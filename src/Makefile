@@ -1,14 +1,17 @@
+MAKEFLAGS += --no-builtin-rules
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
 # Compiler Options
 CC        := gcc
 CXX       := g++
 
 # Include and source code directories 
-INCDIRS   := ./include
-CODEDIRS  := ./loader ./player .
+INCDIRS   := include
+CODEDIRS  := loader player .
 
 # binary and build directories
-BINDIR    := ../bin
-BUILDDIR  := ../build
+BINDIR    := bin
+BUILDDIR  := build
 TARGET    := game
 
 # external libraries
@@ -24,24 +27,29 @@ CXXFLAGS  := $(VERSION) $(WARNINGS) -g $(foreach ENTRY, $(INCDIRS), -I$(ENTRY)) 
 CXXFILES  := $(foreach ENTRY, $(CODEDIRS), $(wildcard $(ENTRY)/*.cpp))
 OBJECTS   := $(patsubst %.cpp, %.o, $(CXXFILES))
 DEPFILES  := $(patsubst %.cpp, %.d, $(CXXFILES))
+OBJDIRS   := $(foreach ENTRY, $(CODEDIRS), $(BUILDDIR)/$(ENTRY))
 
 # default make rule
-.PHONY: all
-all: ${BINDIR}/$(TARGET)
+.PHONY: all create_build_dirs
+all: create_build_dirs | $(BINDIR)/$(TARGET)
 
-${BINDIR}/$(TARGET): $(OBJECTS)
-	mkdir -p ${BINDIR}
-	$(CXX) -o $@ $^ $(LIB)
+create_build_dirs:
+	mkdir -p $(BINDIR)
+	mkdir -p $(BUILDDIR)
+	mkdir -p $(OBJDIRS)
 
-%.o: %.c
-	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
+$(BINDIR)/$(TARGET): $(OBJECTS)
+	$(CXX) -o $@ $(foreach ENTRY, $^, $(BUILDDIR)/$(ENTRY)) $(LIB)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $(BUILDDIR)/$@ $< $(LIB)
 
 .PHONY: run
 run:
-	${BINDIR}/${TARGET}
+	$(BINDIR)/$(TARGET)
 
 .PHONY: clean
 clean:
-	rm -rfv $(BINARY) $(OBJECTS) $(DEPFILES)
+	rm -rfv $(BINDIR) $(BUILDDIR)
 
 -include $(DEPFILES)
