@@ -1,5 +1,4 @@
 MAKEFLAGS += --no-builtin-rules
-uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
 # Compiler Options
 CC        := gcc
@@ -34,9 +33,9 @@ OBJDIRS   := $(foreach ENTRY, $(CODEDIRS), $(BUILDDIR)/$(ENTRY))
 all: create_build_dirs | $(BINDIR)/$(TARGET)
 
 create_build_dirs:
-	mkdir -p $(BINDIR)
-	mkdir -p $(BUILDDIR)
-	mkdir -p $(OBJDIRS)
+	@mkdir -p $(BINDIR)
+	@mkdir -p $(BUILDDIR)
+	@mkdir -p $(OBJDIRS)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	$(CXX) -o $@ $(foreach ENTRY, $^, $(BUILDDIR)/$(ENTRY)) $(LIB)
@@ -46,10 +45,10 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 
 .PHONY: run
 run:
-	$(BINDIR)/$(TARGET)
+	@$(BINDIR)/$(TARGET)
 
 .PHONY: clean
 clean:
-	rm -rfv $(BINDIR) $(BUILDDIR)
+	@rm -rfv $(BINDIR) $(BUILDDIR)
 
 -include $(DEPFILES)
