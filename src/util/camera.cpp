@@ -1,8 +1,8 @@
 #include "camera.hpp"
-#include "constants.hpp"
+#include "constant.hpp"
 
-Camera::Camera(float fov_y, float near, float far) {
-    this->projection_mat = glm::perspective(fov_y, (float)Constant::WIDTH / (float)Constant::HEIGHT, near, far);
+Camera::Camera(float fov_y, float near, float far, float width_height_ration) {
+    this->projection_mat = glm::perspective(fov_y, width_height_ration, near, far);
 }
 
 void Camera::update_view() {
@@ -59,6 +59,10 @@ void Camera::pan(const SDL_Event &event) {
     this->direction.y = sin(glm::radians(this->pitch));
     this->direction.z = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
     this->camera_front = glm::normalize(this->direction);
+}
+
+void Camera::set_model_mat(glm::mat4 new_model_mat) {
+    this->model_mat = new_model_mat;
 }
 
 glm::vec3 Camera::get_camera_position() {

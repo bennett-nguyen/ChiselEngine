@@ -1,5 +1,5 @@
-#ifndef SHADER_HPP
-#define SHADER_HPP
+#ifndef SHADERPROGRAM_HPP
+#define SHADERPROGRAM_HPP
 
 #include <iostream>
 #include <fstream>
@@ -13,9 +13,9 @@ std::string get_file_content(const char *filename);
 void shader_compilation_failcheck(const GLuint &shader);
 void program_linking_failcheck(const GLuint &ID);
 
-class Shader {
+class ShaderProgram {
 public:
-    Shader(const char *vshader_filename, const char *fshader_filename);
+    ShaderProgram(const char *vshader_filename, const char *fshader_filename);
 
     void activate();
     void purge();
@@ -60,7 +60,7 @@ public:
     void uniform_mat3x4f(const char *, GLsizei, GLboolean, glm::mat3x4);
     void uniform_mat4x3f(const char *, GLsizei, GLboolean, glm::mat4x3);
 
-    unsigned get_uniform_location(const char *name);
+    GLint get_uniform_location(const char *name);
 
 private:
     GLuint ID;
