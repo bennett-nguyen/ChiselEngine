@@ -5,9 +5,12 @@ CC        := gcc
 CXX       := g++
 
 # Include and source code directories 
-INCDIRS             := include util 
-INC_DIRS_NO_WARNING := lib/include/imgui lib/include/stb
-CODEDIRS            := util lib/imgui .
+CODEDIRS                  := util voxel .
+IMGUI_CODEDIR             := lib/imgui
+
+IMGUI_INCDIRS             := lib/include/imgui
+HEADERS_ONLY_LIB_INCDIRCS := lib/include/stb
+INCDIRS                   := include util voxel $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
 
 # binary and build directories
 BINDIR     := bin
@@ -29,11 +32,12 @@ FEATURES      := -pedantic-errors
 WARNINGS      := -Wall -Wextra -Wconversion -Wsign-conversion
 RELEASEFLAGS  := -O2 -DNDEBUG
 DEBUGFLAGS    := -g3 -O0
-CXXFLAGS      := $(VERSION) $(WARNINGS) $(FEATURES) $(foreach ENTRY, $(INC_DIRS_NO_WARNING), -isystem $(ENTRY)) $(foreach ENTRY, $(INCDIRS), -I$(ENTRY)) $(DEPFLAGS)
+CXXFLAGS      := $(VERSION) $(WARNINGS) $(FEATURES) $(foreach ENTRY, $(INCDIRS), -I$(ENTRY)) $(DEPFLAGS)
+IMGUIFLAGS    := $(VERSION) $(foreach ENTRY, $(IMGUI_INCDIRS), -I$(ENTRY)) $(DEPFLAGS) $(RELEASEFLAGS)
 
 ifeq ($(CFG), debug)
-	CXXFLAGS  += $(DEBUGFLAGS)
-	TARGETDIR := $(BINDIR)/$(DEBUGDIR)
+	CXXFLAGS   += $(DEBUGFLAGS)
+	TARGETDIR  := $(BINDIR)/$(DEBUGDIR)
 else
 	CXXFLAGS  += $(RELEASEFLAGS)
 	TARGETDIR := $(BINDIR)/$(RELEASEDIR)
@@ -45,6 +49,11 @@ OBJECTS   := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(CXXFILES))
 DEPFILES  := $(patsubst %.cpp, $(BUILDDIR)/%.d, $(CXXFILES))
 OBJDIRS   := $(foreach ENTRY, $(CODEDIRS), $(BUILDDIR)/$(ENTRY))
 
+IMGUI_CXXFILES := $(wildcard lib/imgui/*.cpp)
+IMGUI_OBJECTS  := $(patsubst %.cpp, $(BUILDDIR)/%.o, $(IMGUI_CXXFILES))
+IMGUI_DEPFILES := $(patsubst %.cpp, $(BUILDDIR)/%.d, $(IMGUI_CXXFILES))
+IMGUI_OBJDIR   := $(BUILDDIR)/lib/imgui
+
 # default make rule
 .PHONY: all create_build_dirs
 all: create_build_dirs | $(TARGETDIR)/$(TARGET)
@@ -53,12 +62,22 @@ create_build_dirs:
 	@mkdir -pv $(TARGETDIR)
 	@mkdir -pv $(BUILDDIR)
 	@mkdir -pv $(OBJDIRS)
+	@mkdir -pv $(IMGUI_OBJDIR)
 
-$(TARGETDIR)/$(TARGET): $(OBJECTS)
+$(TARGETDIR)/$(TARGET): $(OBJECTS) $(IMGUI_OBJECTS)
 	$(CXX) -o $@ $^ $(LIB)
 
-$(BUILDDIR)/%.o: %.cpp
+$(BUILDDIR)/util/%.o: util/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
+
+$(BUILDDIR)/voxel/%.o: voxel/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
+
+$(BUILDDIR)/./main.o: main.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
+
+$(IMGUI_OBJDIR)/%.o: lib/imgui/%.cpp
+	$(CXX) $(IMGUIFLAGS) -c -o $@ $<
 
 .PHONY: run
 run:
@@ -69,3 +88,4 @@ clean:
 	@rm -rfv $(BINDIR) $(BUILDDIR)
 
 -include $(DEPFILES)
+-include $(IMGUI_DEPFILES)

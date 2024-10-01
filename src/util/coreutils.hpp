@@ -8,3 +8,4 @@
 #include "ebo.hpp"
 #include "camera.hpp"
 #include "constant.hpp"
+#include "colors.hpp"

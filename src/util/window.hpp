@@ -8,6 +8,7 @@
 // External Libraries
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
+#include <glm/vec4.hpp>
 
 class Window {
 public:
@@ -22,6 +23,7 @@ public:
 
     void swap_buffers();
     void clear(const GLclampf r, const GLclampf g, const GLclampf b, const GLclampf a);
+    void clear(glm::vec4 color);
     float wh_ratio();
 
 private:

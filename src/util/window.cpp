@@ -2,7 +2,7 @@
 #include "iochars.hpp"
 
 Window::Window(const std::string &window_name, int width, int height, Uint32 SDL_init_flags, Uint32 window_flags)
-    : name(window_name), width(width), height(height) {
+    : width(width), height(height), name(window_name) {
     using namespace IOChars;
 
     if (SDL_Init(SDL_init_flags) < 0) {
@@ -81,8 +81,8 @@ Window::Window(const std::string &window_name, float screen_occupation_percentag
     SDL_DisplayMode MD;
     SDL_GetDesktopDisplayMode(0, &MD);
 
-    this->width = MD.w * screen_occupation_percentage;
-    this->height = MD.h * screen_occupation_percentage;
+    this->width = int((float)MD.w * screen_occupation_percentage);
+    this->height = int((float)MD.h * screen_occupation_percentage);
     
     this->window = SDL_CreateWindow(
         window_name.c_str(),
@@ -140,6 +140,11 @@ void Window::swap_buffers() {
 
 void Window::clear(const GLclampf r, const GLclampf g, const GLclampf b, const GLclampf a) {
     glClearColor(r, g, b, a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Window::clear(glm::vec4 color) {
+    glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

@@ -1,8 +1,10 @@
 #include "camera.hpp"
 #include "constant.hpp"
 
-Camera::Camera(float fov_y, float near, float far, float width_height_ration) {
-    this->projection_mat = glm::perspective(fov_y, width_height_ration, near, far);
+Camera::Camera(glm::vec3 position, float fov_y, float near, float far, float width_height_ratio) {
+    this->camera_pos = position;
+    this->projection_mat = glm::perspective(fov_y, width_height_ratio, near, far);
+    this->compute_camera_front();
 }
 
 void Camera::update_view() {
@@ -12,10 +14,6 @@ void Camera::update_view() {
 glm::mat4 Camera::look_at() {
     return glm::lookAt(this->camera_pos,
         this->camera_pos + this->camera_front, this->camera_up);
-}
-
-glm::mat4 Camera::get_model_mat() {
-    return this->model_mat;
 }
 
 glm::mat4 Camera::get_view_mat() {
@@ -37,7 +35,11 @@ void Camera::move() {
         this->camera_pos -= camera_speed * camera_front;
     } if (kb_state[SDL_SCANCODE_W]) {
         this->camera_pos += camera_speed * camera_front;
-    } 
+    } if (kb_state[SDL_SCANCODE_LSHIFT] || kb_state[SDL_SCANCODE_RSHIFT]) {
+        this->camera_pos.y -= camera_speed;
+    } if (kb_state[SDL_SCANCODE_SPACE]) {
+        this->camera_pos.y +=  camera_speed;
+    }
 }
 
 void Camera::pan(const SDL_Event &event) {
@@ -54,17 +56,20 @@ void Camera::pan(const SDL_Event &event) {
 
     this->pitch = std::min(this->pitch, 89.0f);
     this->pitch = std::max(this->pitch, -89.0f);
+    this->compute_camera_front();
+}
 
+void Camera::compute_camera_front() {
     this->direction.x = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
     this->direction.y = sin(glm::radians(this->pitch));
     this->direction.z = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
     this->camera_front = glm::normalize(this->direction);
 }
 
-void Camera::set_model_mat(glm::mat4 new_model_mat) {
-    this->model_mat = new_model_mat;
-}
-
 glm::vec3 Camera::get_camera_position() {
     return this->camera_pos;
+}
+
+void Camera::teleport(glm::vec3 position) {
+    this->camera_pos = position;
 }
