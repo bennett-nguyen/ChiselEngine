@@ -22,6 +22,7 @@ public:
     glm::mat4 get_view_mat();
     glm::mat4 get_projection_mat();
     void compute_camera_front();
+    glm::vec3 get_camera_front();
 
 private:
     glm::vec3 direction;
@@ -31,7 +32,7 @@ private:
 
     float yaw = 90.0f;
     float pitch = 0.0f;
-    const float camera_speed = 0.2f;
+    const float camera_speed = 0.5f;
     const float sensitivity = 0.15f;
 
     glm::mat4 projection_mat;

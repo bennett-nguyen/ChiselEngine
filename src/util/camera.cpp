@@ -52,7 +52,7 @@ void Camera::pan(const SDL_Event &event) {
     yoffset *= this->sensitivity;
 
     this->yaw   += xoffset;
-    this->pitch += -yoffset; 
+    this->pitch -= yoffset; 
 
     this->pitch = std::min(this->pitch, 89.0f);
     this->pitch = std::max(this->pitch, -89.0f);
@@ -72,4 +72,8 @@ glm::vec3 Camera::get_camera_position() {
 
 void Camera::teleport(glm::vec3 position) {
     this->camera_pos = position;
+}
+
+glm::vec3 Camera::get_camera_front() {
+    return this->camera_front;
 }

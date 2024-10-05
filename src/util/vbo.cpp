@@ -1,15 +1,17 @@
 #include "vbo.hpp"
 
-VBO::VBO() {
-    glGenBuffers(1, &this->ID);
-}
+VBO::VBO() {}
 
 VBO::~VBO() {
-    glDeleteBuffers(1, &this->ID);
+    if (glIsBuffer(this->ID)) this->delete_buffer();
 }
 
 void VBO::bind() {
     glBindBuffer(GL_ARRAY_BUFFER, this->ID);
+}
+
+void VBO::unbind() {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void VBO::buffer_data(GLsizeiptr size, const void* data, GLenum usage) {
@@ -25,4 +27,12 @@ void VBO::attrib_pointer(GLuint index, GLint size, GLenum type, GLboolean normal
 void VBO::enable_attrib_array(GLuint index) {
     this->bind();
     glEnableVertexAttribArray(index);
+}
+
+void VBO::gen_buffer() {
+    glGenBuffers(1, &this->ID);
+}
+
+void VBO::delete_buffer() {
+    glDeleteBuffers(1, &this->ID);
 }

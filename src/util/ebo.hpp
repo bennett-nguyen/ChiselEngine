@@ -8,8 +8,10 @@ public:
     EBO();
     ~EBO();
     void bind();
+    void unbind();
     void buffer_data(GLsizeiptr size, const void* data, GLenum usage);
-
+    void gen_buffer();
+    void delete_buffer();
 private:
     GLuint ID;
 };

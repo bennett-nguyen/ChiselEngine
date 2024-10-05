@@ -1,6 +1,11 @@
 #include "block.hpp"
 
-Block::Block() {}
+const float Block::BLOCK_RENDER_SIZE = 1.0f;
+
+Block::Block() {
+    this->set_active(false);
+}
+
 Block::~Block() {}
 
 bool Block::is_active() {

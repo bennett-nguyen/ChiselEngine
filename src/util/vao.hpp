@@ -8,6 +8,9 @@ public:
     VAO();
     ~VAO();
     void bind();
+    void unbind();
+    void gen_buffer();
+    void delete_buffer();
 
 private:
     GLuint ID;
