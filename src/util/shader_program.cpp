@@ -36,6 +36,8 @@ void program_linking_failcheck(const GLuint &ID) {
     std::cerr << "error while linking ID: " << log << std::endl;
 }
 
+ShaderProgram::ShaderProgram() {}
+
 ShaderProgram::ShaderProgram(const char *vshader_file, const char *fshader_file) {
     std::string vshader_content = get_file_content(vshader_file);
     std::string fshader_content = get_file_content(fshader_file);

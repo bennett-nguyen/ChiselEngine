@@ -15,6 +15,7 @@ void program_linking_failcheck(const GLuint &ID);
 
 class ShaderProgram {
 public:
+    ShaderProgram();
     ShaderProgram(const char *vshader_filename, const char *fshader_filename);
 
     void activate();

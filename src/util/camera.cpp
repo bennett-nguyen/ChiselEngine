@@ -66,9 +66,6 @@ void Camera::compute_camera_front() {
     this->camera_front = glm::normalize(this->direction);
 }
 
-glm::vec3 Camera::get_camera_position() {
-    return this->camera_pos;
-}
 
 void Camera::teleport(glm::vec3 position) {
     this->camera_pos = position;
@@ -76,4 +73,12 @@ void Camera::teleport(glm::vec3 position) {
 
 glm::vec3 Camera::get_camera_front() {
     return this->camera_front;
+}
+
+glm::vec3 Camera::get_camera_position() {
+    return this->camera_pos;
+}
+
+glm::vec2 Camera::get_camera_position_2d() {
+    return glm::vec2(this->camera_pos.x, this->camera_pos.z);
 }

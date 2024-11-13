@@ -1,19 +1,19 @@
 #include <SDL2/SDL.h>
-#include "coreutils.hpp"
-#include "blocktype_enum.hpp"
-#include "chunk.hpp"
+#include "window.hpp"
+#include "camera.hpp"
+#include "colors.hpp"
+#include "shader_program.hpp"
+#include "constant.hpp"
+#include "world.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 
 int main() {
-    Window window(
-        "Terrain Generation",
-        Constant::SCREEN_OCCUPATION_RATIO,
-        SDL_INIT_VIDEO,
-        SDL_WINDOW_OPENGL
-    );
+    Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
+    ShaderProgram chunk_shader("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
+    Camera camera(glm::vec3(0, 0, -3.0f), glm::radians(45.0f), 0.1f, 200.0f, window.wh_ratio());
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -24,32 +24,17 @@ int main() {
     ImGui_ImplOpenGL3_Init();
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_MULTISAMPLE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
-    Camera camera(glm::vec3(0, 0, -3.0f), glm::radians(45.0f), 0.1f, 500.0f, window.wh_ratio());
-    ShaderProgram default_shader_program("resources/shaders/default.vert", "resources/shaders/default.frag");
-
+    World world(&camera, &chunk_shader);
     SDL_Event event;
-    glm::mat4 model(1.0f);
-
-    std::vector<Chunk*> chunks;
-
-    for (unsigned x = 0; x < 25; x++) {
-        for (unsigned z = 0; z < 25; z++) {
-            Chunk* pchunk = new Chunk(glm::vec3(x*Chunk::CHUNK_SIZE, 0, z*Chunk::CHUNK_SIZE));
-            pchunk->load_chunk();
-            pchunk->setup_chunk();
-            chunks.push_back(pchunk);
-        }
-    }
 
     while (true) {
         window.clear(Colors::DARK_SLATE_GRAY);
 
         while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            camera.pan(event);
-
             if (SDL_QUIT == event.type) {
                 ImGui_ImplOpenGL3_Shutdown();
                 ImGui_ImplSDL2_Shutdown();
@@ -63,9 +48,19 @@ int main() {
                     } else {
                         SDL_SetRelativeMouseMode(SDL_TRUE);
                     }
+                } else if (SDL_SCANCODE_Q == event.key.keysym.scancode) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                    glLineWidth(1.4f);
+                } else if (SDL_SCANCODE_E == event.key.keysym.scancode) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 }
             }
+
+            camera.pan(event);
         }
+
+        if (SDL_GetRelativeMouseMode()) camera.move();
+        camera.update_view();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -80,17 +75,9 @@ int main() {
         ImGui::Text("Facing: %s", camera_front.y >= 0 ? "Up" : "Down");
         ImGui::End();
 
-        camera.move();
-        camera.update_view();
-
-        default_shader_program.activate();
-        default_shader_program.uniform_mat4f("model", 1, GL_FALSE, glm::mat4(1.0f));
-        default_shader_program.uniform_mat4f("view", 1, GL_FALSE, camera.get_view_mat());
-        default_shader_program.uniform_mat4f("projection", 1, GL_FALSE, camera.get_projection_mat());
-
-        for (Chunk* pchunk : chunks) {
-            pchunk->render(default_shader_program, Colors::WHITE, Colors::BLACK);
-        }
+        world.remove_chunks();
+        world.load_chunks();
+        world.render();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

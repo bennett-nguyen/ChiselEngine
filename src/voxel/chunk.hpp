@@ -1,46 +1,30 @@
 #ifndef CHUNK_HPP
-#define CHUNK_CPP
+#define CHUNK_HPP
 
-#include "mesh.hpp"
-#include "block.hpp"
-#include "vertex.hpp"
 #include <array>
-#include <algorithm>
+#include <glm/vec3.hpp>
+#include <cstring>
+#include "constant.hpp"
+#include "chunk_mesh.hpp"
 #include <glm/gtc/noise.hpp>
 
 class Chunk {
 public:
-    Chunk(glm::vec3 position);
+    Chunk(glm::ivec3 chunk_coord);
     ~Chunk();
 
-    void update(float dt);
-    void render(ShaderProgram &shader_program, glm::vec4 voxel_fill, glm::vec4 voxel_outline);
-
-    void create_mesh();
-    void rebuild_mesh();
-    void create_cube(unsigned x, unsigned y, unsigned z, std::array<bool, 6> faces);
-
-    void load_chunk();
-    void setup_chunk();
-    void unload_chunk();
-
-    bool is_setup();
-    bool is_loaded();
-    Block* get_pblock(size_t idx);
-    Block* get_pblock(unsigned x, unsigned y, unsigned z);
-    size_t get_block_idx(unsigned x, unsigned y, unsigned z);
-    glm::vec3 get_chunk_pos();
-
-    static const unsigned CHUNK_SIZE;
-    static const unsigned CHUNK_AREA;
-    static const unsigned CHUNK_HEIGHT;
+    void load();
+    void unload();
+    void render(ShaderProgram *pchunk_shader, glm::mat4 view, glm::mat4 projection);
+    void build_voxels();
+    void build_mesh();
+    void destroy_mesh();
 
 private:
-    Mesh chunk_mesh;
-    Block *pBlocks;
-    bool _is_setup = false;
-    bool _is_loaded = false;
-    glm::vec3 chunk_position;
+    unsigned *m_pvoxels;
+    ChunkMesh m_mesh;
+    glm::ivec3 m_chunk_coord;
+    bool m_is_empty = true;
 };
 
 #endif

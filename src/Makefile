@@ -10,7 +10,7 @@ IMGUI_CODEDIR             := lib/imgui
 
 IMGUI_INCDIRS             := lib/include/imgui
 HEADERS_ONLY_LIB_INCDIRCS := lib/include/stb
-INCDIRS                   := include util voxel $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
+INCDIRS                   := include voxel util $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
 
 # binary and build directories
 BINDIR     := bin

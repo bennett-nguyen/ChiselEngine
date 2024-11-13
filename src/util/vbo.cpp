@@ -19,9 +19,19 @@ void VBO::buffer_data(GLsizeiptr size, const void* data, GLenum usage) {
     glBufferData(GL_ARRAY_BUFFER, size, data, usage);
 }
 
-void VBO::attrib_pointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer) {
+void VBO::attrib(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer) {
     this->bind();
     glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+}
+
+void VBO::attribI(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer) {
+    this->bind();
+    glVertexAttribIPointer(index, size, type, stride, pointer);
+}
+
+void VBO::attribL(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer) {
+    this->bind();
+    glVertexAttribLPointer(index, size, type, stride, pointer);
 }
 
 void VBO::enable_attrib_array(GLuint index) {
