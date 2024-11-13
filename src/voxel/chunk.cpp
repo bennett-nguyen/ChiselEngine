@@ -1,9 +1,21 @@
 #include "chunk.hpp"
 
-int height_map(float x, float z) {
-    float scale = 0.01f;
-    float normalized_range = (glm::simplex(glm::vec2(x, z) * scale) + 1.0f) / 2.0f;
-    return (int)(normalized_range * Constant::CHUNK_HEIGHT);
+int height_map(unsigned num_iterations, float x, float z, float persistence, float scale, unsigned low, unsigned high) {
+    float max_amp = 0;
+    float amp = 1;
+    float freq = scale;
+    float noise = 0;
+
+    for(unsigned i = 0; i < num_iterations; ++i) {
+        noise += glm::simplex(glm::vec2(x, z) * freq) * amp;
+        max_amp += amp;
+        amp *= persistence;
+        freq *= 2;
+    }
+
+    noise /= max_amp;
+    noise = noise * (high - low) / 2 + (high + low) / 2;
+    return (int)noise;
 }
 
 Chunk::Chunk(glm::ivec3 chunk_coord) {
@@ -33,7 +45,9 @@ void Chunk::build_voxels() {
 
     for (int x = 0; x < (int)Constant::CHUNK_SIZE; x++) {
         for (int z = 0; z < (int)Constant::CHUNK_SIZE; z++) {
-            int y_level = height_map(float(x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE), float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE));
+            int y_level = height_map(16, float(x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE),
+                float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.5, 0.007, 0, Constant::CHUNK_HEIGHT);
+
             for (int y = 0; y <= y_level; y++) {
                 m_pvoxels[get_voxel_idx(x, y, z)] = 1;
                 m_is_empty = false;
