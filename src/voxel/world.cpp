@@ -59,14 +59,35 @@ void World::load_chunks() {
             glm::ivec3 chunk_coord(x + player_chunk_coords.x, 0, z + player_chunk_coords.z);
             if (1 == m_chunk_map.count(chunk_coord)) continue;
             chunks_to_load.push_back(chunk_coord);
+            Chunk *pchunk = new Chunk(chunk_coord);
+            pchunk->build_voxels();
+            m_chunk_map[chunk_coord] = pchunk;
         }
     }
 
     for (auto const &coord : chunks_to_load) {
-        Chunk *pchunk = new Chunk(coord);
-        pchunk->load();
-        m_chunk_map[coord] = pchunk;
+        glm::ivec3 north_coord(coord.x+1, coord.y, coord.z);
+        glm::ivec3 south_coord(coord.x-1, coord.y, coord.z);
+        glm::ivec3 east_coord(coord.x, coord.y, coord.z+1);
+        glm::ivec3 west_coord(coord.x, coord.y, coord.z-1);
+
+        unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
+        unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
+        unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
+        unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
+
+        m_chunk_map[coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
     }
+}
+
+unsigned* World::get_chunk_neighbor_pvoxels(glm::ivec3 coord) {
+    unsigned *neighbor_pvoxels = nullptr;
+    
+    if (1 == m_chunk_map.count(coord)) {
+        neighbor_pvoxels = m_chunk_map[coord]->get_pvoxels();
+    }
+
+    return neighbor_pvoxels;
 }
 
 void World::remove_chunks() {
@@ -89,5 +110,55 @@ void World::remove_chunks() {
     for (auto const &chunk_coord : chunks_to_remove) {
         delete m_chunk_map[chunk_coord];
         m_chunk_map.erase(chunk_coord);
+    }
+}
+
+void World::rebuild_chunks() {
+    glm::ivec3 current_player_chunk_pos = get_chunk_coords_from_camera();
+    std::unordered_set<glm::ivec3> chunks_to_rebuild;
+
+    int old_x_min = m_prev_player_chunk_pos.x - Constant::LOAD_DISTANCE;
+    int old_x_max = m_prev_player_chunk_pos.x + Constant::LOAD_DISTANCE;
+    int old_z_min = m_prev_player_chunk_pos.z - Constant::LOAD_DISTANCE;
+    int old_z_max = m_prev_player_chunk_pos.z + Constant::LOAD_DISTANCE;
+
+    int new_x_min = current_player_chunk_pos.x - Constant::LOAD_DISTANCE;
+    int new_x_max = current_player_chunk_pos.x + Constant::LOAD_DISTANCE;
+    int new_z_min = current_player_chunk_pos.z - Constant::LOAD_DISTANCE;
+    int new_z_max = current_player_chunk_pos.z + Constant::LOAD_DISTANCE;
+
+    for (int x = new_x_min; x <= new_x_max; x++) {
+        for (int z = new_z_min; z <= new_z_max; z++) {
+            if (new_x_min < x && x < new_x_max && new_z_min < z && z < new_z_max) continue;
+            
+            if (old_x_min <= x && x <= old_x_max && old_z_min <= z && z <= old_z_max) {
+                chunks_to_rebuild.insert(glm::ivec3(x, 0, z));
+            }
+        }
+    }
+
+    for (int x = old_x_min; x <= old_x_max; x++) {
+        for (int z = old_z_min; z <= old_z_max; z++) {
+            if (old_x_min < x && x < old_x_max && old_z_min < z && z < old_z_max) continue;
+            
+            if (new_x_min <= x && x <= new_x_max && new_z_min <= z && z <= new_z_max) {
+                chunks_to_rebuild.insert(glm::ivec3(x, 0, z));
+            }
+        }
+    }
+
+    for (auto const &coord : chunks_to_rebuild) {
+        glm::ivec3 north_coord(coord.x+1, coord.y, coord.z);
+        glm::ivec3 south_coord(coord.x-1, coord.y, coord.z);
+        glm::ivec3 east_coord(coord.x, coord.y, coord.z+1);
+        glm::ivec3 west_coord(coord.x, coord.y, coord.z-1);
+
+        unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
+        unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
+        unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
+        unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
+
+        m_chunk_map[coord]->destroy_mesh();
+        m_chunk_map[coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
     }
 }

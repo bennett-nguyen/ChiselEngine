@@ -19,7 +19,8 @@ public:
     ~ChunkMesh();
 
     void render();
-    void build_chunk_mesh(unsigned *m_pvoxels);
+    void build_chunk_mesh(unsigned *m_pvoxels, unsigned *north_neighbor,
+    unsigned *south_neighbor, unsigned *east_neighbor, unsigned *west_neighbor);
     void destroy_chunk_mesh();
 
 private:

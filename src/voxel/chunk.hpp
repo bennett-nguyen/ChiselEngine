@@ -13,13 +13,14 @@ public:
     Chunk(glm::ivec3 chunk_coord);
     ~Chunk();
 
-    void load();
     void unload();
     void render();
     void build_voxels();
-    void build_mesh();
+    void build_mesh(unsigned *north_neighbor, unsigned *south_neighbor,
+        unsigned *east_neighbor, unsigned *west_neighbor);
     void destroy_mesh();
     glm::mat4 get_chunk_model();
+    unsigned* get_pvoxels();
 
 private:
     unsigned *m_pvoxels;

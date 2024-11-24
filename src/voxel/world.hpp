@@ -2,6 +2,7 @@
 #define WORLD_HPP
 
 #include <vector>
+#include <unordered_set>
 #include "chunk.hpp"
 #include "camera.hpp"
 #include "glm/gtx/hash.hpp"
@@ -17,6 +18,8 @@ public:
     void remove_chunks();
     void rebuild_chunks();
     glm::ivec3 get_chunk_coords_from_camera();
+    unsigned* get_chunk_neighbor_pvoxels(glm::ivec3 coord);
+
 private:
     Camera *m_pcamera;
     ShaderProgram *m_pchunk_shader;

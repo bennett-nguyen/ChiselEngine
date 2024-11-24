@@ -26,11 +26,6 @@ Chunk::~Chunk() {
     unload();
 }
 
-void Chunk::load() {
-    build_voxels();
-    build_mesh();
-}
-
 void Chunk::unload() {
     m_is_empty = true;
     delete[] m_pvoxels;
@@ -56,8 +51,11 @@ void Chunk::build_voxels() {
     }
 }
 
-void Chunk::build_mesh() {
-    m_mesh.build_chunk_mesh(m_pvoxels);
+void Chunk::build_mesh(unsigned *north_neighbor, unsigned *south_neighbor,
+        unsigned *east_neighbor, unsigned *west_neighbor) {
+
+    m_mesh.build_chunk_mesh(m_pvoxels, north_neighbor, south_neighbor,
+        east_neighbor, west_neighbor);
 }
 
 void Chunk::destroy_mesh() {
@@ -80,4 +78,8 @@ glm::mat4 Chunk::get_chunk_model() {
 
     model = glm::translate(model, chunk_to_voxel_coord);
     return model;
+}
+
+unsigned *Chunk::get_pvoxels() {
+    return m_pvoxels;
 }

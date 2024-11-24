@@ -13,7 +13,7 @@
 int main() {
     Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
     ShaderProgram chunk_shader("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
-    Camera camera(glm::vec3(0, 0, -3.0f), glm::radians(45.0f), 0.1f, 200.0f, window.wh_ratio());
+    Camera camera(glm::vec3(0, 0, -3.0f), glm::radians(45.0f), 0.1f, 300.0f, window.wh_ratio());
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -75,7 +75,7 @@ int main() {
         std::string y_direction = camera_front.y >= 0 ? "Up" : "Down";
         std::string z_direction = camera_front.z >= 0 ? "East" : "West";
 
-        ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove);
+        ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
         ImGui::SetWindowPos(ImVec2(0, 0), 0);
         ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
         ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
