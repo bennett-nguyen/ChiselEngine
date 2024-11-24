@@ -15,10 +15,11 @@ public:
 
     void load();
     void unload();
-    void render(ShaderProgram *pchunk_shader, glm::mat4 view, glm::mat4 projection);
+    void render();
     void build_voxels();
     void build_mesh();
     void destroy_mesh();
+    glm::mat4 get_chunk_model();
 
 private:
     unsigned *m_pvoxels;

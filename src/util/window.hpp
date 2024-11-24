@@ -12,9 +12,6 @@
 
 class Window {
 public:
-    int width, height;
-
-    Window(const std::string &window_name, int width, int height, Uint32 SDL_init_flags, Uint32 window_flags);
     Window(const std::string &window_name, float screen_occupation_percentage, Uint32 SDL_init_flags, Uint32 window_flags);
     ~Window();
 
@@ -24,12 +21,16 @@ public:
     void swap_buffers();
     void clear(const GLclampf r, const GLclampf g, const GLclampf b, const GLclampf a);
     void clear(glm::vec4 color);
+
+    int get_width();
+    int get_height();
     float wh_ratio();
 
 private:
-    std::string name;
-    SDL_Window *window;
-    SDL_GLContext gl_context;
+    int m_width, m_height;
+    std::string m_name;
+    SDL_Window *m_pwindow;
+    SDL_GLContext m_gl_context;
 };
 
 #endif

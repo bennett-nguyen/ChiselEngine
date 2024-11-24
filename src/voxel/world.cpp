@@ -1,7 +1,10 @@
 #include "world.hpp"
 
 World::World(Camera *p_camera, ShaderProgram *p_chunk_shader)
-    : m_pcamera(p_camera), m_pchunk_shader(p_chunk_shader) {}
+        : m_pcamera(p_camera), m_pchunk_shader(p_chunk_shader) {
+    load_chunks();
+    m_prev_player_chunk_pos = get_chunk_coords_from_camera();
+}
 
 World::~World() {
     for (auto &chunk : m_chunk_map) {
@@ -21,9 +24,29 @@ glm::ivec3 World::get_chunk_coords_from_camera() {
     );
 }
 
+void World::update() {
+    glm::ivec3 current_player_chunk_pos = get_chunk_coords_from_camera();
+
+    if (m_prev_player_chunk_pos.x != current_player_chunk_pos.x
+            || m_prev_player_chunk_pos.z != current_player_chunk_pos.z) {
+        remove_chunks();
+        load_chunks();
+        rebuild_chunks();
+
+        m_prev_player_chunk_pos = current_player_chunk_pos;
+    }
+
+    render();
+}
+
 void World::render() {
+    m_pchunk_shader->activate();
+    m_pchunk_shader->uniform_mat4f("view", 1, GL_FALSE, m_pcamera->get_view_mat());
+    m_pchunk_shader->uniform_mat4f("projection", 1, GL_FALSE, m_pcamera->get_projection_mat());
+
     for (auto &chunk : m_chunk_map) {
-        chunk.second->render(m_pchunk_shader, m_pcamera->get_view_mat(), m_pcamera->get_projection_mat());
+        m_pchunk_shader->uniform_mat4f("model", 1, GL_FALSE, chunk.second->get_chunk_model());
+        chunk.second->render();
     }
 }
 
@@ -59,7 +82,7 @@ void World::remove_chunks() {
         glm::ivec3 chunk_coord = chunk.first;
         if (x_min <= chunk_coord.x && chunk_coord.x <= x_max && 
                 z_min <= chunk_coord.z && chunk_coord.z <= z_max) continue;
-        
+
         chunks_to_remove.push_back(chunk_coord);
     }
 

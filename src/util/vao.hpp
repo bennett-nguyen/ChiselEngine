@@ -13,7 +13,7 @@ public:
     void delete_buffer();
 
 private:
-    GLuint ID;
+    GLuint m_ID;
 };
 
 #endif

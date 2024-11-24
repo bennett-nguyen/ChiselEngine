@@ -64,7 +64,7 @@ public:
     GLint get_uniform_location(const char *name);
 
 private:
-    GLuint ID;
+    GLuint m_ID;
 };
 
 #endif

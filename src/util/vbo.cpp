@@ -3,11 +3,11 @@
 VBO::VBO() {}
 
 VBO::~VBO() {
-    if (glIsBuffer(this->ID)) this->delete_buffer();
+    if (glIsBuffer(m_ID)) this->delete_buffer();
 }
 
 void VBO::bind() {
-    glBindBuffer(GL_ARRAY_BUFFER, this->ID);
+    glBindBuffer(GL_ARRAY_BUFFER, m_ID);
 }
 
 void VBO::unbind() {
@@ -40,9 +40,9 @@ void VBO::enable_attrib_array(GLuint index) {
 }
 
 void VBO::gen_buffer() {
-    glGenBuffers(1, &this->ID);
+    glGenBuffers(1, &m_ID);
 }
 
 void VBO::delete_buffer() {
-    glDeleteBuffers(1, &this->ID);
+    glDeleteBuffers(1, &m_ID);
 }

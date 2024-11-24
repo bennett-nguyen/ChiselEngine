@@ -1,44 +1,47 @@
 #include "camera.hpp"
 #include "constant.hpp"
 
+const float SENSITIVITY = 0.15f;
+const float CAMERA_SPEED = 1.0f;
+
 Camera::Camera(glm::vec3 position, float fov_y, float near, float far, float width_height_ratio) {
-    this->camera_pos = position;
-    this->projection_mat = glm::perspective(fov_y, width_height_ratio, near, far);
+    m_camera_pos = position;
+    m_projection_mat = glm::perspective(fov_y, width_height_ratio, near, far);
     this->compute_camera_front();
 }
 
 void Camera::update_view() {
-    this->view_mat = this->look_at();
+    m_view_mat = this->look_at();
 }
 
 glm::mat4 Camera::look_at() {
-    return glm::lookAt(this->camera_pos,
-        this->camera_pos + this->camera_front, this->camera_up);
+    return glm::lookAt(m_camera_pos,
+        m_camera_pos + m_camera_front, m_camera_up);
 }
 
 glm::mat4 Camera::get_view_mat() {
-    return this->view_mat;
+    return m_view_mat;
 }
 
 glm::mat4 Camera::get_projection_mat() {
-    return this->projection_mat;
+    return m_projection_mat;
 }
 
 void Camera::move() {
     const Uint8 *kb_state = SDL_GetKeyboardState(NULL);
 
     if (kb_state[SDL_SCANCODE_D]) {
-        this->camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+        m_camera_pos += glm::normalize(glm::cross(m_camera_front, m_camera_up)) * CAMERA_SPEED;
     } if (kb_state[SDL_SCANCODE_A]) {
-        this->camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+        m_camera_pos -= glm::normalize(glm::cross(m_camera_front, m_camera_up)) * CAMERA_SPEED;
     } if (kb_state[SDL_SCANCODE_S]) {
-        this->camera_pos -= camera_speed * camera_front;
+        m_camera_pos -= CAMERA_SPEED * m_camera_front;
     } if (kb_state[SDL_SCANCODE_W]) {
-        this->camera_pos += camera_speed * camera_front;
+        m_camera_pos += CAMERA_SPEED * m_camera_front;
     } if (kb_state[SDL_SCANCODE_LSHIFT] || kb_state[SDL_SCANCODE_RSHIFT]) {
-        this->camera_pos.y -= camera_speed;
+        m_camera_pos.y -= CAMERA_SPEED;
     } if (kb_state[SDL_SCANCODE_SPACE]) {
-        this->camera_pos.y +=  camera_speed;
+        m_camera_pos.y +=  CAMERA_SPEED;
     }
 }
 
@@ -48,37 +51,49 @@ void Camera::pan(const SDL_Event &event) {
     float xoffset = (float)event.motion.xrel;
     float yoffset = (float)event.motion.yrel;
 
-    xoffset *= this->sensitivity;
-    yoffset *= this->sensitivity;
+    xoffset *= SENSITIVITY;
+    yoffset *= SENSITIVITY;
 
-    this->yaw   += xoffset;
-    this->pitch -= yoffset; 
+    m_yaw   += xoffset;
+    m_pitch -= yoffset; 
 
-    this->pitch = std::min(this->pitch, 89.0f);
-    this->pitch = std::max(this->pitch, -89.0f);
+    m_pitch = std::min(m_pitch, 89.0f);
+    m_pitch = std::max(m_pitch, -89.0f);
     this->compute_camera_front();
 }
 
 void Camera::compute_camera_front() {
-    this->direction.x = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
-    this->direction.y = sin(glm::radians(this->pitch));
-    this->direction.z = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
-    this->camera_front = glm::normalize(this->direction);
+    m_direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    m_direction.y = sin(glm::radians(m_pitch));
+    m_direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    m_camera_front = glm::normalize(m_direction);
 }
 
 
 void Camera::teleport(glm::vec3 position) {
-    this->camera_pos = position;
+    m_camera_pos = position;
 }
 
 glm::vec3 Camera::get_camera_front() {
-    return this->camera_front;
+    return m_camera_front;
 }
 
 glm::vec3 Camera::get_camera_position() {
-    return this->camera_pos;
+    return m_camera_pos;
 }
 
-glm::vec2 Camera::get_camera_position_2d() {
-    return glm::vec2(this->camera_pos.x, this->camera_pos.z);
+std::string Camera::get_cardinal_directions() {
+    std::string x_direction = m_camera_front.x >= 0 ? "North" : "South";
+    std::string y_direction = m_camera_front.y >= 0 ? "Up" : "Down";
+    std::string z_direction = m_camera_front.z >= 0 ? "East" : "West";
+
+    return "(" + x_direction + ", " + z_direction + ", " + y_direction + ")";
+}
+
+std::string Camera::get_xyz_directions() {
+    std::string x_direction = m_camera_front.x >= 0 ? "X+" : "X-";
+    std::string y_direction = m_camera_front.y >= 0 ? "Y+" : "Y-";
+    std::string z_direction = m_camera_front.z >= 0 ? "Z+" : "Z-";
+
+    return "(" + x_direction + ", " + z_direction + ", " + y_direction + ")";
 }

@@ -46,7 +46,7 @@ void Chunk::build_voxels() {
     for (int x = 0; x < (int)Constant::CHUNK_SIZE; x++) {
         for (int z = 0; z < (int)Constant::CHUNK_SIZE; z++) {
             int y_level = height_map(16, float(x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE),
-                float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.5, 0.007, 0, Constant::CHUNK_HEIGHT);
+                float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.5f, 0.007f, 0, Constant::CHUNK_HEIGHT);
 
             for (int y = 0; y <= y_level; y++) {
                 m_pvoxels[get_voxel_idx(x, y, z)] = 1;
@@ -64,7 +64,20 @@ void Chunk::destroy_mesh() {
     m_mesh.destroy_chunk_mesh();
 }
 
-void Chunk::render(ShaderProgram *pchunk_shader, glm::mat4 view, glm::mat4 projection) {
+void Chunk::render() {
     if (m_is_empty) return;
-    m_mesh.render(pchunk_shader, view, projection, m_chunk_coord);
+    m_mesh.render();
+}
+
+glm::mat4 Chunk::get_chunk_model() {
+    glm::mat4 model(1.0f);
+
+    glm::vec3 chunk_to_voxel_coord(
+        m_chunk_coord.x * (int)Constant::CHUNK_SIZE,
+        m_chunk_coord.y * (int)Constant::CHUNK_HEIGHT,
+        m_chunk_coord.z * (int)Constant::CHUNK_SIZE
+    );
+
+    model = glm::translate(model, chunk_to_voxel_coord);
+    return model;
 }

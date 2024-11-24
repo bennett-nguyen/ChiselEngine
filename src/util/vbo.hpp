@@ -19,7 +19,7 @@ public:
     void gen_buffer();
     void delete_buffer();
 private:
-    GLuint ID;
+    GLuint m_ID;
 };
 
 #endif

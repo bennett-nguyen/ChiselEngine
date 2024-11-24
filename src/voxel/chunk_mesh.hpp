@@ -5,6 +5,7 @@
 
 #include "vao.hpp"
 #include "vbo.hpp"
+#include "ebo.hpp"
 #include "vertex.hpp"
 #include "face_id.hpp"
 #include "constant.hpp"
@@ -17,14 +18,16 @@ public:
     ChunkMesh();
     ~ChunkMesh();
 
-    void render(ShaderProgram *pchunk_shader, glm::mat4 view, glm::mat4 projection, glm::ivec3 chunk_coord);
+    void render();
     void build_chunk_mesh(unsigned *m_pvoxels);
     void destroy_chunk_mesh();
 
 private:
     VBO m_mesh_vbo;
     VAO m_mesh_vao;
+    EBO m_mesh_ebo;
     std::vector<Vertex> m_vertices_data;
+    std::vector<GLuint> m_indices_data;
 };
 
 #endif

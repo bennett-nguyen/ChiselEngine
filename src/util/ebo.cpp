@@ -5,11 +5,11 @@ EBO::EBO() {
 }
 
 EBO::~EBO() {
-    if (glIsBuffer(this->ID)) this->delete_buffer();
+    if (glIsBuffer(m_ID)) this->delete_buffer();
 }
 
 void EBO::bind() {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ID);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID);
 }
 
 void EBO::unbind() {
@@ -22,9 +22,9 @@ void EBO::buffer_data(GLsizeiptr size, const void* data, GLenum usage) {
 }
 
 void EBO::gen_buffer() {
-    glGenBuffers(1, &this->ID);
+    glGenBuffers(1, &m_ID);
 }
 
 void EBO::delete_buffer() {
-    glDeleteBuffers(1, &this->ID);
+    glDeleteBuffers(1, &m_ID);
 }

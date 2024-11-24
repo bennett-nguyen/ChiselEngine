@@ -23,6 +23,8 @@ ChunkMesh::~ChunkMesh() {
 }
 
 void ChunkMesh::build_chunk_mesh(unsigned *m_pvoxels) {
+    GLuint index = 0;
+
     for (int x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (int z = 0; z < Constant::CHUNK_SIZE; z++) {
             for (int y = 0; y < Constant::CHUNK_HEIGHT; y++) {
@@ -33,62 +35,74 @@ void ChunkMesh::build_chunk_mesh(unsigned *m_pvoxels) {
 
                 // Top
                 if (is_void_in_chunk(glm::ivec3(x, y+1, z), m_pvoxels)) {
-                    v0 = Vertex(x, y+1, z, voxel_id, Top);
-                    v1 = Vertex(x+1, y+1, z, voxel_id, Top);
+                    v0 = Vertex(x,   y+1, z,   voxel_id, Top);
+                    v1 = Vertex(x+1, y+1, z,   voxel_id, Top);
                     v2 = Vertex(x+1, y+1, z+1, voxel_id, Top);
-                    v3 = Vertex(x, y+1, z+1, voxel_id, Top);
+                    v3 = Vertex(x,   y+1, z+1, voxel_id, Top);
 
-                    m_vertices_data.insert(m_vertices_data.end(), { v0, v3, v2, v0, v2, v1 });
+                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
+                    m_indices_data.insert(m_indices_data.end(), { index+0, index+3, index+2, index+0, index+2, index+1 });
+                    index += 4;
                 }
 
                 // Bottom
                 if (is_void_in_chunk(glm::ivec3(x, y-1, z), m_pvoxels)) {
-                    v0 = Vertex(x, y, z, voxel_id, Bottom);
-                    v1 = Vertex(x+1, y, z, voxel_id, Bottom);
+                    v0 = Vertex(x,   y, z,   voxel_id, Bottom);
+                    v1 = Vertex(x+1, y, z,   voxel_id, Bottom);
                     v2 = Vertex(x+1, y, z+1, voxel_id, Bottom);
-                    v3 = Vertex(x, y, z+1, voxel_id, Bottom);
+                    v3 = Vertex(x,   y, z+1, voxel_id, Bottom);
 
-                    m_vertices_data.insert(m_vertices_data.end(), { v0, v2, v3, v0, v1, v2 });
+                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
+                    m_indices_data.insert(m_indices_data.end(), { index+0, index+2, index+3, index+0, index+1, index+2 });
+                    index += 4;
                 }
 
                 // North
                 if (is_void_in_chunk(glm::ivec3(x+1, y, z), m_pvoxels)) {
-                    v0 = Vertex(x+1, y, z, voxel_id, North);
-                    v1 = Vertex(x+1, y+1, z, voxel_id, North);
+                    v0 = Vertex(x+1, y,   z,   voxel_id, North);
+                    v1 = Vertex(x+1, y+1, z,   voxel_id, North);
                     v2 = Vertex(x+1, y+1, z+1, voxel_id, North);
-                    v3 = Vertex(x+1, y, z+1, voxel_id, North);
+                    v3 = Vertex(x+1, y,   z+1, voxel_id, North);
 
-                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v0, v2, v3 });
+                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
+                    m_indices_data.insert(m_indices_data.end(), { index+0, index+1, index+2, index+0, index+2, index+3 });
+                    index += 4;
                 }
 
                 // South
                 if (is_void_in_chunk(glm::ivec3(x-1, y, z), m_pvoxels)) {
-                    v0 = Vertex(x, y, z, voxel_id, South);
-                    v1 = Vertex(x, y+1, z, voxel_id, South);
+                    v0 = Vertex(x, y,   z,   voxel_id, South);
+                    v1 = Vertex(x, y+1, z,   voxel_id, South);
                     v2 = Vertex(x, y+1, z+1, voxel_id, South);
-                    v3 = Vertex(x, y, z+1, voxel_id, South);
+                    v3 = Vertex(x, y,   z+1, voxel_id, South);
 
-                    m_vertices_data.insert(m_vertices_data.end(), { v0, v2, v1, v0, v3, v2 });
+                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
+                    m_indices_data.insert(m_indices_data.end(), { index+0, index+2, index+1, index+0, index+3, index+2 });
+                    index += 4;
                 }
 
                 // East
                 if (is_void_in_chunk(glm::ivec3(x, y, z+1), m_pvoxels)) {
-                    v0 = Vertex(x, y, z+1, voxel_id, East);
-                    v1 = Vertex(x, y+1, z+1, voxel_id, East);
+                    v0 = Vertex(x,   y,   z+1, voxel_id, East);
+                    v1 = Vertex(x,   y+1, z+1, voxel_id, East);
                     v2 = Vertex(x+1, y+1, z+1, voxel_id, East);
-                    v3 = Vertex(x+1, y, z+1, voxel_id, East);
+                    v3 = Vertex(x+1, y,   z+1, voxel_id, East);
 
-                    m_vertices_data.insert(m_vertices_data.end(), { v0, v2, v1, v0, v3, v2 });
+                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
+                    m_indices_data.insert(m_indices_data.end(), { index+0, index+2, index+1, index+0, index+3, index+2 });
+                    index += 4;
                 }
 
                 // West
                 if (is_void_in_chunk(glm::ivec3(x, y, z-1), m_pvoxels)) {
-                    v0 = Vertex(x, y, z, voxel_id, West);
-                    v1 = Vertex(x, y+1, z, voxel_id, West);
+                    v0 = Vertex(x,   y,   z, voxel_id, West);
+                    v1 = Vertex(x,   y+1, z, voxel_id, West);
                     v2 = Vertex(x+1, y+1, z, voxel_id, West);
-                    v3 = Vertex(x+1, y, z, voxel_id, West);
+                    v3 = Vertex(x+1, y,   z, voxel_id, West);
 
-                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v0, v2, v3 });
+                    m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
+                    m_indices_data.insert(m_indices_data.end(), { index+0, index+1, index+2, index+0, index+2, index+3 });
+                    index += 4;
                 }
             }
         }
@@ -96,8 +110,10 @@ void ChunkMesh::build_chunk_mesh(unsigned *m_pvoxels) {
 
     m_mesh_vbo.gen_buffer();
     m_mesh_vao.gen_buffer();
+    m_mesh_ebo.gen_buffer();
 
     m_mesh_vao.bind();
+    m_mesh_ebo.bind();
     m_mesh_vbo.bind();
 
     m_mesh_vbo.buffer_data(m_vertices_data.size() * sizeof(Vertex), m_vertices_data.data(), GL_STATIC_DRAW);
@@ -108,27 +124,19 @@ void ChunkMesh::build_chunk_mesh(unsigned *m_pvoxels) {
     m_mesh_vbo.enable_attrib_array(0);
     m_mesh_vbo.enable_attrib_array(1);
     m_mesh_vbo.enable_attrib_array(2);
+
+    m_mesh_ebo.buffer_data(m_indices_data.size() * sizeof(GLuint), m_indices_data.data(), GL_STATIC_DRAW);
 }
 
 void ChunkMesh::destroy_chunk_mesh() {
     m_mesh_vbo.delete_buffer();
     m_mesh_vao.delete_buffer();
+    m_mesh_ebo.delete_buffer();
     m_vertices_data.clear();
+    m_indices_data.clear();
 }
 
-void ChunkMesh::render(ShaderProgram *pchunk_shader, glm::mat4 view, glm::mat4 projection, glm::ivec3 chunk_coord) {
-    glm::vec3 chunk_to_voxel_coord(
-        chunk_coord.x * (int)Constant::CHUNK_SIZE,
-        chunk_coord.y * (int)Constant::CHUNK_HEIGHT,
-        chunk_coord.z * (int)Constant::CHUNK_SIZE
-    );
-
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), chunk_to_voxel_coord);
-
-    pchunk_shader->activate();
-    pchunk_shader->uniform_mat4f("model", 1, GL_FALSE, model);
-    pchunk_shader->uniform_mat4f("view", 1, GL_FALSE, view);
-    pchunk_shader->uniform_mat4f("projection", 1, GL_FALSE, projection);
+void ChunkMesh::render() {
     m_mesh_vao.bind();
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices_data.size());
+    glDrawElements(GL_TRIANGLES, m_indices_data.size(), GL_UNSIGNED_INT, 0);
 }

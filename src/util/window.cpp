@@ -1,65 +1,8 @@
 #include "window.hpp"
 #include "iochars.hpp"
 
-Window::Window(const std::string &window_name, int width, int height, Uint32 SDL_init_flags, Uint32 window_flags)
-    : width(width), height(height), name(window_name) {
-    using namespace IOChars;
-
-    if (SDL_Init(SDL_init_flags) < 0) {
-        std::cerr << "SDL could not be initialized:" << std::endl
-            << SDL_GetError();
-        exit(1);
-    }
-
-    std::cout << window_name << ": SDL is initialized" << std::endl;
-
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
-    this->window = SDL_CreateWindow(
-        window_name.c_str(),
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        width,
-        height,
-        window_flags
-    );
-
-    if (NULL == this->window) {
-        std::cerr << window_name << ": failed to create window" << endline
-            << SDL_GetError();
-        exit(1);
-    }
-
-    std::cout << window_name << ": window is initialized" << endline;
-
-    this->gl_context = SDL_GL_CreateContext(this->window);
-    std::cout << window_name << ": GL context is initialized" << endline;
-
-    if (GLEW_OK != glewInit()) {
-        std::cerr << "failed to initialized GLEW" << endline;
-        exit(1);
-    }
-
-    std::cout << window_name << ": GLEW is initialized" << endline << endline;
-
-    std::cout << "GPU Vendor: " << glGetString(GL_VENDOR) << endline;
-    std::cout << "Renderer: " << glGetString(GL_RENDERER) << endline;
-    std::cout << "Version: " << glGetString(GL_VERSION) << endline;
-    std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endline << endline;
-}
-
 Window::Window(const std::string &window_name, float screen_occupation_percentage, Uint32 SDL_init_flags, Uint32 window_flags)
-    : name(window_name) {
+    : m_name(window_name) {
     using namespace IOChars;
 
     if (SDL_Init(SDL_init_flags) < 0) {
@@ -85,19 +28,19 @@ Window::Window(const std::string &window_name, float screen_occupation_percentag
     SDL_DisplayMode MD;
     SDL_GetDesktopDisplayMode(0, &MD);
 
-    this->width = int((float)MD.w * screen_occupation_percentage);
-    this->height = int((float)MD.h * screen_occupation_percentage);
+    m_width = int((float)MD.w * screen_occupation_percentage);
+    m_height = int((float)MD.h * screen_occupation_percentage);
     
-    this->window = SDL_CreateWindow(
+    m_pwindow = SDL_CreateWindow(
         window_name.c_str(),
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        this->width,
-        this->height,
+        m_width,
+        m_height,
         window_flags
     );
 
-    if (NULL == this->window) {
+    if (NULL == m_pwindow) {
         std::cerr << window_name << ": failed to create window" << endline
             << SDL_GetError();
         exit(1);
@@ -105,7 +48,7 @@ Window::Window(const std::string &window_name, float screen_occupation_percentag
 
     std::cout << window_name << ": window is initialized" << endline;
 
-    this->gl_context = SDL_GL_CreateContext(this->window);
+    m_gl_context = SDL_GL_CreateContext(m_pwindow);
     std::cout << window_name << ": GL context is initialized" << endline;
 
     if (GLEW_OK != glewInit()) {
@@ -123,23 +66,23 @@ Window::Window(const std::string &window_name, float screen_occupation_percentag
 
 Window::~Window() {
     using namespace IOChars;
-    SDL_GL_DeleteContext(this->gl_context);
-    std::cout << this->name << ": destroyed GL context" << endline;
+    SDL_GL_DeleteContext(m_gl_context);
+    std::cout << m_name << ": destroyed GL context" << endline;
 
-    SDL_DestroyWindow(window);
-    std::cout << this->name << ": destroyed window" << endline;
+    SDL_DestroyWindow(m_pwindow);
+    std::cout << m_name << ": destroyed window" << endline;
 }
 
 SDL_Window* Window::get_window() {
-    return this->window;
+    return m_pwindow;
 }
 
 SDL_GLContext Window::get_gl_context() {
-    return this->gl_context;
+    return m_gl_context;
 }
 
 void Window::swap_buffers() {
-    SDL_GL_SwapWindow(this->window);
+    SDL_GL_SwapWindow(m_pwindow);
 }
 
 void Window::clear(const GLclampf r, const GLclampf g, const GLclampf b, const GLclampf a) {
@@ -153,5 +96,14 @@ void Window::clear(glm::vec4 color) {
 }
 
 float Window::wh_ratio() {
-    return (float) this->width / (float) this->height;
+    return (float) m_width / (float) m_height;
+}
+
+int Window::get_width() {
+    return m_width;
+}
+
+
+int Window::get_height() {
+    return m_height;
 }

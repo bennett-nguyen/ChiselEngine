@@ -47,7 +47,7 @@ ShaderProgram::ShaderProgram(const char *vshader_file, const char *fshader_file)
 
     GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
-    this->ID = glCreateProgram();
+    m_ID = glCreateProgram();
 
     glShaderSource(vshader, 1, &vshader_source, NULL);
     glShaderSource(fshader, 1, &fshader_source, NULL);
@@ -58,23 +58,23 @@ ShaderProgram::ShaderProgram(const char *vshader_file, const char *fshader_file)
     shader_compilation_failcheck(vshader);
     shader_compilation_failcheck(fshader);
 
-    glAttachShader(this->ID, vshader);
-    glAttachShader(this->ID, fshader);
+    glAttachShader(m_ID, vshader);
+    glAttachShader(m_ID, fshader);
 
-    glLinkProgram(this->ID);
+    glLinkProgram(m_ID);
 
-    program_linking_failcheck(this->ID);
+    program_linking_failcheck(m_ID);
 
     glDeleteShader(vshader);
     glDeleteShader(fshader);
 }
 
 void ShaderProgram::activate() {
-    glUseProgram(this->ID);
+    glUseProgram(m_ID);
 }
 
 void ShaderProgram::purge() {
-    glDeleteProgram(this->ID);
+    glDeleteProgram(m_ID);
 }
 
 GLint ShaderProgram::get_uniform_location(const char *name) {
@@ -82,7 +82,7 @@ GLint ShaderProgram::get_uniform_location(const char *name) {
 }
 
 GLuint ShaderProgram::get_shader_id() {
-    return this->ID;
+    return m_ID;
 }
 
 // Uniform Variables
