@@ -71,10 +71,6 @@ int main() {
         glm::vec3 camera_pos = camera.get_camera_position();
         glm::vec3 camera_front = camera.get_camera_front();
 
-        std::string x_direction = camera_front.x >= 0 ? "North" : "South";
-        std::string y_direction = camera_front.y >= 0 ? "Up" : "Down";
-        std::string z_direction = camera_front.z >= 0 ? "East" : "West";
-
         ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
         ImGui::SetWindowPos(ImVec2(0, 0), 0);
         ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
