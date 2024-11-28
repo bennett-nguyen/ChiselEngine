@@ -6,10 +6,12 @@
 #include "chunk.hpp"
 #include "camera.hpp"
 #include "glm/gtx/hash.hpp"
+#include <SDL2/SDL.h>
+#include "player.hpp"
 
 class World {
 public:
-    World(Camera *p_camera, ShaderProgram *p_chunk_shader);
+    World(float wh_ratio);
     ~World();
 
     void update();
@@ -17,12 +19,12 @@ public:
     void load_chunks();
     void remove_chunks();
     void rebuild_chunks();
-    glm::ivec3 get_chunk_coords_from_camera();
+    void poll_event(const SDL_Event &event);
     unsigned* get_chunk_neighbor_pvoxels(glm::ivec3 coord);
 
 private:
-    Camera *m_pcamera;
-    ShaderProgram *m_pchunk_shader;
+    Player m_player;
+    ShaderProgram m_chunk_shader;
     std::unordered_map<glm::ivec3, Chunk*> m_chunk_map;
 
     glm::ivec3 m_prev_player_chunk_pos;

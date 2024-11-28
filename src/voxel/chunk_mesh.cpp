@@ -6,7 +6,7 @@ unsigned get_voxel_idx(int x, int y, int z) {
 
 bool is_void_in_chunk(glm::ivec3 local_voxel_pos, unsigned *m_pvoxels) {
     int x = local_voxel_pos.x, y = local_voxel_pos.y, z = local_voxel_pos.z;
-    return 0 == m_pvoxels[get_voxel_idx(x, y, z)];
+    return VoxelID::Air == m_pvoxels[get_voxel_idx(x, y, z)];
 }
 
 bool is_void_north(glm::ivec3 local_voxel_pos, unsigned *m_pvoxels, unsigned *north_neighbor) {

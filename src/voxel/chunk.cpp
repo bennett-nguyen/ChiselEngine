@@ -41,10 +41,10 @@ void Chunk::build_voxels() {
     for (int x = 0; x < (int)Constant::CHUNK_SIZE; x++) {
         for (int z = 0; z < (int)Constant::CHUNK_SIZE; z++) {
             int y_level = height_map(16, float(x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE),
-                float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.5f, 0.007f, 0, Constant::CHUNK_HEIGHT);
+                float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.01f, 0, Constant::CHUNK_HEIGHT);
 
             for (int y = 0; y <= y_level; y++) {
-                m_pvoxels[get_voxel_idx(x, y, z)] = 1;
+                m_pvoxels[get_voxel_idx(x, y, z)] = VoxelID::Dirt;
                 m_is_empty = false;
             }
         }
@@ -82,4 +82,12 @@ glm::mat4 Chunk::get_chunk_model() {
 
 unsigned *Chunk::get_pvoxels() {
     return m_pvoxels;
+}
+
+int Chunk::get_max_height_at_coord(glm::ivec3 position) {
+    for (int y = Constant::CHUNK_HEIGHT-1; y >= 0; y--) {
+        if (m_pvoxels[get_voxel_idx(position.x, y, position.z)]) return y;
+    }
+
+    return -1;
 }

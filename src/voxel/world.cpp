@@ -1,9 +1,10 @@
 #include "world.hpp"
 
-World::World(Camera *p_camera, ShaderProgram *p_chunk_shader)
-        : m_pcamera(p_camera), m_pchunk_shader(p_chunk_shader) {
+World::World(float wh_ratio) {
+    m_chunk_shader = ShaderProgram("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
+    m_player.init_camera(wh_ratio);
+    m_prev_player_chunk_pos = m_player.get_player_chunk_coords();
     load_chunks();
-    m_prev_player_chunk_pos = get_chunk_coords_from_camera();
 }
 
 World::~World() {
@@ -14,18 +15,10 @@ World::~World() {
     m_chunk_map.clear();
 }
 
-glm::ivec3 World::get_chunk_coords_from_camera() {
-    glm::vec3 player_pos = m_pcamera->get_camera_position();
-
-    return glm::ivec3(
-        int(player_pos.x / (float)Constant::CHUNK_SIZE),
-        int(player_pos.y / (float)Constant::CHUNK_HEIGHT),
-        int(player_pos.z / (float)Constant::CHUNK_SIZE)
-    );
-}
-
 void World::update() {
-    glm::ivec3 current_player_chunk_pos = get_chunk_coords_from_camera();
+    m_player.move();
+    m_player.m_camera.update_view();
+    glm::ivec3 current_player_chunk_pos = m_player.get_player_chunk_coords();
 
     if (m_prev_player_chunk_pos.x != current_player_chunk_pos.x
             || m_prev_player_chunk_pos.z != current_player_chunk_pos.z) {
@@ -40,18 +33,18 @@ void World::update() {
 }
 
 void World::render() {
-    m_pchunk_shader->activate();
-    m_pchunk_shader->uniform_mat4f("view", 1, GL_FALSE, m_pcamera->get_view_mat());
-    m_pchunk_shader->uniform_mat4f("projection", 1, GL_FALSE, m_pcamera->get_projection_mat());
+    m_chunk_shader.activate();
+    m_chunk_shader.uniform_mat4f("view", 1, GL_FALSE, m_player.m_camera.get_view_mat());
+    m_chunk_shader.uniform_mat4f("projection", 1, GL_FALSE, m_player.m_camera.get_projection_mat());
 
     for (auto &chunk : m_chunk_map) {
-        m_pchunk_shader->uniform_mat4f("model", 1, GL_FALSE, chunk.second->get_chunk_model());
+        m_chunk_shader.uniform_mat4f("model", 1, GL_FALSE, chunk.second->get_chunk_model());
         chunk.second->render();
     }
 }
 
 void World::load_chunks() {
-    glm::ivec3 player_chunk_coords = get_chunk_coords_from_camera();
+    glm::ivec3 player_chunk_coords = m_player.get_player_chunk_coords();
     std::vector<glm::ivec3> chunks_to_load;
 
     for (int x = -(int)Constant::LOAD_DISTANCE; x <= (int)Constant::LOAD_DISTANCE; x++) {
@@ -91,7 +84,7 @@ unsigned* World::get_chunk_neighbor_pvoxels(glm::ivec3 coord) {
 }
 
 void World::remove_chunks() {
-    glm::ivec3 player_chunk_coords = get_chunk_coords_from_camera();
+    glm::ivec3 player_chunk_coords = m_player.get_player_chunk_coords();
     std::vector<glm::ivec3> chunks_to_remove;
 
     int x_min = -(int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
@@ -114,7 +107,7 @@ void World::remove_chunks() {
 }
 
 void World::rebuild_chunks() {
-    glm::ivec3 current_player_chunk_pos = get_chunk_coords_from_camera();
+    glm::ivec3 current_player_chunk_pos = m_player.get_player_chunk_coords();
     std::unordered_set<glm::ivec3> chunks_to_rebuild;
 
     int old_x_min = m_prev_player_chunk_pos.x - Constant::LOAD_DISTANCE;
@@ -161,4 +154,8 @@ void World::rebuild_chunks() {
         m_chunk_map[coord]->destroy_mesh();
         m_chunk_map[coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
     }
+}
+
+void World::poll_event(const SDL_Event &event) {
+    m_player.m_camera.pan(event);
 }

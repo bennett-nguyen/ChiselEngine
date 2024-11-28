@@ -12,8 +12,6 @@
 
 int main() {
     Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
-    ShaderProgram chunk_shader("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
-    Camera camera(glm::vec3(0, 0, -3.0f), glm::radians(45.0f), 0.1f, 300.0f, window.wh_ratio());
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -28,8 +26,17 @@ int main() {
     glEnable(GL_MULTISAMPLE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
-    World world(&camera, &chunk_shader);
+    World world(window.wh_ratio());
     SDL_Event event;
+
+    // int width, height, nchannels;
+    // unsigned char *bytes = stbi_load("resources/imgs/texture_array.png", &width, &height, &nchannels, 0);
+    // int num_layers = height / 32;
+
+    // GLuint texture_array;
+    // glGenTextures(1, &texture_array);
+    // glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array);
+    // glTexStorage3D(GL_TEXTURE_2D_ARRAY, )
 
     while (true) {
         window.clear(Colors::DARK_SLATE_GRAY);
@@ -58,25 +65,22 @@ int main() {
                 }
             }
 
-            camera.pan(event);
+            world.poll_event(event);
         }
-
-        if (SDL_GetRelativeMouseMode()) camera.move();
-        camera.update_view();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        glm::vec3 camera_pos = camera.get_camera_position();
-        glm::vec3 camera_front = camera.get_camera_front();
+        // glm::vec3 camera_pos = camera.get_camera_position();
+        // glm::vec3 camera_front = camera.get_camera_front();
 
-        ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-        ImGui::SetWindowPos(ImVec2(0, 0), 0);
-        ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
-        ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
-        ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
-        ImGui::End();
+        // ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+        // ImGui::SetWindowPos(ImVec2(0, 0), 0);
+        // ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
+        // ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
+        // ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
+        // ImGui::End();
 
         world.update();
 

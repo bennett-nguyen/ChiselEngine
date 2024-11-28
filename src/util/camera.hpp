@@ -15,18 +15,19 @@ extern const float CAMERA_SPEED;
 
 class Camera {
 public:
-    Camera(glm::vec3 position, float fov_y, float near, float far, float width_height_ratio);
+    Camera();
+    Camera(float fov_y, float near, float far, float width_height_ratio);
 
-    void move();
     void update_view();
     void pan(const SDL_Event &event);
-    void teleport(glm::vec3 position);
     void compute_camera_front();
+    void set_camera_position(glm::vec3 player_position);
+
     glm::mat4 look_at();
     glm::mat4 get_view_mat();
     glm::mat4 get_projection_mat();
     glm::vec3 get_camera_front();
-    glm::vec3 get_camera_position();
+    glm::vec3 get_camera_up();
     std::string get_xyz_directions();
     std::string get_cardinal_directions();
 
@@ -40,7 +41,7 @@ private:
     float m_pitch = 0.0f;
 
     glm::mat4 m_projection_mat;
-    glm::mat4 m_view_mat = this->look_at();
+    glm::mat4 m_view_mat;
 };
 
 #endif

@@ -21,6 +21,7 @@ public:
     void destroy_mesh();
     glm::mat4 get_chunk_model();
     unsigned* get_pvoxels();
+    int get_max_height_at_coord(glm::ivec3 position);
 
 private:
     unsigned *m_pvoxels;

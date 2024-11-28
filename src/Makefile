@@ -5,12 +5,12 @@ CC        := gcc
 CXX       := g++
 
 # Include and source code directories 
-CODEDIRS                  := util voxel .
+CODEDIRS                  := util voxel entities .
 IMGUI_CODEDIR             := lib/imgui
 
 IMGUI_INCDIRS             := lib/include/imgui
 HEADERS_ONLY_LIB_INCDIRCS := lib/include/stb
-INCDIRS                   := include voxel util $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
+INCDIRS                   := include voxel util entities $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
 
 # binary and build directories
 BINDIR     := bin
@@ -71,6 +71,10 @@ $(BUILDDIR)/util/%.o: util/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
 
 $(BUILDDIR)/voxel/%.o: voxel/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
+
+
+$(BUILDDIR)/entities/%.o: entities/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
 
 $(BUILDDIR)/./main.o: main.cpp

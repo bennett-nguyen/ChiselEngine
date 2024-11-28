@@ -1,13 +1,16 @@
 #include "camera.hpp"
 #include "constant.hpp"
+#include <iostream>
 
 const float SENSITIVITY = 0.15f;
-const float CAMERA_SPEED = 1.0f;
+const float SPEED = 1.0f;
 
-Camera::Camera(glm::vec3 position, float fov_y, float near, float far, float width_height_ratio) {
-    m_camera_pos = position;
+Camera::Camera() {}
+
+Camera::Camera(float fov_y, float near, float far, float width_height_ratio) {
     m_projection_mat = glm::perspective(fov_y, width_height_ratio, near, far);
     this->compute_camera_front();
+    update_view();
 }
 
 void Camera::update_view() {
@@ -27,27 +30,8 @@ glm::mat4 Camera::get_projection_mat() {
     return m_projection_mat;
 }
 
-void Camera::move() {
-    const Uint8 *kb_state = SDL_GetKeyboardState(NULL);
-
-    if (kb_state[SDL_SCANCODE_D]) {
-        m_camera_pos += glm::normalize(glm::cross(m_camera_front, m_camera_up)) * CAMERA_SPEED;
-    } if (kb_state[SDL_SCANCODE_A]) {
-        m_camera_pos -= glm::normalize(glm::cross(m_camera_front, m_camera_up)) * CAMERA_SPEED;
-    } if (kb_state[SDL_SCANCODE_S]) {
-        m_camera_pos -= CAMERA_SPEED * m_camera_front;
-    } if (kb_state[SDL_SCANCODE_W]) {
-        m_camera_pos += CAMERA_SPEED * m_camera_front;
-    } if (kb_state[SDL_SCANCODE_LSHIFT] || kb_state[SDL_SCANCODE_RSHIFT]) {
-        m_camera_pos.y -= CAMERA_SPEED;
-    } if (kb_state[SDL_SCANCODE_SPACE]) {
-        m_camera_pos.y +=  CAMERA_SPEED;
-    }
-}
-
 void Camera::pan(const SDL_Event &event) {
     if (SDL_MOUSEMOTION != event.type || !SDL_GetRelativeMouseMode()) return;
-
     float xoffset = (float)event.motion.xrel;
     float yoffset = (float)event.motion.yrel;
 
@@ -69,17 +53,17 @@ void Camera::compute_camera_front() {
     m_camera_front = glm::normalize(m_direction);
 }
 
-
-void Camera::teleport(glm::vec3 position) {
-    m_camera_pos = position;
+void Camera::set_camera_position(glm::vec3 player_position) {
+    m_camera_pos = player_position;
+    m_camera_pos.y += Constant::PLAYER_HEIGHT;
 }
 
 glm::vec3 Camera::get_camera_front() {
     return m_camera_front;
 }
 
-glm::vec3 Camera::get_camera_position() {
-    return m_camera_pos;
+glm::vec3 Camera::get_camera_up() {
+    return m_camera_up;
 }
 
 std::string Camera::get_cardinal_directions() {

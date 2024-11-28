@@ -8,6 +8,7 @@
 #include "ebo.hpp"
 #include "vertex.hpp"
 #include "face_id.hpp"
+#include "voxel_id.hpp"
 #include "constant.hpp"
 #include "shader_program.hpp"
 
