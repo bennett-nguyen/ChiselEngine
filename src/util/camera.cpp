@@ -47,12 +47,15 @@ void Camera::pan(const SDL_Event &event) {
 }
 
 void Camera::compute_camera_front() {
-    m_direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    m_direction.y = sin(glm::radians(m_pitch));
-    m_direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    m_camera_front = glm::normalize(m_direction);
+    m_camera_front.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    m_camera_front.y = sin(glm::radians(m_pitch));
+    m_camera_front.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    m_camera_front = glm::normalize(m_camera_front);
 }
 
+glm::vec3 Camera::get_camera_position() {
+    return m_camera_pos;
+}
 void Camera::set_camera_position(glm::vec3 player_position) {
     m_camera_pos = player_position;
     m_camera_pos.y += Constant::PLAYER_HEIGHT;

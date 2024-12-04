@@ -19,6 +19,8 @@ public:
     void build_mesh(unsigned *north_neighbor, unsigned *south_neighbor,
         unsigned *east_neighbor, unsigned *west_neighbor);
     void destroy_mesh();
+    void set_voxel_id(unsigned voxel_idx, unsigned value);
+    bool is_air_at(unsigned voxel_idx);
     glm::mat4 get_chunk_model();
     unsigned* get_pvoxels();
     int get_max_height_at_coord(glm::ivec3 position);

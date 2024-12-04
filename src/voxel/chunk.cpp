@@ -26,6 +26,14 @@ Chunk::~Chunk() {
     unload();
 }
 
+bool Chunk::is_air_at(unsigned voxel_idx) {
+    return VoxelID::Air == m_pvoxels[voxel_idx];
+}
+
+void Chunk::set_voxel_id(unsigned voxel_idx, unsigned value) {
+    m_pvoxels[voxel_idx] = value;
+}
+
 void Chunk::unload() {
     m_is_empty = true;
     delete[] m_pvoxels;

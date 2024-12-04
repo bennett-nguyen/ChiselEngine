@@ -29,7 +29,31 @@ void World::update() {
         m_prev_player_chunk_pos = current_player_chunk_pos;
     }
 
+    if (m_is_break_block) {
+        std::pair<glm::ivec3, int> ray_cast_result = m_player.ray_cast(m_chunk_map);
+        glm::ivec3 chunk_coord = ray_cast_result.first;
+        int voxel_idx = ray_cast_result.second;
+
+        if (-1 != voxel_idx) {
+            m_chunk_map[chunk_coord]->set_voxel_id(voxel_idx, 0);
+
+            glm::ivec3 north_coord(chunk_coord.x+1, chunk_coord.y, chunk_coord.z);
+            glm::ivec3 south_coord(chunk_coord.x-1, chunk_coord.y, chunk_coord.z);
+            glm::ivec3 east_coord(chunk_coord.x, chunk_coord.y, chunk_coord.z+1);
+            glm::ivec3 west_coord(chunk_coord.x, chunk_coord.y, chunk_coord.z-1);
+
+            unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
+            unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
+            unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
+            unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
+
+            m_chunk_map[chunk_coord]->destroy_mesh();
+            m_chunk_map[chunk_coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
+        }
+    }
+
     render();
+    m_is_break_block = false;
 }
 
 void World::render() {
@@ -73,9 +97,20 @@ void World::load_chunks() {
     }
 }
 
+void World::debug_window() {
+    Camera camera = m_player.m_camera;
+    glm::vec3 camera_pos = camera.get_camera_position();
+    ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SetWindowPos(ImVec2(0, 0), 0);
+    ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
+    ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
+    ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
+    ImGui::End();
+}
+
 unsigned* World::get_chunk_neighbor_pvoxels(glm::ivec3 coord) {
     unsigned *neighbor_pvoxels = nullptr;
-    
+
     if (1 == m_chunk_map.count(coord)) {
         neighbor_pvoxels = m_chunk_map[coord]->get_pvoxels();
     }
@@ -158,4 +193,8 @@ void World::rebuild_chunks() {
 
 void World::poll_event(const SDL_Event &event) {
     m_player.m_camera.pan(event);
+
+    if (SDL_KEYDOWN == event.type && SDL_SCANCODE_B == event.key.keysym.scancode) {
+        m_is_break_block = true;
+    }
 }

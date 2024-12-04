@@ -72,16 +72,7 @@ int main() {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        // glm::vec3 camera_pos = camera.get_camera_position();
-        // glm::vec3 camera_front = camera.get_camera_front();
-
-        // ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-        // ImGui::SetWindowPos(ImVec2(0, 0), 0);
-        // ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
-        // ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
-        // ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
-        // ImGui::End();
-
+        world.debug_window();
         world.update();
 
         ImGui::Render();
