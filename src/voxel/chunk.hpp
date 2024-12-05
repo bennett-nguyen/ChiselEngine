@@ -2,10 +2,10 @@
 #define CHUNK_HPP
 
 #include <array>
-#include <glm/vec3.hpp>
 #include <cstring>
 #include "constant.hpp"
 #include "chunk_mesh.hpp"
+#include <glm/glm.hpp>
 #include <glm/gtc/noise.hpp>
 
 class Chunk {

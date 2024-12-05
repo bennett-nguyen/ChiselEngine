@@ -1,6 +1,7 @@
 #include "world.hpp"
 
-World::World(float wh_ratio) {
+World::World(float wh_ratio)
+    : m_voxel_handler(&m_chunk_map) {
     m_chunk_shader = ShaderProgram("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
     m_player.init_camera(wh_ratio);
     m_prev_player_chunk_pos = m_player.get_player_chunk_coords();
@@ -13,6 +14,27 @@ World::~World() {
     }
 
     m_chunk_map.clear();
+}
+
+void World::build_chunk(glm::ivec3 chunk_coords) {
+    if (1 != m_chunk_map.count(chunk_coords)) return;
+    glm::ivec3 north_coord(chunk_coords.x+1, chunk_coords.y, chunk_coords.z);
+    glm::ivec3 south_coord(chunk_coords.x-1, chunk_coords.y, chunk_coords.z);
+    glm::ivec3 east_coord(chunk_coords.x, chunk_coords.y, chunk_coords.z+1);
+    glm::ivec3 west_coord(chunk_coords.x, chunk_coords.y, chunk_coords.z-1);
+
+    unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
+    unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
+    unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
+    unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
+
+    m_chunk_map[chunk_coords]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
+}
+
+void World::rebuild_chunk(glm::ivec3 chunk_coords) {
+    if (1 != m_chunk_map.count(chunk_coords)) return;
+    m_chunk_map[chunk_coords]->destroy_mesh();
+    build_chunk(chunk_coords);
 }
 
 void World::update() {
@@ -29,31 +51,56 @@ void World::update() {
         m_prev_player_chunk_pos = current_player_chunk_pos;
     }
 
-    if (m_is_break_block) {
-        std::pair<glm::ivec3, int> ray_cast_result = m_player.ray_cast(m_chunk_map);
-        glm::ivec3 chunk_coord = ray_cast_result.first;
-        int voxel_idx = ray_cast_result.second;
-
-        if (-1 != voxel_idx) {
-            m_chunk_map[chunk_coord]->set_voxel_id(voxel_idx, 0);
-
-            glm::ivec3 north_coord(chunk_coord.x+1, chunk_coord.y, chunk_coord.z);
-            glm::ivec3 south_coord(chunk_coord.x-1, chunk_coord.y, chunk_coord.z);
-            glm::ivec3 east_coord(chunk_coord.x, chunk_coord.y, chunk_coord.z+1);
-            glm::ivec3 west_coord(chunk_coord.x, chunk_coord.y, chunk_coord.z-1);
-
-            unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
-            unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
-            unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
-            unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
-
-            m_chunk_map[chunk_coord]->destroy_mesh();
-            m_chunk_map[chunk_coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
-        }
-    }
+    Camera camera = m_player.m_camera;
+    m_voxel_handler.ray_cast(camera.get_camera_position(), camera.get_camera_front());
+    break_block();
 
     render();
+
+    if (m_is_render_cube_mesh) {
+        m_cubemesh.render(camera.get_view_mat(),
+            camera.get_projection_mat(),
+                glm::vec3(get_voxel_world_coords(m_voxel_handler.get_detected_voxel(),
+                    m_voxel_handler.get_chunk_coords_of_detected_voxel())));
+    }
+
     m_is_break_block = false;
+}
+
+void World::break_block() {
+    m_is_render_cube_mesh = false;
+
+    if (m_voxel_handler.get_is_detected_voxel()) {
+        m_is_render_cube_mesh = true;
+
+        if (!m_is_break_block) return;
+
+        m_is_render_cube_mesh = false;
+        glm::ivec3 voxel_local_coords = m_voxel_handler.get_detected_voxel();
+        glm::ivec3 chunk_coords = m_voxel_handler.get_chunk_coords_of_detected_voxel();
+        unsigned voxel_idx = m_voxel_handler.get_detected_voxel_idx();
+
+        m_chunk_map[chunk_coords]->set_voxel_id(voxel_idx, 0);
+        rebuild_chunk(chunk_coords);
+
+        if (0 == voxel_local_coords.x) {
+            rebuild_chunk(glm::ivec3(chunk_coords.x-1, chunk_coords.y, chunk_coords.z));
+        } else if (Constant::CHUNK_SIZE-1 == voxel_local_coords.x) {
+            rebuild_chunk(glm::ivec3(chunk_coords.x+1, chunk_coords.y, chunk_coords.z));
+        }
+
+        if (0 == voxel_local_coords.y) {
+            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y-1, chunk_coords.z));
+        } else if (Constant::CHUNK_HEIGHT-1 == voxel_local_coords.y) {
+            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y+1, chunk_coords.z));
+        }
+
+        if (0 == voxel_local_coords.z) {
+            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z-1));
+        } else if (Constant::CHUNK_SIZE-1 == voxel_local_coords.z) {
+            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z+1));
+        }
+    }
 }
 
 void World::render() {
@@ -82,18 +129,8 @@ void World::load_chunks() {
         }
     }
 
-    for (auto const &coord : chunks_to_load) {
-        glm::ivec3 north_coord(coord.x+1, coord.y, coord.z);
-        glm::ivec3 south_coord(coord.x-1, coord.y, coord.z);
-        glm::ivec3 east_coord(coord.x, coord.y, coord.z+1);
-        glm::ivec3 west_coord(coord.x, coord.y, coord.z-1);
-
-        unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
-        unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
-        unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
-        unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
-
-        m_chunk_map[coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
+    for (auto const &coords : chunks_to_load) {
+        build_chunk(coords);
     }
 }
 
@@ -175,26 +212,17 @@ void World::rebuild_chunks() {
         }
     }
 
-    for (auto const &coord : chunks_to_rebuild) {
-        glm::ivec3 north_coord(coord.x+1, coord.y, coord.z);
-        glm::ivec3 south_coord(coord.x-1, coord.y, coord.z);
-        glm::ivec3 east_coord(coord.x, coord.y, coord.z+1);
-        glm::ivec3 west_coord(coord.x, coord.y, coord.z-1);
-
-        unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
-        unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
-        unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
-        unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
-
-        m_chunk_map[coord]->destroy_mesh();
-        m_chunk_map[coord]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
+    for (auto const &coords : chunks_to_rebuild) {
+        rebuild_chunk(coords);
     }
 }
 
 void World::poll_event(const SDL_Event &event) {
     m_player.m_camera.pan(event);
 
-    if (SDL_KEYDOWN == event.type && SDL_SCANCODE_B == event.key.keysym.scancode) {
-        m_is_break_block = true;
+    if (SDL_KEYDOWN == event.type) {
+        if (SDL_SCANCODE_B == event.key.keysym.scancode) {
+            m_is_break_block = true;
+        }
     }
 }

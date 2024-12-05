@@ -2,7 +2,7 @@
 #define VERTEX_HPP
 
 #include <GL/glew.h>
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 struct Vertex {
     glm::ivec3 m_pos;
@@ -11,14 +11,24 @@ struct Vertex {
     Vertex() {}
 
     Vertex(GLint x, GLint y, GLint z, GLuint voxel_id, GLuint face_id)
-        : m_pos(glm::ivec3(x, y, z)), m_voxel_id(voxel_id), m_face_id(face_id) {}
+        : m_pos(x, y, z), m_voxel_id(voxel_id), m_face_id(face_id) {}
 
     Vertex(glm::ivec3 pos, GLuint voxel_id, GLuint face_id)
         : m_pos(pos), m_voxel_id(voxel_id), m_face_id(face_id) {}
 };
 
+struct CubeMeshVertex {
+    glm::vec3 m_pos;
+    glm::vec2 m_tex_coords;
+
+    CubeMeshVertex() {}
+};
+
 size_t get_offset_of_pos();
 size_t get_offset_of_voxel_id();
 size_t get_offset_of_face_id();
+
+size_t get_offset_of_cm_pos();
+size_t get_offset_of_cm_tex_coords();
 
 #endif

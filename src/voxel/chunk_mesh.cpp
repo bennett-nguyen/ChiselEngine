@@ -1,9 +1,5 @@
 #include "chunk_mesh.hpp"
 
-unsigned get_voxel_idx(int x, int y, int z) {
-    return unsigned(x + Constant::CHUNK_SIZE * z + Constant::CHUNK_AREA * y);
-}
-
 bool is_void_in_chunk(glm::ivec3 local_voxel_pos, unsigned *m_pvoxels) {
     int x = local_voxel_pos.x, y = local_voxel_pos.y, z = local_voxel_pos.z;
     return VoxelID::Air == m_pvoxels[get_voxel_idx(x, y, z)];

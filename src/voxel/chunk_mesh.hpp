@@ -11,8 +11,7 @@
 #include "voxel_id.hpp"
 #include "constant.hpp"
 #include "shader_program.hpp"
-
-unsigned get_voxel_idx(int x, int y, int z);
+#include "voxel_math.hpp"
 
 class ChunkMesh {
 public:

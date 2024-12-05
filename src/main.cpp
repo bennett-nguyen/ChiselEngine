@@ -12,7 +12,6 @@
 
 int main() {
     Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -28,15 +27,6 @@ int main() {
 
     World world(window.wh_ratio());
     SDL_Event event;
-
-    // int width, height, nchannels;
-    // unsigned char *bytes = stbi_load("resources/imgs/texture_array.png", &width, &height, &nchannels, 0);
-    // int num_layers = height / 32;
-
-    // GLuint texture_array;
-    // glGenTextures(1, &texture_array);
-    // glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array);
-    // glTexStorage3D(GL_TEXTURE_2D_ARRAY, )
 
     while (true) {
         window.clear(Colors::DARK_SLATE_GRAY);

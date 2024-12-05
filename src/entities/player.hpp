@@ -28,8 +28,6 @@ public:
     void set_position(glm::vec3 position);
 
     glm::ivec3 get_player_chunk_coords();
-    std::pair<glm::ivec3, int> ray_cast(std::unordered_map<glm::ivec3, Chunk*> m_chunk_map);
-    std::pair<glm::ivec3, int> get_voxel_info(std::unordered_map<glm::ivec3, Chunk*> m_chunk_map, glm::ivec3 voxel_pos);
 
 private:
     glm::vec3 m_position;

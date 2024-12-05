@@ -1,4 +1,5 @@
 #include "chunk.hpp"
+#include <random>
 
 int height_map(unsigned num_iterations, float x, float z, float persistence, float scale, unsigned low, unsigned high) {
     float max_amp = 0;
@@ -46,13 +47,21 @@ void Chunk::build_voxels() {
         m_pvoxels[i] = 0;
     }
 
+    int min = 1;
+    int max = 100;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(min, max);
+    unsigned voxel_id = distrib(gen);
+
     for (int x = 0; x < (int)Constant::CHUNK_SIZE; x++) {
         for (int z = 0; z < (int)Constant::CHUNK_SIZE; z++) {
             int y_level = height_map(16, float(x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE),
                 float(z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.01f, 0, Constant::CHUNK_HEIGHT);
 
             for (int y = 0; y <= y_level; y++) {
-                m_pvoxels[get_voxel_idx(x, y, z)] = VoxelID::Dirt;
+                m_pvoxels[get_voxel_idx(x, y, z)] = voxel_id;
                 m_is_empty = false;
             }
         }
