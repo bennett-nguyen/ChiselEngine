@@ -48,7 +48,7 @@ void Chunk::build_voxels() {
     }
 
     int min = 1;
-    int max = 100;
+    int max = 1000;
 
     std::random_device rd;
     std::mt19937 gen(rd());

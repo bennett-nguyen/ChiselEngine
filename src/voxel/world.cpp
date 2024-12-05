@@ -1,5 +1,11 @@
 #include "world.hpp"
 
+#define FPS_INTERVAL 1.0 //seconds.
+
+Uint32 fps_lasttime = SDL_GetTicks(); //the last recorded time.
+Uint32 fps_current; //the current FPS.
+Uint32 fps_frames = 0; //frames passed since the last recorded fps.
+
 World::World(float wh_ratio)
     : m_voxel_handler(&m_chunk_map) {
     m_chunk_shader = ShaderProgram("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
@@ -135,13 +141,31 @@ void World::load_chunks() {
 }
 
 void World::debug_window() {
+    fps_frames++;
+
+    if (fps_lasttime < SDL_GetTicks() - FPS_INTERVAL*1000) {
+        fps_lasttime = SDL_GetTicks();
+        fps_current = fps_frames;
+        fps_frames = 0;
+    }
+
     Camera camera = m_player.m_camera;
     glm::vec3 camera_pos = camera.get_camera_position();
     ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SetWindowPos(ImVec2(0, 0), 0);
+
+    ImGui::Text("FPS: %u", fps_current);
     ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
     ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
     ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
+
+    ImGui::NewLine();
+
+    ImGui::Text("GPU Vendor: %s", glGetString(GL_VENDOR));
+    ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
+    ImGui::Text("Version: %s", glGetString(GL_VERSION));
+    ImGui::Text("Shading Language Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
     ImGui::End();
 }
 
@@ -222,6 +246,12 @@ void World::poll_event(const SDL_Event &event) {
 
     if (SDL_KEYDOWN == event.type) {
         if (SDL_SCANCODE_B == event.key.keysym.scancode) {
+            m_is_break_block = true;
+        }
+    }
+
+    if (SDL_MOUSEBUTTONDOWN == event.type) {
+        if (SDL_BUTTON_LEFT == event.button.button) {
             m_is_break_block = true;
         }
     }
