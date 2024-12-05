@@ -10,7 +10,7 @@ void Player::switch_gamemode(GameMode mode) {
 }
 
 void Player::init_camera(float wh_ratio) {
-    m_camera = Camera(glm::radians(Constant::FOV), 0.1f, 100.0f, wh_ratio);
+    m_camera = Camera(glm::radians(Constant::FOV), 0.1f, 150.0f, wh_ratio);
     m_camera.set_camera_position(m_position);
 }
 
