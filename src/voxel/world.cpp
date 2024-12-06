@@ -23,10 +23,10 @@ void World::buildChunk(glm::ivec3 chunk_coords) {
     glm::ivec3 east_coord(chunk_coords.x, chunk_coords.y, chunk_coords.z+1);
     glm::ivec3 west_coord(chunk_coords.x, chunk_coords.y, chunk_coords.z-1);
 
-    unsigned *north_neighbor_pvoxels = getChunkNeighborPVoxels(north_coord);
-    unsigned *south_neighbor_pvoxels = getChunkNeighborPVoxels(south_coord);
-    unsigned *east_neighbor_pvoxels = getChunkNeighborPVoxels(east_coord);
-    unsigned *west_neighbor_pvoxels = getChunkNeighborPVoxels(west_coord);
+    unsigned *north_neighbor_pvoxels = getChunkNeighborVoxelsPointer(north_coord);
+    unsigned *south_neighbor_pvoxels = getChunkNeighborVoxelsPointer(south_coord);
+    unsigned *east_neighbor_pvoxels = getChunkNeighborVoxelsPointer(east_coord);
+    unsigned *west_neighbor_pvoxels = getChunkNeighborVoxelsPointer(west_coord);
 
     m_chunk_map[chunk_coords]->buildMesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
 }
@@ -143,7 +143,7 @@ Player* World::getPlayerPointer() {
     return &m_player;
 }
 
-unsigned* World::getChunkNeighborPVoxels(glm::ivec3 coord) {
+unsigned* World::getChunkNeighborVoxelsPointer(glm::ivec3 coord) {
     unsigned *neighbor_pvoxels = nullptr;
 
     if (1 == m_chunk_map.count(coord)) {

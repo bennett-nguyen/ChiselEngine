@@ -26,7 +26,7 @@ public:
     void rebuildChunks();
     void breakBlock();
     void pollEvent(const SDL_Event &event);
-    unsigned* getChunkNeighborPVoxels(glm::ivec3 coord);
+    unsigned* getChunkNeighborVoxelsPointer(glm::ivec3 coord);
 
     Player *getPlayerPointer();
 private:
