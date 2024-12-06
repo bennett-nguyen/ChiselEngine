@@ -9,7 +9,7 @@ Uint32 fps_frames = 0; //frames passed since the last recorded fps.
 void computeFPS() {
     fps_frames++;
 
-    if (fps_lasttime < SDL_GetTicks() - FPS_INTERVAL*1000) {
+    if ((float)fps_lasttime < (float)SDL_GetTicks() - FPS_INTERVAL*1000) {
         fps_lasttime = SDL_GetTicks();
         fps_current = fps_frames;
         fps_frames = 0;

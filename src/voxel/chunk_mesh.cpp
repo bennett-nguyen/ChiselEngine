@@ -2,7 +2,7 @@
 
 bool isVoidInChunk(glm::ivec3 local_voxel_pos, unsigned *m_pvoxels) {
     int x = local_voxel_pos.x, y = local_voxel_pos.y, z = local_voxel_pos.z;
-    return VoxelID::Air == m_pvoxels[VoxelMath::getVoxelIndex(x, y, z)];
+    return VoxelID::Air == m_pvoxels[VoxelMath::getVoxelIndex((unsigned)x, (unsigned)y, (unsigned)z)];
 }
 
 bool isVoidNorth(glm::ivec3 local_voxel_pos, unsigned *m_pvoxels, unsigned *north_neighbor) {
@@ -82,7 +82,7 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
     for (int x = 0; x < (int)Constant::CHUNK_SIZE; x++) {
         for (int z = 0; z < (int)Constant::CHUNK_SIZE; z++) {
             for (int y = 0; y < (int)Constant::CHUNK_HEIGHT; y++) {
-                unsigned voxel_id = m_pvoxels[VoxelMath::getVoxelIndex(x, y, z)];
+                unsigned voxel_id = m_pvoxels[VoxelMath::getVoxelIndex((unsigned)x, (unsigned)y, (unsigned)z)];
                 if (0 == voxel_id) continue;
 
                 Vertex v0, v1, v2, v3;
@@ -170,7 +170,7 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
     m_mesh_ebo.bind();
     m_mesh_vbo.bind();
 
-    m_mesh_vbo.bufferData(m_vertices_data.size() * sizeof(Vertex), m_vertices_data.data(), GL_STATIC_DRAW);
+    m_mesh_vbo.bufferData((GLsizeiptr)(m_vertices_data.size() * sizeof(Vertex)), m_vertices_data.data(), GL_STATIC_DRAW);
     m_mesh_vbo.attribI(0, 3, GL_INT, sizeof(Vertex), (void*)getOffsetOfPos());
     m_mesh_vbo.attribI(1, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)getOffsetOfVoxelID());
     m_mesh_vbo.attribI(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)getOffsetOfFaceID());
@@ -179,7 +179,7 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
     m_mesh_vbo.enable_attrib_array(1);
     m_mesh_vbo.enable_attrib_array(2);
 
-    m_mesh_ebo.bufferData(m_indices_data.size() * sizeof(GLuint), m_indices_data.data(), GL_STATIC_DRAW);
+    m_mesh_ebo.bufferData((GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
 }
 
 void ChunkMesh::destroyChunkMesh() {
@@ -192,5 +192,5 @@ void ChunkMesh::destroyChunkMesh() {
 
 void ChunkMesh::render() {
     m_mesh_vao.bind();
-    glDrawElements(GL_TRIANGLES, m_indices_data.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, (GLsizei)(m_indices_data.size()), GL_UNSIGNED_INT, 0);
 }

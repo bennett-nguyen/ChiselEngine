@@ -39,9 +39,9 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
     int step_z = (int)glm::sign(normalized_direction.z);
     FaceID face_x, face_y, face_z;
 
-    float t_delta_x, t_delta_y, t_delta_z;
-    float t_max_x, t_max_y, t_max_z;
-    float current_distance;
+    float t_delta_x = 0.0f, t_delta_y = 0.0f, t_delta_z = 0.0f;
+    float t_max_x = 0.0f, t_max_y = 0.0f, t_max_z = 0.0f;
+    float current_distance = 0.0f;
 
     unsigned voxel_idx;
     glm::uvec3 voxel_local_coords;

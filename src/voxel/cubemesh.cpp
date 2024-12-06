@@ -110,11 +110,11 @@ CubeMesh::CubeMesh()
     m_mesh_ebo.bind();
     m_mesh_vbo.bind();
 
-    m_mesh_vbo.bufferData(m_vertices_data.size() * sizeof(CubeMeshVertex), m_vertices_data.data(), GL_STATIC_DRAW);
+    m_mesh_vbo.bufferData((GLsizeiptr)(m_vertices_data.size() * sizeof(CubeMeshVertex)), m_vertices_data.data(), GL_STATIC_DRAW);
     m_mesh_vbo.attrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(CubeMeshVertex), (void*)getOffsetOfCubeMeshPos());
     m_mesh_vbo.enable_attrib_array(0);
 
-    m_mesh_ebo.bufferData(m_indices_data.size() * sizeof(GLuint), m_indices_data.data(), GL_STATIC_DRAW);
+    m_mesh_ebo.bufferData((GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
 }
 
 void CubeMesh::render(glm::mat4 view, glm::mat4 projection, glm::vec3 position) {

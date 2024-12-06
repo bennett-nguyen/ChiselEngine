@@ -1,7 +1,7 @@
 #include "chunk.hpp"
 #include <random>
 
-int heightMap(unsigned num_iterations, float x, float z, float persistence, float scale, unsigned low, unsigned high) {
+unsigned heightMap(unsigned num_iterations, float x, float z, float persistence, float scale, unsigned low, unsigned high) {
     float max_amp = 0;
     float amp = 1;
     float freq = scale;
@@ -15,8 +15,8 @@ int heightMap(unsigned num_iterations, float x, float z, float persistence, floa
     }
 
     noise /= max_amp;
-    noise = noise * (high - low) / 2 + (high + low) / 2;
-    return (int)noise;
+    noise = noise * ((float)high - (float)low) / 2 + ((float)high + (float)low) / 2;
+    return (unsigned)noise;
 }
 
 Chunk::Chunk(glm::ivec3 chunk_coord) {
@@ -54,7 +54,7 @@ void Chunk::buildVoxels() {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(min, max);
-    unsigned voxel_id = distrib(gen);
+    unsigned voxel_id = (unsigned)distrib(gen);
 
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {

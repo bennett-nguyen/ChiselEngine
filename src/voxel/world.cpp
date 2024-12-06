@@ -118,9 +118,14 @@ void World::loadChunks() {
     glm::ivec3 player_chunk_coords = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
     std::vector<glm::ivec3> chunks_to_load;
 
-    for (int x = -(int)Constant::LOAD_DISTANCE; x <= (int)Constant::LOAD_DISTANCE; x++) {
-        for (int z = -(int)Constant::LOAD_DISTANCE; z <= (int)Constant::LOAD_DISTANCE; z++) {
-            glm::ivec3 chunk_coord(x + player_chunk_coords.x, 0, z + player_chunk_coords.z);
+    int x_min = -(int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
+    int x_max =  (int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
+    int z_min = -(int)Constant::LOAD_DISTANCE + player_chunk_coords.z;
+    int z_max =  (int)Constant::LOAD_DISTANCE + player_chunk_coords.z;
+
+    for (int x = x_min; x <= x_max; x++) {
+        for (int z = z_min; z <= z_max; z++) {
+            glm::ivec3 chunk_coord(x, 0, z);
             if (1 == m_chunk_map.count(chunk_coord)) continue;
             chunks_to_load.push_back(chunk_coord);
             Chunk *pchunk = new Chunk(chunk_coord);
@@ -153,9 +158,9 @@ void World::removeChunks() {
     std::vector<glm::ivec3> chunks_to_remove;
 
     int x_min = -(int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
-    int x_max = (int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
+    int x_max =  (int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
     int z_min = -(int)Constant::LOAD_DISTANCE + player_chunk_coords.z;
-    int z_max = (int)Constant::LOAD_DISTANCE + player_chunk_coords.z;
+    int z_max =  (int)Constant::LOAD_DISTANCE + player_chunk_coords.z;
 
     for (auto const &chunk : m_chunk_map) {
         glm::ivec3 chunk_coord = chunk.first;
@@ -175,15 +180,15 @@ void World::rebuildChunks() {
     glm::ivec3 current_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
     std::unordered_set<glm::ivec3> chunks_to_rebuild;
 
-    int old_x_min = m_prev_player_chunk_pos.x - Constant::LOAD_DISTANCE;
-    int old_x_max = m_prev_player_chunk_pos.x + Constant::LOAD_DISTANCE;
-    int old_z_min = m_prev_player_chunk_pos.z - Constant::LOAD_DISTANCE;
-    int old_z_max = m_prev_player_chunk_pos.z + Constant::LOAD_DISTANCE;
+    int old_x_min = m_prev_player_chunk_pos.x - (int)Constant::LOAD_DISTANCE;
+    int old_x_max = m_prev_player_chunk_pos.x + (int)Constant::LOAD_DISTANCE;
+    int old_z_min = m_prev_player_chunk_pos.z - (int)Constant::LOAD_DISTANCE;
+    int old_z_max = m_prev_player_chunk_pos.z + (int)Constant::LOAD_DISTANCE;
 
-    int new_x_min = current_player_chunk_pos.x - Constant::LOAD_DISTANCE;
-    int new_x_max = current_player_chunk_pos.x + Constant::LOAD_DISTANCE;
-    int new_z_min = current_player_chunk_pos.z - Constant::LOAD_DISTANCE;
-    int new_z_max = current_player_chunk_pos.z + Constant::LOAD_DISTANCE;
+    int new_x_min = current_player_chunk_pos.x - (int)Constant::LOAD_DISTANCE;
+    int new_x_max = current_player_chunk_pos.x + (int)Constant::LOAD_DISTANCE;
+    int new_z_min = current_player_chunk_pos.z - (int)Constant::LOAD_DISTANCE;
+    int new_z_max = current_player_chunk_pos.z + (int)Constant::LOAD_DISTANCE;
 
     for (int x = new_x_min; x <= new_x_max; x++) {
         for (int z = new_z_min; z <= new_z_max; z++) {
