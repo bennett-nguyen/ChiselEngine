@@ -14,21 +14,21 @@
 
 class World {
 public:
-    World(float wh_ratio);
+    World(float getWidthHeightRatio);
     ~World();
 
     void update();
     void render();
-    void build_chunk(glm::ivec3 chunk_coords);
-    void rebuild_chunk(glm::ivec3 chunk_coords);
-    void load_chunks();
-    void remove_chunks();
-    void rebuild_chunks();
-    void break_block();
-    void poll_event(const SDL_Event &event);
-    unsigned* get_chunk_neighbor_pvoxels(glm::ivec3 coord);
-    void debug_window();
+    void buildChunk(glm::ivec3 chunk_coords);
+    void rebuildChunk(glm::ivec3 chunk_coords);
+    void loadChunks();
+    void removeChunks();
+    void rebuildChunks();
+    void breakBlock();
+    void pollEvent(const SDL_Event &event);
+    unsigned* getChunkNeighborPVoxels(glm::ivec3 coord);
 
+    Player *getPlayerPointer();
 private:
     Player m_player;
     ShaderProgram m_chunk_shader;

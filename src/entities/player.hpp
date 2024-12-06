@@ -21,13 +21,11 @@ public:
     Player();
 
     void move();
-    void switch_gamemode(GameMode mode);
-    void init_camera(float wh_ratio);
+    void switchGamemode(GameMode mode);
+    void initCamera(float getWidthHeightRatio);
 
-    glm::vec3 get_position();
-    void set_position(glm::vec3 position);
-
-    glm::ivec3 get_player_chunk_coords();
+    glm::vec3 getPosition();
+    void setPosition(glm::vec3 position);
 
 private:
     glm::vec3 m_position;

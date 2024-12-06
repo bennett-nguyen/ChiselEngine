@@ -1,11 +1,11 @@
 #include "ebo.hpp"
 
 EBO::EBO() {
-    this->gen_buffer();
+    this->genBuffer();
 }
 
 EBO::~EBO() {
-    if (glIsBuffer(m_ID)) this->delete_buffer();
+    if (glIsBuffer(m_ID)) this->deleteBuffer();
 }
 
 void EBO::bind() {
@@ -16,15 +16,15 @@ void EBO::unbind() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void EBO::buffer_data(GLsizeiptr size, const void* data, GLenum usage) {
+void EBO::bufferData(GLsizeiptr size, const void* data, GLenum usage) {
     this->bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
 }
 
-void EBO::gen_buffer() {
+void EBO::genBuffer() {
     glGenBuffers(1, &m_ID);
 }
 
-void EBO::delete_buffer() {
+void EBO::deleteBuffer() {
     glDeleteBuffers(1, &m_ID);
 }

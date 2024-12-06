@@ -5,6 +5,7 @@
 #include "shader_program.hpp"
 #include "constant.hpp"
 #include "world.hpp"
+#include "debug_window.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
@@ -12,12 +13,13 @@
 
 int main() {
     Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    ImGui_ImplSDL2_InitForOpenGL(window.get_window(), window.get_gl_context());
+    ImGui_ImplSDL2_InitForOpenGL(window.getWindowPointer(), window.getGLContext());
     ImGui_ImplOpenGL3_Init();
 
     glEnable(GL_DEPTH_TEST);
@@ -25,8 +27,10 @@ int main() {
     glEnable(GL_MULTISAMPLE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
-    World world(window.wh_ratio());
+    World world(window.getWidthHeightRatio());
     SDL_Event event;
+
+    DebugWindow debug_window(world.getPlayerPointer());
 
     while (true) {
         window.clear(Colors::DARK_SLATE_GRAY);
@@ -55,19 +59,19 @@ int main() {
                 }
             }
 
-            world.poll_event(event);
+            world.pollEvent(event);
         }
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        world.debug_window();
         world.update();
 
+        debug_window.show();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        window.swap_buffers();
+        window.swapBuffers();
     }
 
     return 0;

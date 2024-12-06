@@ -18,24 +18,27 @@ public:
     Camera();
     Camera(float fov_y, float near, float far, float width_height_ratio);
 
-    void update_view();
+    void updateView();
     void pan(const SDL_Event &event);
-    void compute_camera_front();
-    void set_camera_position(glm::vec3 player_position);
+    void computeCameraFront();
+    void computeCameraRight();
+    void computeCameraUp();
+    void setCameraPosition(glm::vec3 player_position);
 
-    glm::mat4 look_at();
-    glm::mat4 get_view_mat();
-    glm::mat4 get_projection_mat();
-    glm::vec3 get_camera_front();
-    glm::vec3 get_camera_up();
-    glm::vec3 get_camera_position();
-    std::string get_xyz_directions();
-    std::string get_cardinal_directions();
+    glm::mat4 lookAt();
+    glm::mat4 getViewMat();
+    glm::mat4 getProjectionMat();
+    glm::vec3 getCameraFront();
+    glm::vec3 getCameraUp();
+    glm::vec3 getCameraRight();
+    glm::vec3 getCameraPosition();
+    std::string getXYZ_Directions();
+    std::string getCardinalDirections();
 
 private:
     glm::vec3 m_camera_pos;
     glm::vec3 m_camera_front;
-    glm::vec3 m_camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 m_camera_up;
     glm::vec3 m_camera_right;
 
     float m_yaw = 90.0f;

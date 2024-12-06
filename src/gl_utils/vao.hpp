@@ -9,8 +9,8 @@ public:
     ~VAO();
     void bind();
     void unbind();
-    void gen_buffer();
-    void delete_buffer();
+    void genBuffer();
+    void deleteBuffer();
 
 private:
     GLuint m_ID;

@@ -73,15 +73,15 @@ Window::~Window() {
     std::cout << m_name << ": destroyed window" << endline;
 }
 
-SDL_Window* Window::get_window() {
+SDL_Window* Window::getWindowPointer() {
     return m_pwindow;
 }
 
-SDL_GLContext Window::get_gl_context() {
+SDL_GLContext Window::getGLContext() {
     return m_gl_context;
 }
 
-void Window::swap_buffers() {
+void Window::swapBuffers() {
     SDL_GL_SwapWindow(m_pwindow);
 }
 
@@ -95,15 +95,15 @@ void Window::clear(glm::vec4 color) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-float Window::wh_ratio() {
+float Window::getWidthHeightRatio() {
     return (float) m_width / (float) m_height;
 }
 
-int Window::get_width() {
+int Window::getWidth() {
     return m_width;
 }
 
 
-int Window::get_height() {
+int Window::getHeight() {
     return m_height;
 }

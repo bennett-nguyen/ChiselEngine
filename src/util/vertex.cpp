@@ -1,21 +1,21 @@
 #include "vertex.hpp"
 
-size_t get_offset_of_pos() {
+size_t getOffsetOfPos() {
     return offsetof(Vertex, m_pos);
 }
 
-size_t get_offset_of_voxel_id() {
+size_t getOffsetOfVoxelID() {
     return offsetof(Vertex, m_voxel_id);
 }
 
-size_t get_offset_of_face_id() {
+size_t getOffsetOfFaceID() {
     return offsetof(Vertex, m_face_id);
 }
 
-size_t get_offset_of_cm_pos() {
+size_t getOffsetOfCubeMeshPos() {
     return offsetof(CubeMeshVertex, m_pos);
 }
 
-size_t get_offset_of_cm_tex_coords() {
+size_t getOffsetOfCubeMeshTexCoords() {
     return offsetof(CubeMeshVertex, m_tex_coords);
 }

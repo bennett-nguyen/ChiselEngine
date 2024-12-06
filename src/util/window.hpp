@@ -15,16 +15,16 @@ public:
     Window(const std::string &window_name, float screen_occupation_percentage, Uint32 SDL_init_flags, Uint32 window_flags);
     ~Window();
 
-    SDL_Window* get_window();
-    SDL_GLContext get_gl_context();
+    SDL_Window* getWindowPointer();
+    SDL_GLContext getGLContext();
 
-    void swap_buffers();
+    void swapBuffers();
     void clear(const GLclampf r, const GLclampf g, const GLclampf b, const GLclampf a);
     void clear(glm::vec4 color);
 
-    int get_width();
-    int get_height();
-    float wh_ratio();
+    int getWidth();
+    int getHeight();
+    float getWidthHeightRatio();
 
 private:
     int m_width, m_height;

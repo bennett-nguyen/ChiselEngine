@@ -24,11 +24,10 @@ struct CubeMeshVertex {
     CubeMeshVertex() {}
 };
 
-size_t get_offset_of_pos();
-size_t get_offset_of_voxel_id();
-size_t get_offset_of_face_id();
-
-size_t get_offset_of_cm_pos();
-size_t get_offset_of_cm_tex_coords();
+size_t getOffsetOfPos();
+size_t getOffsetOfVoxelID();
+size_t getOffsetOfFaceID();
+size_t getOffsetOfCubeMeshPos();
+size_t getOffsetOfCubeMeshTexCoords();
 
 #endif

@@ -5,12 +5,12 @@ CC        := gcc
 CXX       := g++
 
 # Include and source code directories 
-CODEDIRS                  := util voxel entities .
+CODEDIRS                  := util voxel entities gl_utils .
 IMGUI_CODEDIR             := lib/imgui
 
 IMGUI_INCDIRS             := lib/include/imgui
 HEADERS_ONLY_LIB_INCDIRCS := lib/include/stb
-INCDIRS                   := include voxel util entities $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
+INCDIRS                   := include voxel util gl_utils entities $(IMGUI_INCDIRS) $(HEADERS_ONLY_LIB_INCDIRCS)
 
 # binary and build directories
 BINDIR     := bin
@@ -70,9 +70,11 @@ $(TARGETDIR)/$(TARGET): $(OBJECTS) $(IMGUI_OBJECTS)
 $(BUILDDIR)/util/%.o: util/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
 
-$(BUILDDIR)/voxel/%.o: voxel/%.cpp
+$(BUILDDIR)/gl_utils/%.o: gl_utils/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
 
+$(BUILDDIR)/voxel/%.o: voxel/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
 
 $(BUILDDIR)/entities/%.o: entities/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LIB)
@@ -85,7 +87,7 @@ $(IMGUI_OBJDIR)/%.o: lib/imgui/%.cpp
 
 .PHONY: run
 run:
-	@$(TARGETDIR)/$(TARGET)
+	@__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia $(TARGETDIR)/$(TARGET)
 
 .PHONY: clean
 clean:

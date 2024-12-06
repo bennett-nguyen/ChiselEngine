@@ -15,20 +15,20 @@ public:
     VoxelHandler(std::unordered_map<glm::ivec3, Chunk*> *p_chunk_map)
         : mp_chunk_map(p_chunk_map) {}
 
-    void ray_cast(glm::vec3 current_pos, glm::vec3 normalized_direction);
+    void rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction);
 
-    bool get_is_detected_voxel();
-    glm::ivec3 get_detected_voxel();
-    glm::ivec3 get_chunk_coords_of_detected_voxel();
-    FaceID get_detected_voxel_face();
-    unsigned get_detected_voxel_idx();
+    bool IsDetectedVoxel();
+    FaceID getDetectedVoxelFace();
+    unsigned getDetectedVoxelIndex();
+    glm::uvec3 getDetectedVoxelLocalCoords();
+    glm::ivec3 getChunkCoordsOfDetectedVoxel();
 
 private:
     bool m_is_detected_voxel;
-    glm::ivec3 m_detected_voxel;
-    glm::ivec3 m_chunk_coords_of_detected_voxel;
     FaceID m_detected_voxel_face;
     unsigned m_detected_voxel_idx;
+    glm::uvec3 m_detected_voxel_local_coords;
+    glm::ivec3 m_chunk_coords_of_detected_voxel;
 
     std::unordered_map<glm::ivec3, Chunk*> *mp_chunk_map;
 };

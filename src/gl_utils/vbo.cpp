@@ -3,7 +3,7 @@
 VBO::VBO() {}
 
 VBO::~VBO() {
-    if (glIsBuffer(m_ID)) this->delete_buffer();
+    if (glIsBuffer(m_ID)) this->deleteBuffer();
 }
 
 void VBO::bind() {
@@ -14,7 +14,7 @@ void VBO::unbind() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VBO::buffer_data(GLsizeiptr size, const void* data, GLenum usage) {
+void VBO::bufferData(GLsizeiptr size, const void* data, GLenum usage) {
     this->bind();
     glBufferData(GL_ARRAY_BUFFER, size, data, usage);
 }
@@ -39,10 +39,10 @@ void VBO::enable_attrib_array(GLuint index) {
     glEnableVertexAttribArray(index);
 }
 
-void VBO::gen_buffer() {
+void VBO::genBuffer() {
     glGenBuffers(1, &m_ID);
 }
 
-void VBO::delete_buffer() {
+void VBO::deleteBuffer() {
     glDeleteBuffers(1, &m_ID);
 }

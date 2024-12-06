@@ -8,35 +8,35 @@ float FRAC1(float x) {
     return 1.0f - x + std::floor(x);
 }
 
-bool VoxelHandler::get_is_detected_voxel() {
+bool VoxelHandler::IsDetectedVoxel() {
     return m_is_detected_voxel;
 }
 
-glm::ivec3 VoxelHandler::get_detected_voxel() {
-    return m_detected_voxel;
+glm::uvec3 VoxelHandler::getDetectedVoxelLocalCoords() {
+    return m_detected_voxel_local_coords;
 }
 
-glm::ivec3 VoxelHandler::get_chunk_coords_of_detected_voxel() {
+glm::ivec3 VoxelHandler::getChunkCoordsOfDetectedVoxel() {
     return m_chunk_coords_of_detected_voxel;
 }
 
-FaceID VoxelHandler::get_detected_voxel_face() {
+FaceID VoxelHandler::getDetectedVoxelFace() {
     return m_detected_voxel_face;
 }
 
-unsigned VoxelHandler::get_detected_voxel_idx() {
+unsigned VoxelHandler::getDetectedVoxelIndex() {
     return m_detected_voxel_idx;
 }
 
-void VoxelHandler::ray_cast(glm::vec3 current_pos, glm::vec3 normalized_direction) {
+void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction) {
     auto chunk_map = *mp_chunk_map;
-    glm::ivec3 current_voxel = get_voxel_world_coords_from_pos(current_pos);
+    glm::ivec3 current_voxel = VoxelMath::getVoxelWorldCoordsFromPos(current_pos);
 
     m_is_detected_voxel = false;
 
-    int step_x = glm::sign(normalized_direction.x);
-    int step_y = glm::sign(normalized_direction.y);
-    int step_z = glm::sign(normalized_direction.z);
+    int step_x = (int)glm::sign(normalized_direction.x);
+    int step_y = (int)glm::sign(normalized_direction.y);
+    int step_z = (int)glm::sign(normalized_direction.z);
     FaceID face_x, face_y, face_z;
 
     float t_delta_x, t_delta_y, t_delta_z;
@@ -44,7 +44,8 @@ void VoxelHandler::ray_cast(glm::vec3 current_pos, glm::vec3 normalized_directio
     float current_distance;
 
     unsigned voxel_idx;
-    glm::ivec3 voxel_local_coords, chunk_coords_of_voxel;
+    glm::uvec3 voxel_local_coords;
+    glm::ivec3 chunk_coords_of_voxel;
 
     if (step_x == 0) {
         t_delta_x = 10000000.0f;
@@ -86,15 +87,15 @@ void VoxelHandler::ray_cast(glm::vec3 current_pos, glm::vec3 normalized_directio
     }
 
     while (current_distance < Constant::MAX_RAY_LENGTH) {
-        chunk_coords_of_voxel = get_chunk_coords_from_voxel(current_voxel);
+        chunk_coords_of_voxel = VoxelMath::getChunkCoordsFromVoxel(current_voxel);
 
         if (1 == mp_chunk_map->count(chunk_coords_of_voxel)) {
-            voxel_local_coords = get_local_voxel_coords(current_voxel, chunk_coords_of_voxel);
-            voxel_idx = get_voxel_idx(voxel_local_coords);
+            voxel_local_coords = VoxelMath::getLocalVoxelCoords(current_voxel, chunk_coords_of_voxel);
+            voxel_idx = VoxelMath::getVoxelIndex(voxel_local_coords);
 
-            if (!chunk_map[chunk_coords_of_voxel]->is_air_at(voxel_idx)) {
+            if (!chunk_map[chunk_coords_of_voxel]->isAirAt(voxel_idx)) {
                 m_is_detected_voxel = true;
-                m_detected_voxel = voxel_local_coords;
+                m_detected_voxel_local_coords = voxel_local_coords;
                 m_detected_voxel_idx = voxel_idx;
                 m_chunk_coords_of_detected_voxel = chunk_coords_of_voxel;
                 break;

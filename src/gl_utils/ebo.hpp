@@ -9,9 +9,9 @@ public:
     ~EBO();
     void bind();
     void unbind();
-    void buffer_data(GLsizeiptr size, const void* data, GLenum usage);
-    void gen_buffer();
-    void delete_buffer();
+    void bufferData(GLsizeiptr size, const void* data, GLenum usage);
+    void genBuffer();
+    void deleteBuffer();
 private:
     GLuint m_ID;
 };

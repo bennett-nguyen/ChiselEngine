@@ -8055,7 +8055,7 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
                 ImGui::TextUnformatted("(R = radius, N = approx number of segments)");
                 ImGui::Spacing();
                 ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                const float min_widget_width = ImGui::CalcTextSize("R: MMM\nN: MMM").x;
+                const float min_widgetWidth = ImGui::CalcTextSize("R: MMM\nN: MMM").x;
                 for (int n = 0; n < 8; n++)
                 {
                     const float RAD_MIN = 5.0f;
@@ -8067,7 +8067,7 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
                     // N is not always exact here due to how PathArcTo() function work internally
                     ImGui::Text("R: %.f\nN: %d", rad, draw_list->_CalcCircleAutoSegmentCount(rad));
 
-                    const float canvas_width = IM_MAX(min_widget_width, rad * 2.0f);
+                    const float canvas_width = IM_MAX(min_widgetWidth, rad * 2.0f);
                     const float offset_x     = floorf(canvas_width * 0.5f);
                     const float offset_y     = floorf(RAD_MAX);
 

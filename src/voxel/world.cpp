@@ -1,17 +1,11 @@
 #include "world.hpp"
 
-#define FPS_INTERVAL 1.0 //seconds.
-
-Uint32 fps_lasttime = SDL_GetTicks(); //the last recorded time.
-Uint32 fps_current; //the current FPS.
-Uint32 fps_frames = 0; //frames passed since the last recorded fps.
-
-World::World(float wh_ratio)
+World::World(float getWidthHeightRatio)
     : m_voxel_handler(&m_chunk_map) {
     m_chunk_shader = ShaderProgram("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
-    m_player.init_camera(wh_ratio);
-    m_prev_player_chunk_pos = m_player.get_player_chunk_coords();
-    load_chunks();
+    m_player.initCamera(getWidthHeightRatio);
+    m_prev_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
+    loadChunks();
 }
 
 World::~World() {
@@ -22,106 +16,106 @@ World::~World() {
     m_chunk_map.clear();
 }
 
-void World::build_chunk(glm::ivec3 chunk_coords) {
+void World::buildChunk(glm::ivec3 chunk_coords) {
     if (1 != m_chunk_map.count(chunk_coords)) return;
     glm::ivec3 north_coord(chunk_coords.x+1, chunk_coords.y, chunk_coords.z);
     glm::ivec3 south_coord(chunk_coords.x-1, chunk_coords.y, chunk_coords.z);
     glm::ivec3 east_coord(chunk_coords.x, chunk_coords.y, chunk_coords.z+1);
     glm::ivec3 west_coord(chunk_coords.x, chunk_coords.y, chunk_coords.z-1);
 
-    unsigned *north_neighbor_pvoxels = get_chunk_neighbor_pvoxels(north_coord);
-    unsigned *south_neighbor_pvoxels = get_chunk_neighbor_pvoxels(south_coord);
-    unsigned *east_neighbor_pvoxels = get_chunk_neighbor_pvoxels(east_coord);
-    unsigned *west_neighbor_pvoxels = get_chunk_neighbor_pvoxels(west_coord);
+    unsigned *north_neighbor_pvoxels = getChunkNeighborPVoxels(north_coord);
+    unsigned *south_neighbor_pvoxels = getChunkNeighborPVoxels(south_coord);
+    unsigned *east_neighbor_pvoxels = getChunkNeighborPVoxels(east_coord);
+    unsigned *west_neighbor_pvoxels = getChunkNeighborPVoxels(west_coord);
 
-    m_chunk_map[chunk_coords]->build_mesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
+    m_chunk_map[chunk_coords]->buildMesh(north_neighbor_pvoxels, south_neighbor_pvoxels, east_neighbor_pvoxels, west_neighbor_pvoxels);
 }
 
-void World::rebuild_chunk(glm::ivec3 chunk_coords) {
+void World::rebuildChunk(glm::ivec3 chunk_coords) {
     if (1 != m_chunk_map.count(chunk_coords)) return;
-    m_chunk_map[chunk_coords]->destroy_mesh();
-    build_chunk(chunk_coords);
+    m_chunk_map[chunk_coords]->destroyMesh();
+    buildChunk(chunk_coords);
 }
 
 void World::update() {
     m_player.move();
-    m_player.m_camera.update_view();
-    glm::ivec3 current_player_chunk_pos = m_player.get_player_chunk_coords();
+    m_player.m_camera.updateView();
+    glm::ivec3 current_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
 
     if (m_prev_player_chunk_pos.x != current_player_chunk_pos.x
             || m_prev_player_chunk_pos.z != current_player_chunk_pos.z) {
-        remove_chunks();
-        load_chunks();
-        rebuild_chunks();
+        removeChunks();
+        loadChunks();
+        rebuildChunks();
 
         m_prev_player_chunk_pos = current_player_chunk_pos;
     }
 
     Camera camera = m_player.m_camera;
-    m_voxel_handler.ray_cast(camera.get_camera_position(), camera.get_camera_front());
-    break_block();
+    m_voxel_handler.rayCast(camera.getCameraPosition(), camera.getCameraFront());
+    breakBlock();
 
     render();
 
     if (m_is_render_cube_mesh) {
-        glm::vec3 current_voxel = get_voxel_world_coords(m_voxel_handler.get_detected_voxel(), m_voxel_handler.get_chunk_coords_of_detected_voxel());
-        m_cubemesh.render(camera.get_view_mat(),
-            camera.get_projection_mat(),
+        glm::vec3 current_voxel = VoxelMath::getVoxelWorldCoords(m_voxel_handler.getDetectedVoxelLocalCoords(), m_voxel_handler.getChunkCoordsOfDetectedVoxel());
+        m_cubemesh.render(camera.getViewMat(),
+            camera.getProjectionMat(),
                 glm::vec3(current_voxel));
     }
 
     m_is_break_block = false;
 }
 
-void World::break_block() {
+void World::breakBlock() {
     m_is_render_cube_mesh = false;
 
-    if (m_voxel_handler.get_is_detected_voxel()) {
+    if (m_voxel_handler.IsDetectedVoxel()) {
         m_is_render_cube_mesh = true;
 
         if (!m_is_break_block) return;
 
         m_is_render_cube_mesh = false;
-        glm::ivec3 voxel_local_coords = m_voxel_handler.get_detected_voxel();
-        glm::ivec3 chunk_coords = m_voxel_handler.get_chunk_coords_of_detected_voxel();
-        unsigned voxel_idx = m_voxel_handler.get_detected_voxel_idx();
+        glm::uvec3 voxel_local_coords = m_voxel_handler.getDetectedVoxelLocalCoords();
+        glm::ivec3 chunk_coords = m_voxel_handler.getChunkCoordsOfDetectedVoxel();
+        unsigned voxel_idx = m_voxel_handler.getDetectedVoxelIndex();
 
-        m_chunk_map[chunk_coords]->set_voxel_id(voxel_idx, 0);
-        rebuild_chunk(chunk_coords);
+        m_chunk_map[chunk_coords]->setVoxelID(voxel_idx, 0);
+        rebuildChunk(chunk_coords);
 
         if (0 == voxel_local_coords.x) {
-            rebuild_chunk(glm::ivec3(chunk_coords.x-1, chunk_coords.y, chunk_coords.z));
+            rebuildChunk(glm::ivec3(chunk_coords.x-1, chunk_coords.y, chunk_coords.z));
         } else if (Constant::CHUNK_SIZE-1 == voxel_local_coords.x) {
-            rebuild_chunk(glm::ivec3(chunk_coords.x+1, chunk_coords.y, chunk_coords.z));
+            rebuildChunk(glm::ivec3(chunk_coords.x+1, chunk_coords.y, chunk_coords.z));
         }
 
         if (0 == voxel_local_coords.y) {
-            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y-1, chunk_coords.z));
+            rebuildChunk(glm::ivec3(chunk_coords.x, chunk_coords.y-1, chunk_coords.z));
         } else if (Constant::CHUNK_HEIGHT-1 == voxel_local_coords.y) {
-            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y+1, chunk_coords.z));
+            rebuildChunk(glm::ivec3(chunk_coords.x, chunk_coords.y+1, chunk_coords.z));
         }
 
         if (0 == voxel_local_coords.z) {
-            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z-1));
+            rebuildChunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z-1));
         } else if (Constant::CHUNK_SIZE-1 == voxel_local_coords.z) {
-            rebuild_chunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z+1));
+            rebuildChunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z+1));
         }
     }
 }
 
 void World::render() {
     m_chunk_shader.activate();
-    m_chunk_shader.uniform_mat4f("view", 1, GL_FALSE, m_player.m_camera.get_view_mat());
-    m_chunk_shader.uniform_mat4f("projection", 1, GL_FALSE, m_player.m_camera.get_projection_mat());
+    m_chunk_shader.uniformMat4f("view", 1, GL_FALSE, m_player.m_camera.getViewMat());
+    m_chunk_shader.uniformMat4f("projection", 1, GL_FALSE, m_player.m_camera.getProjectionMat());
 
     for (auto &chunk : m_chunk_map) {
-        m_chunk_shader.uniform_mat4f("model", 1, GL_FALSE, chunk.second->get_chunk_model());
+        m_chunk_shader.uniformMat4f("model", 1, GL_FALSE, chunk.second->getChunkModel());
         chunk.second->render();
     }
 }
 
-void World::load_chunks() {
-    glm::ivec3 player_chunk_coords = m_player.get_player_chunk_coords();
+void World::loadChunks() {
+    glm::ivec3 player_chunk_coords = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
     std::vector<glm::ivec3> chunks_to_load;
 
     for (int x = -(int)Constant::LOAD_DISTANCE; x <= (int)Constant::LOAD_DISTANCE; x++) {
@@ -130,60 +124,32 @@ void World::load_chunks() {
             if (1 == m_chunk_map.count(chunk_coord)) continue;
             chunks_to_load.push_back(chunk_coord);
             Chunk *pchunk = new Chunk(chunk_coord);
-            pchunk->build_voxels();
+            pchunk->buildVoxels();
             m_chunk_map[chunk_coord] = pchunk;
         }
     }
 
     for (auto const &coords : chunks_to_load) {
-        build_chunk(coords);
+        buildChunk(coords);
     }
 }
 
-void World::debug_window() {
-    fps_frames++;
-
-    if (fps_lasttime < SDL_GetTicks() - FPS_INTERVAL*1000) {
-        fps_lasttime = SDL_GetTicks();
-        fps_current = fps_frames;
-        fps_frames = 0;
-    }
-
-    Camera camera = m_player.m_camera;
-    glm::vec3 player_pos = m_player.get_position();
-    glm::ivec3 chunk_coords = get_chunk_coords_from_pos(player_pos);
-
-    ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SetWindowPos(ImVec2(0, 0), 0);
-
-    ImGui::Text("FPS: %u", fps_current);
-    ImGui::Text("Coordinates: %f, %f, %f", player_pos.x, player_pos.y, player_pos.z);
-    ImGui::Text("Chunk Coordinates: %d, %d, %d", chunk_coords.x, chunk_coords.y, chunk_coords.z);
-    ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
-    ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
-
-    ImGui::NewLine();
-
-    ImGui::Text("GPU Vendor: %s", glGetString(GL_VENDOR));
-    ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
-    ImGui::Text("Version: %s", glGetString(GL_VERSION));
-    ImGui::Text("Shading Language Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-    ImGui::End();
+Player* World::getPlayerPointer() {
+    return &m_player;
 }
 
-unsigned* World::get_chunk_neighbor_pvoxels(glm::ivec3 coord) {
+unsigned* World::getChunkNeighborPVoxels(glm::ivec3 coord) {
     unsigned *neighbor_pvoxels = nullptr;
 
     if (1 == m_chunk_map.count(coord)) {
-        neighbor_pvoxels = m_chunk_map[coord]->get_pvoxels();
+        neighbor_pvoxels = m_chunk_map[coord]->getVoxelsPointer();
     }
 
     return neighbor_pvoxels;
 }
 
-void World::remove_chunks() {
-    glm::ivec3 player_chunk_coords = m_player.get_player_chunk_coords();
+void World::removeChunks() {
+    glm::ivec3 player_chunk_coords = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
     std::vector<glm::ivec3> chunks_to_remove;
 
     int x_min = -(int)Constant::LOAD_DISTANCE + player_chunk_coords.x;
@@ -205,8 +171,8 @@ void World::remove_chunks() {
     }
 }
 
-void World::rebuild_chunks() {
-    glm::ivec3 current_player_chunk_pos = m_player.get_player_chunk_coords();
+void World::rebuildChunks() {
+    glm::ivec3 current_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
     std::unordered_set<glm::ivec3> chunks_to_rebuild;
 
     int old_x_min = m_prev_player_chunk_pos.x - Constant::LOAD_DISTANCE;
@@ -240,11 +206,11 @@ void World::rebuild_chunks() {
     }
 
     for (auto const &coords : chunks_to_rebuild) {
-        rebuild_chunk(coords);
+        rebuildChunk(coords);
     }
 }
 
-void World::poll_event(const SDL_Event &event) {
+void World::pollEvent(const SDL_Event &event) {
     m_player.m_camera.pan(event);
 
     if (SDL_KEYDOWN == event.type) {

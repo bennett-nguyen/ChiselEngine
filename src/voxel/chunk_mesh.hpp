@@ -19,14 +19,15 @@ public:
     ~ChunkMesh();
 
     void render();
-    void build_chunk_mesh(unsigned *m_pvoxels, unsigned *north_neighbor,
+    void buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
     unsigned *south_neighbor, unsigned *east_neighbor, unsigned *west_neighbor);
-    void destroy_chunk_mesh();
+    void destroyChunkMesh();
 
 private:
     VBO m_mesh_vbo;
     VAO m_mesh_vao;
     EBO m_mesh_ebo;
+
     std::vector<Vertex> m_vertices_data;
     std::vector<GLuint> m_indices_data;
 };

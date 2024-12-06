@@ -3,14 +3,14 @@
 VAO::VAO() {}
 
 VAO::~VAO() {
-    if (glIsBuffer(m_ID)) this->delete_buffer();
+    if (glIsBuffer(m_ID)) this->deleteBuffer();
 }
 
-void VAO::gen_buffer() {
+void VAO::genBuffer() {
     glGenVertexArrays(1, &m_ID);
 }
 
-void VAO::delete_buffer() {
+void VAO::deleteBuffer() {
     glDeleteVertexArrays(1, &m_ID);
 }
 

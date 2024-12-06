@@ -5,21 +5,20 @@ Player::Player()
     : m_position(glm::vec3(0, 51, 0)) {
 }
 
-void Player::switch_gamemode(GameMode mode) {
+void Player::switchGamemode(GameMode mode) {
     m_mode = mode;
 }
 
-void Player::init_camera(float wh_ratio) {
-    m_camera = Camera(glm::radians(Constant::FOV), 0.1f, 150.0f, wh_ratio);
-    m_camera.set_camera_position(m_position);
+void Player::initCamera(float getWidthHeightRatio) {
+    m_camera = Camera(glm::radians(Constant::FOV), 0.1f, 150.0f, getWidthHeightRatio);
+    m_camera.setCameraPosition(m_position);
 }
 
 void Player::move() {
     const Uint8 *kb_state = SDL_GetKeyboardState(NULL);
 
-    glm::vec3 camera_front = m_camera.get_camera_front();
-    glm::vec3 camera_up = m_camera.get_camera_up();
-    glm::vec3 camera_right = glm::cross(camera_front, camera_up);
+    glm::vec3 camera_front = m_camera.getCameraFront();
+    glm::vec3 camera_right = m_camera.getCameraRight();
 
     glm::vec3 moving_direction(0.0f);
 
@@ -45,22 +44,14 @@ void Player::move() {
         m_position += glm::normalize(moving_direction) * Constant::PLAYER_SPEED;
     }
 
-    m_camera.set_camera_position(m_position);
+    m_camera.setCameraPosition(m_position);
 }
 
-glm::ivec3 Player::get_player_chunk_coords() {
-    return glm::ivec3(
-        int(m_position.x / (float)Constant::CHUNK_SIZE),
-        int(m_position.y / (float)Constant::CHUNK_HEIGHT),
-        int(m_position.z / (float)Constant::CHUNK_SIZE)
-    );
-}
-
-void Player::set_position(glm::vec3 position) {
+void Player::setPosition(glm::vec3 position) {
     m_position = position;
-    m_camera.set_camera_position(position);
+    m_camera.setCameraPosition(position);
 }
 
-glm::vec3 Player::get_position() {
+glm::vec3 Player::getPosition() {
     return m_position;
 }
