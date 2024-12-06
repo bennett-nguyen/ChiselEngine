@@ -86,13 +86,8 @@ void Chunk::render() {
 
 glm::mat4 Chunk::get_chunk_model() {
     glm::mat4 model(1.0f);
-
-    glm::vec3 chunk_to_voxel_coord(
-        m_chunk_coord.x * (int)Constant::CHUNK_SIZE,
-        m_chunk_coord.y * (int)Constant::CHUNK_HEIGHT,
-        m_chunk_coord.z * (int)Constant::CHUNK_SIZE
-    );
-    model = glm::translate(model, chunk_to_voxel_coord);
+    glm::vec3 chunk_to_voxel_coord = get_voxel_world_coords_from_chunk_coords(m_chunk_coord);
+    model = glm::translate(model, glm::vec3(chunk_to_voxel_coord));
     return model;
 }
 

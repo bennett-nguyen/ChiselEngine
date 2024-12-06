@@ -33,6 +33,14 @@ glm::ivec3 get_chunk_coords_from_pos(glm::vec3 pos) {
     );
 }
 
+glm::ivec3 get_voxel_world_coords_from_chunk_coords(glm::ivec3 chunk_coords) {
+    return glm::ivec3(
+        chunk_coords.x * Constant::CHUNK_SIZE,
+        chunk_coords.y * Constant::CHUNK_HEIGHT,
+        chunk_coords.z * Constant::CHUNK_SIZE
+    );
+}
+
 glm::ivec3 get_chunk_coords_from_voxel(glm::ivec3 voxel_world_coords) {
     return glm::ivec3(
         std::floor(voxel_world_coords.x / (float)Constant::CHUNK_SIZE),
