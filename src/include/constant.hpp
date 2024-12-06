@@ -9,14 +9,15 @@ namespace Constant {
     constexpr unsigned CHUNK_HEIGHT = 50;
     constexpr unsigned CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
     constexpr unsigned CHUNK_VOLUME = CHUNK_AREA * CHUNK_HEIGHT;
-
     constexpr unsigned LOAD_DISTANCE = 5;
+
     constexpr float PLAYER_HEIGHT = 1.5f;
     constexpr float PLAYER_SPEED = 0.6f;
     constexpr float FOV = 60.0f; // in degrees, CONVERT TO RADIANS BEFORE USING!
     constexpr float GRAVITATIONAL_ACCELERATION = 0.3f;
     constexpr float JUMP_VELOCITY = 2.0f;
-    constexpr float MAX_RAY_LENGTH = 7.5f;
+    constexpr float MAX_RAY_LENGTH = 8.0f;
+    constexpr float CUBE_MESH_SCALE = 1.0f / 256.0f;
 }
 
 #endif

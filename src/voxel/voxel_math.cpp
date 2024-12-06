@@ -1,12 +1,12 @@
 #include "voxel_math.hpp"
 
 unsigned get_voxel_idx(int x, int y, int z) {
-    return unsigned(x + Constant::CHUNK_SIZE * z + Constant::CHUNK_AREA * y);
+    return (unsigned)x + Constant::CHUNK_SIZE * (unsigned)z + Constant::CHUNK_AREA * (unsigned)y;
 }
 
 unsigned get_voxel_idx(glm::ivec3 voxel_local_coords) {
-    return unsigned(voxel_local_coords.x + Constant::CHUNK_SIZE
-        * voxel_local_coords.z + Constant::CHUNK_AREA * voxel_local_coords.y);
+    return (unsigned)voxel_local_coords.x + Constant::CHUNK_SIZE
+        * (unsigned)voxel_local_coords.z + Constant::CHUNK_AREA * (unsigned)voxel_local_coords.y;
 }
 
 glm::ivec3 get_voxel_world_coords(glm::ivec3 voxel_local_coords, glm::ivec3 chunk_coords) {
@@ -19,9 +19,9 @@ glm::ivec3 get_voxel_world_coords(glm::ivec3 voxel_local_coords, glm::ivec3 chun
 
 glm::ivec3 get_voxel_world_coords_from_pos(glm::vec3 pos) {
     return glm::ivec3(
-        (int)pos.x,
-        (int)pos.y,
-        (int)pos.z
+        std::floor(pos.x),
+        std::floor(pos.y),
+        std::floor(pos.z)
     );
 }
 

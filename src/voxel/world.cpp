@@ -64,10 +64,10 @@ void World::update() {
     render();
 
     if (m_is_render_cube_mesh) {
+        glm::vec3 current_voxel = get_voxel_world_coords(m_voxel_handler.get_detected_voxel(), m_voxel_handler.get_chunk_coords_of_detected_voxel());
         m_cubemesh.render(camera.get_view_mat(),
             camera.get_projection_mat(),
-                glm::vec3(get_voxel_world_coords(m_voxel_handler.get_detected_voxel(),
-                    m_voxel_handler.get_chunk_coords_of_detected_voxel())));
+                glm::vec3(current_voxel));
     }
 
     m_is_break_block = false;
@@ -150,12 +150,15 @@ void World::debug_window() {
     }
 
     Camera camera = m_player.m_camera;
-    glm::vec3 camera_pos = camera.get_camera_position();
+    glm::vec3 player_pos = m_player.get_position();
+    glm::ivec3 chunk_coords = get_chunk_coords_from_pos(player_pos);
+
     ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SetWindowPos(ImVec2(0, 0), 0);
 
     ImGui::Text("FPS: %u", fps_current);
-    ImGui::Text("Position: %f, %f, %f", camera_pos.x, camera_pos.y, camera_pos.z);
+    ImGui::Text("Coordinates: %f, %f, %f", player_pos.x, player_pos.y, player_pos.z);
+    ImGui::Text("Chunk Coordinates: %d, %d, %d", chunk_coords.x, chunk_coords.y, chunk_coords.z);
     ImGui::Text("Cardinal Direction: %s", camera.get_cardinal_directions().c_str());
     ImGui::Text("XYZ Direction: %s", camera.get_xyz_directions().c_str());
 

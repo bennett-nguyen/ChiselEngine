@@ -42,7 +42,7 @@ void VoxelHandler::ray_cast(glm::vec3 current_pos, glm::vec3 normalized_directio
     float t_delta_x, t_delta_y, t_delta_z;
     float t_max_x, t_max_y, t_max_z;
     float current_distance;
-    
+
     unsigned voxel_idx;
     glm::ivec3 voxel_local_coords, chunk_coords_of_voxel;
 

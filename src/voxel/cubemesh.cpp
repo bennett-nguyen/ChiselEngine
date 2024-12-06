@@ -51,53 +51,54 @@ CubeMesh::CubeMesh()
     GLuint index = 0;
     unsigned indices_array_index = 0;
     CubeMeshVertex v0, v1, v2, v3;
-    float x = -0.5125f, y = -0.5125f, z = -0.5125f;
+    const float X_MIN = -(0.5f+Constant::CUBE_MESH_SCALE), Y_MIN = -(0.5+Constant::CUBE_MESH_SCALE), Z_MIN = -(0.5f+Constant::CUBE_MESH_SCALE);
+    const float X_MAX = X_MIN+1.0f+Constant::CUBE_MESH_SCALE, Y_MAX = Y_MIN+1.0f+Constant::CUBE_MESH_SCALE, Z_MAX = Z_MIN+1.0f+Constant::CUBE_MESH_SCALE;
 
     // Top
-    v0.m_pos = glm::vec3(x,      y+1.0125f, z);
-    v1.m_pos = glm::vec3(x+1.0125f, y+1.0125f, z);
-    v2.m_pos = glm::vec3(x+1.0125f, y+1.0125f, z+1.0125f);
-    v3.m_pos = glm::vec3(x,      y+1.0125f, z+1.0125f);
+    v0.m_pos = glm::vec3(X_MIN, Y_MAX, Z_MIN);
+    v1.m_pos = glm::vec3(X_MAX, Y_MAX, Z_MIN);
+    v2.m_pos = glm::vec3(X_MAX, Y_MAX, Z_MAX);
+    v3.m_pos = glm::vec3(X_MIN, Y_MAX, Z_MAX);
     add_vertices(index, m_vertices_data, v0, v1, v2, v3);
     add_indices(indices_array_index, index, m_indices_data, Top);
 
     // Bottom
-    v0.m_pos = glm::vec3(x,      y, z);
-    v1.m_pos = glm::vec3(x+1.0125f, y, z);
-    v2.m_pos = glm::vec3(x+1.0125f, y, z+1.0125f);
-    v3.m_pos = glm::vec3(x,      y, z+1.0125f);
+    v0.m_pos = glm::vec3(X_MIN, Y_MIN, Z_MIN);
+    v1.m_pos = glm::vec3(X_MAX, Y_MIN, Z_MIN);
+    v2.m_pos = glm::vec3(X_MAX, Y_MIN, Z_MAX);
+    v3.m_pos = glm::vec3(X_MIN, Y_MIN, Z_MAX);
     add_vertices(index, m_vertices_data, v0, v1, v2, v3);
     add_indices(indices_array_index, index, m_indices_data, Bottom);
 
     // North
-    v0.m_pos = glm::vec3(x+1.0125f, y,      z);
-    v1.m_pos = glm::vec3(x+1.0125f, y+1.0125f, z);
-    v2.m_pos = glm::vec3(x+1.0125f, y+1.0125f, z+1.0125f);
-    v3.m_pos = glm::vec3(x+1.0125f, y,      z+1.0125f);
+    v0.m_pos = glm::vec3(X_MAX, Y_MIN, Z_MIN);
+    v1.m_pos = glm::vec3(X_MAX, Y_MAX, Z_MIN);
+    v2.m_pos = glm::vec3(X_MAX, Y_MAX, Z_MAX);
+    v3.m_pos = glm::vec3(X_MAX, Y_MIN, Z_MAX);
     add_vertices(index, m_vertices_data, v0, v1, v2, v3);
     add_indices(indices_array_index, index, m_indices_data, North);
 
     // South
-    v0.m_pos = glm::vec3(x, y,      z);
-    v1.m_pos = glm::vec3(x, y+1.0125f, z);
-    v2.m_pos = glm::vec3(x, y+1.0125f, z+1.0125f);
-    v3.m_pos = glm::vec3(x, y,      z+1.0125f);
+    v0.m_pos = glm::vec3(X_MIN, Y_MIN, Z_MIN);
+    v1.m_pos = glm::vec3(X_MIN, Y_MAX, Z_MIN);
+    v2.m_pos = glm::vec3(X_MIN, Y_MAX, Z_MAX);
+    v3.m_pos = glm::vec3(X_MIN, Y_MIN, Z_MAX);
     add_vertices(index, m_vertices_data, v0, v1, v2, v3);
     add_indices(indices_array_index, index, m_indices_data, South);
 
     // East
-    v0.m_pos = glm::vec3(x,      y,      z+1.0125f);
-    v1.m_pos = glm::vec3(x,      y+1.0125f, z+1.0125f);
-    v2.m_pos = glm::vec3(x+1.0125f, y+1.0125f, z+1.0125f);
-    v3.m_pos = glm::vec3(x+1.0125f, y,      z+1.0125f);
+    v0.m_pos = glm::vec3(X_MIN, Y_MIN, Z_MAX);
+    v1.m_pos = glm::vec3(X_MIN, Y_MAX, Z_MAX);
+    v2.m_pos = glm::vec3(X_MAX, Y_MAX, Z_MAX);
+    v3.m_pos = glm::vec3(X_MAX, Y_MIN, Z_MAX);
     add_vertices(index, m_vertices_data, v0, v1, v2, v3);
     add_indices(indices_array_index, index, m_indices_data, East);
 
     // West
-    v0.m_pos = glm::vec3(x,      y,      z);
-    v1.m_pos = glm::vec3(x,      y+1.0125f, z);
-    v2.m_pos = glm::vec3(x+1.0125f, y+1.0125f, z);
-    v3.m_pos = glm::vec3(x+1.0125f, y,      z);
+    v0.m_pos = glm::vec3(X_MIN, Y_MIN, Z_MIN);
+    v1.m_pos = glm::vec3(X_MIN, Y_MAX, Z_MIN);
+    v2.m_pos = glm::vec3(X_MAX, Y_MAX, Z_MIN);
+    v3.m_pos = glm::vec3(X_MAX, Y_MIN, Z_MIN);
     add_vertices(index, m_vertices_data, v0, v1, v2, v3);
     add_indices(indices_array_index, index, m_indices_data, West);
 
@@ -120,7 +121,7 @@ void CubeMesh::render(glm::mat4 view, glm::mat4 projection, glm::vec3 position) 
     m_shader_program.activate();
 
     glm::mat4 model;
-    model = glm::translate(m_mesh_model, position + 0.50625f);
+    model = glm::translate(m_mesh_model, position + 0.5f + Constant::CUBE_MESH_SCALE * 0.5f);
 
     m_shader_program.uniform_mat4f("model", 1, GL_FALSE, model);
     m_shader_program.uniform_mat4f("view", 1, GL_FALSE, view);

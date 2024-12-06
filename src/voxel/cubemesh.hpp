@@ -9,6 +9,7 @@
 #include <array>
 #include <glm/glm.hpp>
 #include "face_id.hpp"
+#include "constant.hpp"
 
 class CubeMesh {
 public:

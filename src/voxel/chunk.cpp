@@ -92,7 +92,6 @@ glm::mat4 Chunk::get_chunk_model() {
         m_chunk_coord.y * (int)Constant::CHUNK_HEIGHT,
         m_chunk_coord.z * (int)Constant::CHUNK_SIZE
     );
-
     model = glm::translate(model, chunk_to_voxel_coord);
     return model;
 }

@@ -85,7 +85,7 @@ $(IMGUI_OBJDIR)/%.o: lib/imgui/%.cpp
 
 .PHONY: run
 run:
-	@__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia $(TARGETDIR)/$(TARGET)
+	@$(TARGETDIR)/$(TARGET)
 
 .PHONY: clean
 clean:
