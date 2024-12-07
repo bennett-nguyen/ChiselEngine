@@ -22,9 +22,9 @@ There may be more but I will focus on what's important for now.
 
 # Platform
 
-| Platform              | Compiler | Build system |
-|-----------------------|----------|--------------|
-| Linux PopOS 22.04 LTS | g++      | make         |
+| Platform              | Compiler | Build system | Graphics API |
+|-----------------------|----------|--------------|--------------|
+| Linux PopOS 22.04 LTS | g++      | make         | OpenGL       |
 
 # Building
 
