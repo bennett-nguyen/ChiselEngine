@@ -44,3 +44,15 @@ To run:
 ```sh
 $ make run
 ```
+
+# External Libraries Attributions
+
+- [stb](https://github.com/nothings/stb): Single-file public domain (or MIT licensed) libraries for C/C++.
+
+- [Dear Imgui](https://github.com/ocornut/imgui): Bloat-free graphical user interface library for C++
+
+- [glew](https://glew.sourceforge.net/): The OpenGL Extension Wrangler Library.
+
+- [glm](https://glm.g-truc.net/0.9.9/index.html): OpenGL Mathematics.
+
+- [SDL2](https://www.libsdl.org/): Simple DirectMedia Layer.
