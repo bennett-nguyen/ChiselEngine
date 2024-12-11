@@ -2,8 +2,7 @@
 #include "constant.hpp"
 #include <iostream>
 
-const float SENSITIVITY = 0.15f;
-const float SPEED = 1.0f;
+const float SENSITIVITY = 6.0f;
 
 Camera::Camera() {}
 
@@ -30,13 +29,13 @@ glm::mat4 Camera::getProjectionMat() {
     return m_projection_mat;
 }
 
-void Camera::pan(const SDL_Event &event) {
+void Camera::pan(const SDL_Event &event, float delta_time) {
     if (SDL_MOUSEMOTION != event.type || !SDL_GetRelativeMouseMode()) return;
     float xoffset = (float)event.motion.xrel;
     float yoffset = (float)event.motion.yrel;
 
-    xoffset *= SENSITIVITY;
-    yoffset *= SENSITIVITY;
+    xoffset *= SENSITIVITY * delta_time;
+    yoffset *= SENSITIVITY * delta_time;
 
     m_yaw   += xoffset;
     m_pitch -= yoffset; 

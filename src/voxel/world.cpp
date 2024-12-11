@@ -4,6 +4,7 @@ World::World(float getWidthHeightRatio)
     : m_voxel_handler(&m_chunk_map) {
     m_chunk_shader = ShaderProgram("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
     m_player.initCamera(getWidthHeightRatio);
+    m_player.setPosition(glm::vec3(0, 70, 0));
     m_prev_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
     loadChunks();
 }
@@ -37,9 +38,11 @@ void World::rebuildChunk(glm::ivec3 chunk_coords) {
     buildChunk(chunk_coords);
 }
 
-void World::update() {
-    m_player.move();
-    m_player.m_camera.updateView();
+void World::update(float delta_time) {
+    Camera *player_camera = &m_player.m_camera;
+
+    m_player.move(delta_time);
+    player_camera->updateView();
     glm::ivec3 current_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
 
     if (m_prev_player_chunk_pos.x != current_player_chunk_pos.x
@@ -51,20 +54,31 @@ void World::update() {
         m_prev_player_chunk_pos = current_player_chunk_pos;
     }
 
-    Camera camera = m_player.m_camera;
-    m_voxel_handler.rayCast(camera.getCameraPosition(), camera.getCameraFront());
-    breakBlock();
+    m_voxel_handler.rayCast(player_camera->getCameraPosition(), player_camera->getCameraFront());
+    
+    if (0 == m_block_interaction_mode) {
+        breakBlock();
+    } else if (1 == m_block_interaction_mode) {
+        placeBlock();
+    }
 
     render();
 
     if (m_is_render_cube_mesh) {
-        glm::vec3 current_voxel = VoxelMath::getVoxelWorldCoords(m_voxel_handler.getDetectedVoxelLocalCoords(), m_voxel_handler.getChunkCoordsOfDetectedVoxel());
-        m_cubemesh.render(camera.getViewMat(),
-            camera.getProjectionMat(),
-                glm::vec3(current_voxel));
+        if (0 == m_block_interaction_mode) {
+            glm::vec3 current_voxel = VoxelMath::getVoxelWorldCoords(m_voxel_handler.getDetectedVoxelLocalCoords(), m_voxel_handler.getChunkCoordsOfDetectedVoxel());
+            m_cubemesh.render(m_block_interaction_mode, player_camera->getViewMat(),
+                player_camera->getProjectionMat(),
+                    glm::vec3(current_voxel));
+        } else if (1 == m_block_interaction_mode) {
+            glm::vec3 current_voxel = m_voxel_handler.getVoxelWorldCoordsNextToDetectedVoxel();
+            m_cubemesh.render(m_block_interaction_mode, player_camera->getViewMat(),
+                player_camera->getProjectionMat(),
+                    glm::vec3(current_voxel));
+        }
     }
 
-    m_is_break_block = false;
+    m_is_block_interaction_enabled = false;
 }
 
 void World::breakBlock() {
@@ -73,7 +87,7 @@ void World::breakBlock() {
     if (m_voxel_handler.IsDetectedVoxel()) {
         m_is_render_cube_mesh = true;
 
-        if (!m_is_break_block) return;
+        if (!m_is_block_interaction_enabled) return;
 
         m_is_render_cube_mesh = false;
         glm::uvec3 voxel_local_coords = m_voxel_handler.getDetectedVoxelLocalCoords();
@@ -99,6 +113,42 @@ void World::breakBlock() {
             rebuildChunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z-1));
         } else if (Constant::CHUNK_SIZE-1 == voxel_local_coords.z) {
             rebuildChunk(glm::ivec3(chunk_coords.x, chunk_coords.y, chunk_coords.z+1));
+        }
+    }
+}
+
+void World::placeBlock() {
+    m_is_render_cube_mesh = false;
+
+    if (m_voxel_handler.IsDetectedVoxel()) {
+        m_is_render_cube_mesh = true;
+
+        if (!m_is_block_interaction_enabled) return;
+        glm::ivec3 adjacent_voxel_world_coords = m_voxel_handler.getVoxelWorldCoordsNextToDetectedVoxel();
+        glm::ivec3 adjacent_voxel_chunk_coords = VoxelMath::getChunkCoordsFromVoxel(adjacent_voxel_world_coords);
+        glm::uvec3 adjacent_voxel_local_coords = VoxelMath::getLocalVoxelCoords(adjacent_voxel_world_coords, adjacent_voxel_chunk_coords);
+        unsigned adjacent_voxel_index = VoxelMath::getVoxelIndex(adjacent_voxel_local_coords);
+
+        if (adjacent_voxel_chunk_coords.y >= Constant::CHUNK_HEIGHT || 0 < adjacent_voxel_chunk_coords.y) return;
+        m_chunk_map[adjacent_voxel_chunk_coords]->setVoxelID(adjacent_voxel_index, VoxelID::CobbleStone);
+        rebuildChunk(adjacent_voxel_chunk_coords);
+
+        if (0 == adjacent_voxel_local_coords.x) {
+            rebuildChunk(glm::ivec3(adjacent_voxel_chunk_coords.x-1, adjacent_voxel_chunk_coords.y, adjacent_voxel_chunk_coords.z));
+        } else if (Constant::CHUNK_SIZE-1 == adjacent_voxel_local_coords.x) {
+            rebuildChunk(glm::ivec3(adjacent_voxel_chunk_coords.x+1, adjacent_voxel_chunk_coords.y, adjacent_voxel_chunk_coords.z));
+        }
+
+        if (0 == adjacent_voxel_local_coords.y) {
+            rebuildChunk(glm::ivec3(adjacent_voxel_chunk_coords.x, adjacent_voxel_chunk_coords.y-1, adjacent_voxel_chunk_coords.z));
+        } else if (Constant::CHUNK_HEIGHT-1 == adjacent_voxel_local_coords.y) {
+            rebuildChunk(glm::ivec3(adjacent_voxel_chunk_coords.x, adjacent_voxel_chunk_coords.y+1, adjacent_voxel_chunk_coords.z));
+        }
+
+        if (0 == adjacent_voxel_local_coords.z) {
+            rebuildChunk(glm::ivec3(adjacent_voxel_chunk_coords.x, adjacent_voxel_chunk_coords.y, adjacent_voxel_chunk_coords.z-1));
+        } else if (Constant::CHUNK_SIZE-1 == adjacent_voxel_local_coords.z) {
+            rebuildChunk(glm::ivec3(adjacent_voxel_chunk_coords.x, adjacent_voxel_chunk_coords.y, adjacent_voxel_chunk_coords.z+1));
         }
     }
 }
@@ -215,18 +265,21 @@ void World::rebuildChunks() {
     }
 }
 
-void World::pollEvent(const SDL_Event &event) {
-    m_player.m_camera.pan(event);
+void World::pollEvent(const SDL_Event &event, float delta_time) {
+    m_player.m_camera.pan(event, delta_time);
 
     if (SDL_KEYDOWN == event.type) {
         if (SDL_SCANCODE_B == event.key.keysym.scancode) {
-            m_is_break_block = true;
+            m_is_block_interaction_enabled = true;
         }
     }
 
     if (SDL_MOUSEBUTTONDOWN == event.type) {
         if (SDL_BUTTON_LEFT == event.button.button) {
-            m_is_break_block = true;
+            m_is_block_interaction_enabled = true;
+        } else if (SDL_BUTTON_RIGHT == event.button.button) {
+            m_block_interaction_mode++;
+            m_block_interaction_mode %= 2;
         }
     }
 }

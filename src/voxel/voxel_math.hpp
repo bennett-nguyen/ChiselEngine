@@ -2,6 +2,7 @@
 #define VOXEL_MATH_HPP
 
 #include <glm/glm.hpp>
+#include "face_id.hpp"
 #include "constant.hpp"
 
 namespace VoxelMath {

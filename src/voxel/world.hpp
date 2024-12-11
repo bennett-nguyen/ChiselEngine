@@ -17,7 +17,7 @@ public:
     World(float getWidthHeightRatio);
     ~World();
 
-    void update();
+    void update(float delta_time);
     void render();
     void buildChunk(glm::ivec3 chunk_coords);
     void rebuildChunk(glm::ivec3 chunk_coords);
@@ -25,7 +25,8 @@ public:
     void removeChunks();
     void rebuildChunks();
     void breakBlock();
-    void pollEvent(const SDL_Event &event);
+    void placeBlock();
+    void pollEvent(const SDL_Event &event, float delta_time);
     unsigned* getChunkNeighborVoxelsPointer(glm::ivec3 coord);
 
     Player *getPlayerPointer();
@@ -37,8 +38,9 @@ private:
     CubeMesh m_cubemesh;
 
     glm::ivec3 m_prev_player_chunk_pos;
-    bool m_is_break_block = false;
+    bool m_is_block_interaction_enabled = false;
     bool m_is_render_cube_mesh = false;
+    int m_block_interaction_mode = 0;
 };
 
 #endif

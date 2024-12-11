@@ -14,7 +14,7 @@ void Player::initCamera(float getWidthHeightRatio) {
     m_camera.setCameraPosition(m_position);
 }
 
-void Player::move() {
+void Player::move(float delta_time) {
     const Uint8 *kb_state = SDL_GetKeyboardState(NULL);
 
     glm::vec3 camera_front = m_camera.getCameraFront();
@@ -41,7 +41,7 @@ void Player::move() {
     }
 
     if (glm::vec3(0.0f) != moving_direction) {
-        m_position += glm::normalize(moving_direction) * Constant::PLAYER_SPEED;
+        m_position += glm::normalize(moving_direction) * Constant::PLAYER_SPEED * delta_time;
     }
 
     m_camera.setCameraPosition(m_position);

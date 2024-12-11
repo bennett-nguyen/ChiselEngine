@@ -7,6 +7,22 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+// Dirt,
+// Grass,
+// CobbleStone,
+// Stone,
+// Sand,
+
+vec3 colors[6] = vec3[6](
+    vec3(0.0, 0.0, 0.0),
+    vec3(0.61,0.46,0.33),
+    vec3(0.24,0.57,0.25),
+    vec3(0.66,0.66,0.66),
+    vec3(0.50,0.50,0.50),
+    vec3(0.76,0.70,0.50)
+);
+
+
 out vec3 out_color;
 
 vec3 hash31(float p) {
@@ -18,10 +34,10 @@ vec3 hash31(float p) {
 float shades[6] = float[6](
     1.0, 0.7,
     0.8, 0.6,
-    0.84, 0.5
+    0.84, 0.8
 );
 
 void main() {
     gl_Position = projection * view * model * vec4(in_pos, 1.0f);
-    out_color = hash31(voxel_id) * shades[face_id];
+    out_color = colors[voxel_id] * shades[face_id];
 }

@@ -12,6 +12,10 @@ bool VoxelHandler::IsDetectedVoxel() {
     return m_is_detected_voxel;
 }
 
+glm::ivec3 VoxelHandler::getVoxelWorldCoordsNextToDetectedVoxel() {
+    return m_voxel_world_coords_next_to_detected_voxel;
+}
+
 glm::uvec3 VoxelHandler::getDetectedVoxelLocalCoords() {
     return m_detected_voxel_local_coords;
 }
@@ -98,6 +102,21 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
                 m_detected_voxel_local_coords = voxel_local_coords;
                 m_detected_voxel_idx = voxel_idx;
                 m_chunk_coords_of_detected_voxel = chunk_coords_of_voxel;
+
+                if (m_detected_voxel_face == FaceID::North) {
+                    m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x+1, current_voxel.y, current_voxel.z);
+                } else if (m_detected_voxel_face == FaceID::South) {
+                    m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x-1, current_voxel.y, current_voxel.z);
+                } else if (m_detected_voxel_face == FaceID::East) {
+                    m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x, current_voxel.y, current_voxel.z+1);
+                } else if (m_detected_voxel_face == FaceID::West) {
+                    m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x, current_voxel.y, current_voxel.z-1);
+                } else if (m_detected_voxel_face == FaceID::Top) {
+                    m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x, current_voxel.y+1, current_voxel.z);
+                } else if (m_detected_voxel_face == FaceID::Bottom) {
+                    m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x, current_voxel.y-1, current_voxel.z);
+                }
+
                 break;
             }
         }

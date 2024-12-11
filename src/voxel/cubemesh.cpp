@@ -117,7 +117,7 @@ CubeMesh::CubeMesh()
     m_mesh_ebo.bufferData((GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
 }
 
-void CubeMesh::render(glm::mat4 view, glm::mat4 projection, glm::vec3 position) {
+void CubeMesh::render(int block_interaction_mode, glm::mat4 view, glm::mat4 projection, glm::vec3 position) {
     m_shader_program.activate();
 
     glm::mat4 model;
@@ -126,6 +126,7 @@ void CubeMesh::render(glm::mat4 view, glm::mat4 projection, glm::vec3 position) 
     m_shader_program.uniformMat4f("model", 1, GL_FALSE, model);
     m_shader_program.uniformMat4f("view", 1, GL_FALSE, view);
     m_shader_program.uniformMat4f("projection", 1, GL_FALSE, projection);
+    m_shader_program.uniformInt("block_interaction_mode", block_interaction_mode);
 
     m_mesh_vao.bind();
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);

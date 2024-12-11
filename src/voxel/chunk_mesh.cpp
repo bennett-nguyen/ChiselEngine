@@ -89,10 +89,10 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
 
                 // Top
                 if (isVoidTop(glm::ivec3(x, y+1, z), m_pvoxels)) {
-                    v0 = Vertex(x,   y+1, z,   voxel_id, Top);
-                    v1 = Vertex(x+1, y+1, z,   voxel_id, Top);
-                    v2 = Vertex(x+1, y+1, z+1, voxel_id, Top);
-                    v3 = Vertex(x,   y+1, z+1, voxel_id, Top);
+                    v0 = Vertex(x,   y+1, z,   voxel_id, FaceID::Top);
+                    v1 = Vertex(x+1, y+1, z,   voxel_id, FaceID::Top);
+                    v2 = Vertex(x+1, y+1, z+1, voxel_id, FaceID::Top);
+                    v3 = Vertex(x,   y+1, z+1, voxel_id, FaceID::Top);
 
                     m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
                     m_indices_data.insert(m_indices_data.end(), { index+0, index+3, index+2, index+0, index+2, index+1 });
@@ -101,10 +101,10 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
 
                 // Bottom
                 if (isVoidBottom(glm::ivec3(x, y-1, z), m_pvoxels)) {
-                    v0 = Vertex(x,   y, z,   voxel_id, Bottom);
-                    v1 = Vertex(x+1, y, z,   voxel_id, Bottom);
-                    v2 = Vertex(x+1, y, z+1, voxel_id, Bottom);
-                    v3 = Vertex(x,   y, z+1, voxel_id, Bottom);
+                    v0 = Vertex(x,   y, z,   voxel_id, FaceID::Bottom);
+                    v1 = Vertex(x+1, y, z,   voxel_id, FaceID::Bottom);
+                    v2 = Vertex(x+1, y, z+1, voxel_id, FaceID::Bottom);
+                    v3 = Vertex(x,   y, z+1, voxel_id, FaceID::Bottom);
 
                     m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
                     m_indices_data.insert(m_indices_data.end(), { index+0, index+2, index+3, index+0, index+1, index+2 });
@@ -113,10 +113,10 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
 
                 // North
                 if (isVoidNorth(glm::ivec3(x+1, y, z), m_pvoxels, north_neighbor)) {
-                    v0 = Vertex(x+1, y,   z,   voxel_id, North);
-                    v1 = Vertex(x+1, y+1, z,   voxel_id, North);
-                    v2 = Vertex(x+1, y+1, z+1, voxel_id, North);
-                    v3 = Vertex(x+1, y,   z+1, voxel_id, North);
+                    v0 = Vertex(x+1, y,   z,   voxel_id, FaceID::North);
+                    v1 = Vertex(x+1, y+1, z,   voxel_id, FaceID::North);
+                    v2 = Vertex(x+1, y+1, z+1, voxel_id, FaceID::North);
+                    v3 = Vertex(x+1, y,   z+1, voxel_id, FaceID::North);
 
                     m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
                     m_indices_data.insert(m_indices_data.end(), { index+0, index+1, index+2, index+0, index+2, index+3 });
@@ -125,10 +125,10 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
 
                 // South
                 if (isVoidSouth(glm::ivec3(x-1, y, z), m_pvoxels, south_neighbor)) {
-                    v0 = Vertex(x, y,   z,   voxel_id, South);
-                    v1 = Vertex(x, y+1, z,   voxel_id, South);
-                    v2 = Vertex(x, y+1, z+1, voxel_id, South);
-                    v3 = Vertex(x, y,   z+1, voxel_id, South);
+                    v0 = Vertex(x, y,   z,   voxel_id, FaceID::South);
+                    v1 = Vertex(x, y+1, z,   voxel_id, FaceID::South);
+                    v2 = Vertex(x, y+1, z+1, voxel_id, FaceID::South);
+                    v3 = Vertex(x, y,   z+1, voxel_id, FaceID::South);
 
                     m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
                     m_indices_data.insert(m_indices_data.end(), { index+0, index+2, index+1, index+0, index+3, index+2 });
@@ -137,10 +137,10 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
 
                 // East
                 if (isVoidEast(glm::ivec3(x, y, z+1), m_pvoxels, east_neighbor)) {
-                    v0 = Vertex(x,   y,   z+1, voxel_id, East);
-                    v1 = Vertex(x,   y+1, z+1, voxel_id, East);
-                    v2 = Vertex(x+1, y+1, z+1, voxel_id, East);
-                    v3 = Vertex(x+1, y,   z+1, voxel_id, East);
+                    v0 = Vertex(x,   y,   z+1, voxel_id, FaceID::East);
+                    v1 = Vertex(x,   y+1, z+1, voxel_id, FaceID::East);
+                    v2 = Vertex(x+1, y+1, z+1, voxel_id, FaceID::East);
+                    v3 = Vertex(x+1, y,   z+1, voxel_id, FaceID::East);
 
                     m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
                     m_indices_data.insert(m_indices_data.end(), { index+0, index+2, index+1, index+0, index+3, index+2 });
@@ -149,10 +149,10 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
 
                 // West
                 if (isVoidWest(glm::ivec3(x, y, z-1), m_pvoxels, west_neighbor)) {
-                    v0 = Vertex(x,   y,   z, voxel_id, West);
-                    v1 = Vertex(x,   y+1, z, voxel_id, West);
-                    v2 = Vertex(x+1, y+1, z, voxel_id, West);
-                    v3 = Vertex(x+1, y,   z, voxel_id, West);
+                    v0 = Vertex(x,   y,   z, voxel_id, FaceID::West);
+                    v1 = Vertex(x,   y+1, z, voxel_id, FaceID::West);
+                    v2 = Vertex(x+1, y+1, z, voxel_id, FaceID::West);
+                    v3 = Vertex(x+1, y,   z, voxel_id, FaceID::West);
 
                     m_vertices_data.insert(m_vertices_data.end(), { v0, v1, v2, v3 });
                     m_indices_data.insert(m_indices_data.end(), { index+0, index+1, index+2, index+0, index+2, index+3 });

@@ -7,7 +7,8 @@ enum FaceID {
     North,  // X+
     South,  // X-
     East,   // Z+
-    West    // Z-
+    West,    // Z-
+    Nil
 };
 
 #endif

@@ -20,7 +20,7 @@ public:
 
     Player();
 
-    void move();
+    void move(float delta_time);
     void switchGamemode(GameMode mode);
     void initCamera(float getWidthHeightRatio);
 

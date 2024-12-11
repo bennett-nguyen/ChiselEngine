@@ -15,7 +15,7 @@ class CubeMesh {
 public:
     CubeMesh();
 
-    void render(glm::mat4 view, glm::mat4 projection, glm::vec3 position);
+    void render(int block_interaction_mode, glm::mat4 view, glm::mat4 projection, glm::vec3 position);
 
 private:
     VAO m_mesh_vao;

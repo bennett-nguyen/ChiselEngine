@@ -12,7 +12,7 @@ namespace Constant {
     constexpr unsigned LOAD_DISTANCE = 10;
 
     constexpr float PLAYER_HEIGHT = 1.5f;
-    constexpr float PLAYER_SPEED = 0.6f;
+    constexpr float PLAYER_SPEED = 30.0f;
     constexpr float FOV = 60.0f; // in degrees, CONVERT TO RADIANS BEFORE USING!
     constexpr float GRAVITATIONAL_ACCELERATION = 0.3f;
     constexpr float JUMP_VELOCITY = 2.0f;

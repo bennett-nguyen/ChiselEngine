@@ -51,17 +51,35 @@ void Chunk::buildVoxels() {
     int min = 1;
     int max = 1000;
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(min, max);
-    unsigned voxel_id = (unsigned)distrib(gen);
+    unsigned sand_level = 10; 
+    unsigned dirt_level = 20; 
+    unsigned grass_level = 30; 
+    unsigned cobblestone_level = 40; 
+    unsigned stone_level = 50; 
 
+    // std::random_device rd;
+    // std::mt19937 gen(rd());
+    // std::uniform_int_distribution<> distrib(min, max);
+    // unsigned voxel_id = (unsigned)distrib(gen);
+    
+    unsigned voxel_id;
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
-            unsigned y_level = heightMap(16, float((int)x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE),
-                float((int)z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.01f, 0, Constant::CHUNK_HEIGHT);
+            unsigned y_level = heightMap(6, float((int)x + m_chunk_coord.x * (int)Constant::CHUNK_SIZE),
+                float((int)z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.007f, 0, Constant::CHUNK_HEIGHT);
 
             for (unsigned y = 0; y <= y_level; y++) {
+                if (0 < y && y <= sand_level) {
+                    voxel_id = VoxelID::Sand;
+                } else if (sand_level < y && y <= dirt_level) {
+                    voxel_id = VoxelID::Dirt;
+                } else if (dirt_level < y && y <= grass_level) {
+                    voxel_id = VoxelID::Grass;
+                } else if (grass_level < y && y <= cobblestone_level) {
+                    voxel_id = VoxelID::CobbleStone;
+                } else if (stone_level < y && y <= stone_level) {
+                    voxel_id = VoxelID::Stone;
+                }
                 m_pvoxels[VoxelMath::getVoxelIndex(x, y, z)] = voxel_id;
                 m_is_empty = false;
             }

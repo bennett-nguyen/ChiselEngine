@@ -11,7 +11,6 @@
 #include <string>
 
 extern const float SENSITIVITY;
-extern const float CAMERA_SPEED;
 
 class Camera {
 public:
@@ -19,7 +18,7 @@ public:
     Camera(float fov_y, float near, float far, float width_height_ratio);
 
     void updateView();
-    void pan(const SDL_Event &event);
+    void pan(const SDL_Event &event, float delta_time);
     void computeCameraFront();
     void computeCameraRight();
     void computeCameraUp();

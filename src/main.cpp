@@ -11,6 +11,10 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 
+Uint64 now = SDL_GetPerformanceCounter();
+Uint64 last = 0;
+float delta_time = 0;
+
 int main() {
     Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
 
@@ -34,6 +38,10 @@ int main() {
 
     while (true) {
         window.clear(Colors::DARK_SLATE_GRAY);
+
+        last = now;
+        now = SDL_GetPerformanceCounter();
+        delta_time = (float)((now - last)*1000 / (float)SDL_GetPerformanceFrequency() ) * 0.001f;
 
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event);
@@ -59,14 +67,15 @@ int main() {
                 }
             }
 
-            world.pollEvent(event);
+            world.pollEvent(event, delta_time);
         }
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        world.update();
+
+        world.update(delta_time);
 
         debug_window.show();
         ImGui::Render();
