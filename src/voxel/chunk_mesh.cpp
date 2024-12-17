@@ -162,35 +162,35 @@ void ChunkMesh::buildChunkMesh(unsigned *m_pvoxels, unsigned *north_neighbor,
         }
     }
 
-    m_mesh_vbo.genBuffer();
-    m_mesh_vao.genBuffer();
-    m_mesh_ebo.genBuffer();
+    glGenBuffers(1, &m_mesh_vbo);
+    glGenBuffers(1, &m_mesh_ebo);
+    glGenVertexArrays(1, &m_mesh_vao);
 
-    m_mesh_vao.bind();
-    m_mesh_ebo.bind();
-    m_mesh_vbo.bind();
+    glBindVertexArray(m_mesh_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_mesh_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_mesh_ebo);
 
-    m_mesh_vbo.bufferData((GLsizeiptr)(m_vertices_data.size() * sizeof(Vertex)), m_vertices_data.data(), GL_STATIC_DRAW);
-    m_mesh_vbo.attribI(0, 3, GL_INT, sizeof(Vertex), (void*)getOffsetOfPos());
-    m_mesh_vbo.attribI(1, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)getOffsetOfVoxelID());
-    m_mesh_vbo.attribI(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)getOffsetOfFaceID());
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(m_vertices_data.size() * sizeof(Vertex)), m_vertices_data.data(), GL_STATIC_DRAW);
+    glVertexAttribIPointer(0, 3, GL_INT, sizeof(Vertex), (void*)getOffsetOfPos());
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)getOffsetOfVoxelID());
+    glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)getOffsetOfFaceID());
 
-    m_mesh_vbo.enable_attrib_array(0);
-    m_mesh_vbo.enable_attrib_array(1);
-    m_mesh_vbo.enable_attrib_array(2);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
 
-    m_mesh_ebo.bufferData((GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
 }
 
 void ChunkMesh::destroyChunkMesh() {
-    m_mesh_vbo.deleteBuffer();
-    m_mesh_vao.deleteBuffer();
-    m_mesh_ebo.deleteBuffer();
+    glDeleteVertexArrays(1, &m_mesh_vao);
+    glDeleteBuffers(1, &m_mesh_vbo);
+    glDeleteBuffers(1, &m_mesh_ebo);
     m_vertices_data.clear();
     m_indices_data.clear();
 }
 
 void ChunkMesh::render() {
-    m_mesh_vao.bind();
+    glBindVertexArray(m_mesh_vao);
     glDrawElements(GL_TRIANGLES, (GLsizei)(m_indices_data.size()), GL_UNSIGNED_INT, 0);
 }

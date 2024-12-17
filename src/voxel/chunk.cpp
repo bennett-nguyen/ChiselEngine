@@ -1,5 +1,4 @@
 #include "chunk.hpp"
-#include <random>
 
 unsigned heightMap(unsigned num_iterations, float x, float z, float persistence, float scale, unsigned low, unsigned high) {
     float max_amp = 0;

@@ -3,6 +3,7 @@
 World::World(float getWidthHeightRatio)
     : m_voxel_handler(&m_chunk_map) {
     m_chunk_shader = ShaderProgram("resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
+    m_cubemesh_shader = ShaderProgram("resources/shaders/cubemesh.vert", "resources/shaders/cubemesh.frag");
     m_player.initCamera(getWidthHeightRatio);
     m_player.setPosition(glm::vec3(0, 70, 0));
     m_prev_player_chunk_pos = VoxelMath::getChunkCoordsFromPos(m_player.getPosition());
@@ -65,17 +66,20 @@ void World::update(float delta_time) {
     render();
 
     if (m_is_render_cube_mesh) {
+        m_cubemesh_shader.activate();
+        m_cubemesh_shader.uniformMat4f("view", 1, GL_FALSE, player_camera->getViewMat());
+        m_cubemesh_shader.uniformMat4f("projection", 1, GL_FALSE, player_camera->getProjectionMat());
+        m_cubemesh_shader.uniformInt("block_interaction_mode", m_block_interaction_mode);
+
         if (0 == m_block_interaction_mode) {
-            glm::vec3 current_voxel = VoxelMath::getVoxelWorldCoords(m_voxel_handler.getDetectedVoxelLocalCoords(), m_voxel_handler.getChunkCoordsOfDetectedVoxel());
-            m_cubemesh.render(m_block_interaction_mode, player_camera->getViewMat(),
-                player_camera->getProjectionMat(),
-                    glm::vec3(current_voxel));
+            glm::vec3 current_voxel = m_voxel_handler.getDetectedVoxelWorldCoords();
+            m_cubemesh_shader.uniformMat4f("model", 1, GL_FALSE, m_cubemesh.getModel(glm::vec3(current_voxel)));
         } else if (1 == m_block_interaction_mode) {
             glm::vec3 current_voxel = m_voxel_handler.getVoxelWorldCoordsNextToDetectedVoxel();
-            m_cubemesh.render(m_block_interaction_mode, player_camera->getViewMat(),
-                player_camera->getProjectionMat(),
-                    glm::vec3(current_voxel));
+            m_cubemesh_shader.uniformMat4f("model", 1, GL_FALSE, m_cubemesh.getModel(glm::vec3(current_voxel)));
         }
+
+        m_cubemesh.render();
     }
 
     m_is_block_interaction_enabled = false;
@@ -90,9 +94,10 @@ void World::breakBlock() {
         if (!m_is_block_interaction_enabled) return;
 
         m_is_render_cube_mesh = false;
-        glm::uvec3 voxel_local_coords = m_voxel_handler.getDetectedVoxelLocalCoords();
-        glm::ivec3 chunk_coords = m_voxel_handler.getChunkCoordsOfDetectedVoxel();
-        unsigned voxel_idx = m_voxel_handler.getDetectedVoxelIndex();
+        glm::ivec3 detected_voxel_coords = m_voxel_handler.getDetectedVoxelWorldCoords();
+        glm::ivec3 chunk_coords = VoxelMath::getChunkCoordsFromVoxel(detected_voxel_coords);
+        glm::uvec3 voxel_local_coords = VoxelMath::getLocalVoxelCoords(detected_voxel_coords, chunk_coords);
+        unsigned voxel_idx = VoxelMath::getVoxelIndex(voxel_local_coords);
 
         m_chunk_map[chunk_coords]->setVoxelID(voxel_idx, 0);
         rebuildChunk(chunk_coords);

@@ -33,6 +33,7 @@ public:
 private:
     Player m_player;
     ShaderProgram m_chunk_shader;
+    ShaderProgram m_cubemesh_shader;
     std::unordered_map<glm::ivec3, Chunk*> m_chunk_map;
     VoxelHandler m_voxel_handler;
     CubeMesh m_cubemesh;

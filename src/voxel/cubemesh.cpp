@@ -42,12 +42,7 @@ void addIndices(unsigned &array_index, GLuint &index, std::array<GLuint, 36> &v,
     index += 4;
 }
 
-CubeMesh::CubeMesh()
-    : m_mesh_model(glm::mat4(1.0f)),
-        m_shader_program(ShaderProgram("resources/shaders/cubemesh.vert",
-            "resources/shaders/cubemesh.frag"))
-    {
-
+CubeMesh::CubeMesh() {
     GLuint index = 0;
     unsigned indices_array_index = 0;
     CubeMeshVertex v0, v1, v2, v3;
@@ -102,32 +97,28 @@ CubeMesh::CubeMesh()
     addVertices(index, m_vertices_data, v0, v1, v2, v3);
     addIndices(indices_array_index, index, m_indices_data, West);
 
-    m_mesh_vao.genBuffer();
-    m_mesh_vbo.genBuffer();
-    m_mesh_ebo.genBuffer();
+    glGenVertexArrays(1, &m_mesh_vao);
+    glGenBuffers(1, &m_mesh_vbo);
+    glGenBuffers(1, &m_mesh_ebo);
+    
+    glBindVertexArray(m_mesh_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_mesh_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_mesh_ebo);
 
-    m_mesh_vao.bind();
-    m_mesh_ebo.bind();
-    m_mesh_vbo.bind();
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(m_vertices_data.size() * sizeof(CubeMeshVertex)), m_vertices_data.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(CubeMeshVertex), (void*)getOffsetOfCubeMeshPos());
+    glEnableVertexAttribArray(0);
 
-    m_mesh_vbo.bufferData((GLsizeiptr)(m_vertices_data.size() * sizeof(CubeMeshVertex)), m_vertices_data.data(), GL_STATIC_DRAW);
-    m_mesh_vbo.attrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(CubeMeshVertex), (void*)getOffsetOfCubeMeshPos());
-    m_mesh_vbo.enable_attrib_array(0);
-
-    m_mesh_ebo.bufferData((GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(m_indices_data.size() * sizeof(GLuint)), m_indices_data.data(), GL_STATIC_DRAW);
 }
 
-void CubeMesh::render(int block_interaction_mode, glm::mat4 view, glm::mat4 projection, glm::vec3 position) {
-    m_shader_program.activate();
+glm::mat4 CubeMesh::getModel(glm::vec3 cube_mesh_position) {
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, cube_mesh_position + 0.5f + Constant::CUBE_MESH_SCALE * 0.5f);
+    return model;
+}
 
-    glm::mat4 model;
-    model = glm::translate(m_mesh_model, position + 0.5f + Constant::CUBE_MESH_SCALE * 0.5f);
-
-    m_shader_program.uniformMat4f("model", 1, GL_FALSE, model);
-    m_shader_program.uniformMat4f("view", 1, GL_FALSE, view);
-    m_shader_program.uniformMat4f("projection", 1, GL_FALSE, projection);
-    m_shader_program.uniformInt("block_interaction_mode", block_interaction_mode);
-
-    m_mesh_vao.bind();
+void CubeMesh::render() {
+    glBindVertexArray(m_mesh_vao);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }

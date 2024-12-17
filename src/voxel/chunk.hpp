@@ -2,6 +2,7 @@
 #define CHUNK_HPP
 
 #include <array>
+#include <random>
 #include <cstring>
 #include "constant.hpp"
 #include "chunk_mesh.hpp"

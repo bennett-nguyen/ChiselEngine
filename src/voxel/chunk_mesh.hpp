@@ -3,9 +3,6 @@
 
 #include <vector>
 
-#include "vao.hpp"
-#include "vbo.hpp"
-#include "ebo.hpp"
 #include "vertex.hpp"
 #include "face_id.hpp"
 #include "voxel_id.hpp"
@@ -24,9 +21,9 @@ public:
     void destroyChunkMesh();
 
 private:
-    VBO m_mesh_vbo;
-    VAO m_mesh_vao;
-    EBO m_mesh_ebo;
+    GLuint m_mesh_vbo;
+    GLuint m_mesh_vao;
+    GLuint m_mesh_ebo;
 
     std::vector<Vertex> m_vertices_data;
     std::vector<GLuint> m_indices_data;

@@ -16,20 +16,12 @@ glm::ivec3 VoxelHandler::getVoxelWorldCoordsNextToDetectedVoxel() {
     return m_voxel_world_coords_next_to_detected_voxel;
 }
 
-glm::uvec3 VoxelHandler::getDetectedVoxelLocalCoords() {
-    return m_detected_voxel_local_coords;
-}
-
-glm::ivec3 VoxelHandler::getChunkCoordsOfDetectedVoxel() {
-    return m_chunk_coords_of_detected_voxel;
+glm::ivec3 VoxelHandler::getDetectedVoxelWorldCoords() {
+    return m_detected_voxel_world_coords;
 }
 
 FaceID VoxelHandler::getDetectedVoxelFace() {
     return m_detected_voxel_face;
-}
-
-unsigned VoxelHandler::getDetectedVoxelIndex() {
-    return m_detected_voxel_idx;
 }
 
 void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction) {
@@ -99,9 +91,7 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
 
             if (!chunk_map[chunk_coords_of_voxel]->isAirAt(voxel_idx)) {
                 m_is_detected_voxel = true;
-                m_detected_voxel_local_coords = voxel_local_coords;
-                m_detected_voxel_idx = voxel_idx;
-                m_chunk_coords_of_detected_voxel = chunk_coords_of_voxel;
+                m_detected_voxel_world_coords = current_voxel;
 
                 if (m_detected_voxel_face == FaceID::North) {
                     m_voxel_world_coords_next_to_detected_voxel = glm::ivec3(current_voxel.x+1, current_voxel.y, current_voxel.z);
