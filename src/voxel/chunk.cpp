@@ -68,7 +68,7 @@ void Chunk::buildVoxels() {
                 float((int)z + m_chunk_coord.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.007f, 0, Constant::CHUNK_HEIGHT);
 
             for (unsigned y = 0; y <= y_level; y++) {
-                if (0 < y && y <= sand_level) {
+                if (0 <= y && y <= sand_level) {
                     voxel_id = VoxelID::Sand;
                 } else if (sand_level < y && y <= dirt_level) {
                     voxel_id = VoxelID::Dirt;

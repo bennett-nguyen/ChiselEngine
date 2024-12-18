@@ -16,7 +16,8 @@ namespace Constant {
     constexpr float FOV = 60.0f; // in degrees, CONVERT TO RADIANS BEFORE USING!
     constexpr float GRAVITATIONAL_ACCELERATION = 0.3f;
     constexpr float JUMP_VELOCITY = 2.0f;
-    constexpr float MAX_RAY_LENGTH = 8.0f;
+    constexpr unsigned MAX_VOXEL_TRAVERSED = 8;
+    constexpr float MAX_RAY_LENGTH = 8.78f;
     constexpr float CUBE_MESH_SCALE = 1.0f / 256.0f;
 }
 

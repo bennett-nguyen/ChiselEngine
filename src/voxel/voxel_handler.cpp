@@ -37,7 +37,6 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
 
     float t_delta_x = 0.0f, t_delta_y = 0.0f, t_delta_z = 0.0f;
     float t_max_x = 0.0f, t_max_y = 0.0f, t_max_z = 0.0f;
-    float current_distance = 0.0f;
 
     unsigned voxel_idx;
     glm::uvec3 voxel_local_coords;
@@ -82,7 +81,10 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
         }
     }
 
-    while (current_distance < Constant::MAX_RAY_LENGTH) {
+    unsigned voxel_traversed = 0;
+    float current_ray_length = 0.0f;
+
+    while (voxel_traversed <= Constant::MAX_VOXEL_TRAVERSED || current_ray_length <= Constant::MAX_RAY_LENGTH) {
         chunk_coords_of_voxel = VoxelMath::getChunkCoordsFromVoxel(current_voxel);
 
         if (1 == mp_chunk_map->count(chunk_coords_of_voxel)) {
@@ -116,25 +118,27 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
                 t_max_x += t_delta_x;
                 current_voxel.x += step_x;
                 m_detected_voxel_face = face_x;
-                current_distance = t_max_x;
+                current_ray_length = t_max_x;
             } else {
                 t_max_z += t_delta_z;
                 current_voxel.z += step_z;
                 m_detected_voxel_face = face_z;
-                current_distance = t_max_z;
+                current_ray_length = t_max_z;
             }
         } else {
             if (t_max_y < t_max_z) {
                 t_max_y += t_delta_y;
                 current_voxel.y += step_y;
                 m_detected_voxel_face = face_y;
-                current_distance = t_max_y;
+                current_ray_length = t_max_y;
             } else {
                 t_max_z += t_delta_z;
                 current_voxel.z += step_z;
                 m_detected_voxel_face = face_z;
-                current_distance = t_max_z;
+                current_ray_length = t_max_z;
             }
         }
+
+        voxel_traversed++;
     }
 }

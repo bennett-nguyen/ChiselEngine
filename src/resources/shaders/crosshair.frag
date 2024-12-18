@@ -1,7 +1,16 @@
 #version 410 core
 
-out vec4 frag_color;
+in vec2 TexCoords;
+out vec4 color;
+
+uniform sampler2D tex; 
 
 void main() {
-    frag_color = vec4(1.0, 0.0, 0.0, 1.0);
+    vec4 tex_color = texture(tex, TexCoords);
+
+    if (tex_color.a < 0.1f) {
+        discard;
+    }
+
+    color = tex_color;
 }
