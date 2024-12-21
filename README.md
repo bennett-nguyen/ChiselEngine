@@ -24,26 +24,66 @@ There may be more but I will focus on what's important for now.
 
 | Platform              | Compiler | Build system | Graphics API |
 |-----------------------|----------|--------------|--------------|
-| Linux PopOS 22.04 LTS | g++      | make         | OpenGL       |
+| Windows               | g++ (MinGW64)     | CMake         | OpenGL       |
+| Debian-Based Distros  | g++      | CMake         | OpenGL       |
 
 # Building
 
-Install `glew`, `SDL2`, and `glm` via `apt`:
+The executable will be in the generated `bin` folder along side with some resources for the engine to run properly.
 
-```sh
-$ sudo apt install libglew-dev libsdl2-dev libglm-dev
+If the program throw an error like `terminate called after throwing an instance of 'int'` or anything related to that even though it compiled successfully, then it might be that the program can't find certain resources like lacking shader files or images. Make sure the `resources` folder is always present in the same level as the executable.
+
+## Windows
+
+### Requirements
+- MSYS2: For installing MinGW64 UCRT toolchain, other packages, and building Chisel.
+
+### Packages
+- `mingw-w64-ucrt-x86_64-toolchain`
+- `mingw-w64-ucrt-x86_64-cmake`
+- `mingw-w64-ucrt-x86_64-SDL2`
+- `mingw-w64-ucrt-x86_64-glm`
+- `mingw-w64-ucrt-x86_64-glew`
+
+Install the packages via the MSYS2 UCRT Bash Terminal:
+
+```
+$ pacman -S mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-glm mingw-w64-ucrt-x86_64-glew
 ```
 
-To build the engine:
-```sh
-$ cd src/
-$ make # make CFG=debug if you want to compile with g++ debug flags
+### Building
+Build Chisel via the MSYS2 UCRT Bash Terminal:
+```
+$ mkdir build
+$ cd build
+$ cmake .. -G "MinGW Makefiles"
+$ cmake --build .. --parallel
 ```
 
-To run:
-```sh
-$ make run
+## Debian-Based Distros
+
+For now, I only provide support for any Debian-based distros that have `apt` since there're pre-built binaries of `SDL2`, `glm`, and `glew` on there.
+
+### Packages
+
+- `libsdl2-dev`
+- `libglm-dev`
+- `libglew-dev`
+
 ```
+$ sudo apt update
+$ sudo apt install libsdl2-dev libglm-dev libglew-dev
+```
+
+### Building
+
+```
+$ mkdir build
+$ cd build
+$ cmake .. -G "Unix Makefiles"
+$ cmake --build .. --parallel
+```
+
 
 # License
 
