@@ -1,17 +1,15 @@
 #include "window.hpp"
-#include "iochars.hpp"
 
 Window::Window(const std::string &window_name, float screen_occupation_percentage, Uint32 SDL_init_flags, Uint32 window_flags)
     : m_name(window_name) {
-    using namespace IOChars;
 
     if (SDL_Init(SDL_init_flags) < 0) {
-        std::cerr << "SDL could not be initialized:" << std::endl
+        std::cerr << "SDL could not be initialized:" << '\n'
             << SDL_GetError();
         exit(1);
     }
 
-    std::cout << window_name << ": SDL is initialized" << std::endl;
+    std::cout << window_name << ": SDL is initialized" << '\n';
 
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -41,36 +39,35 @@ Window::Window(const std::string &window_name, float screen_occupation_percentag
     );
 
     if (NULL == m_pwindow) {
-        std::cerr << window_name << ": failed to create window" << endline
+        std::cerr << window_name << ": failed to create window" << '\n'
             << SDL_GetError();
         exit(1);
     }
 
-    std::cout << window_name << ": window is initialized" << endline;
+    std::cout << window_name << ": window is initialized" << '\n';
 
     m_gl_context = SDL_GL_CreateContext(m_pwindow);
-    std::cout << window_name << ": GL context is initialized" << endline;
+    std::cout << window_name << ": GL context is initialized" << '\n';
 
     if (GLEW_OK != glewInit()) {
-        std::cerr << "failed to initialized GLEW" << endline;
+        std::cerr << "failed to initialized GLEW" << '\n';
         exit(1);
     }
 
-    std::cout << window_name << ": GLEW is initialized" << endline << endline;
+    std::cout << window_name << ": GLEW is initialized" << '\n' << '\n';
 
-    std::cout << "GPU Vendor: " << glGetString(GL_VENDOR) << endline;
-    std::cout << "Renderer: " << glGetString(GL_RENDERER) << endline;
-    std::cout << "Version: " << glGetString(GL_VERSION) << endline;
-    std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endline << endline;
+    std::cout << "GPU Vendor: " << glGetString(GL_VENDOR) << '\n';
+    std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';
+    std::cout << "Version: " << glGetString(GL_VERSION) << '\n';
+    std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n' << '\n';
 }
 
 Window::~Window() {
-    using namespace IOChars;
     SDL_GL_DeleteContext(m_gl_context);
-    std::cout << m_name << ": destroyed GL context" << endline;
+    std::cout << m_name << ": destroyed GL context" << '\n';
 
     SDL_DestroyWindow(m_pwindow);
-    std::cout << m_name << ": destroyed window" << endline;
+    std::cout << m_name << ": destroyed window" << '\n';
 }
 
 SDL_Window* Window::getWindowPointer() {

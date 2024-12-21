@@ -33,7 +33,7 @@ void VoxelHandler::rayCast(glm::vec3 current_pos, glm::vec3 normalized_direction
     int step_x = (int)glm::sign(normalized_direction.x);
     int step_y = (int)glm::sign(normalized_direction.y);
     int step_z = (int)glm::sign(normalized_direction.z);
-    FaceID face_x, face_y, face_z;
+    FaceID face_x = FaceID::Nil, face_y = FaceID::Nil, face_z = FaceID::Nil;
 
     float t_delta_x = 0.0f, t_delta_y = 0.0f, t_delta_z = 0.0f;
     float t_max_x = 0.0f, t_max_y = 0.0f, t_max_z = 0.0f;

@@ -3,13 +3,14 @@
 
 #include <vector>
 #include <unordered_set>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+#include <SDL2/SDL.h>
+#include <imgui.h>
 #include "chunk.hpp"
 #include "camera.hpp"
-#include <glm/gtx/hash.hpp>
 #include "voxel_handler.hpp"
-#include <SDL2/SDL.h>
 #include "player.hpp"
-#include "imgui.h"
 #include "cubemesh.hpp"
 
 class World {

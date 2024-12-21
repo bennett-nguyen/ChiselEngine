@@ -3,6 +3,7 @@
 
 #include <array>
 #include <glm/glm.hpp>
+
 #include "vertex.hpp"
 #include "face_id.hpp"
 #include "constant.hpp"

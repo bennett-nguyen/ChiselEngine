@@ -7,12 +7,11 @@
 #include "world.hpp"
 #include "debug_window.hpp"
 
-#include "imgui.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_opengl3.h"
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb_image.h>
 
 Uint64 now = SDL_GetPerformanceCounter();
 Uint64 last = 0;
@@ -21,7 +20,7 @@ float delta_time = 0;
 GLuint crosshair_vbo;
 GLuint crosshair_vao;
 
-int main() {
+int main(int argc, char** argv) {
     Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
     ShaderProgram crosshair_shader("resources/shaders/crosshair.vert", "resources/shaders/crosshair.frag");
     IMGUI_CHECKVERSION();

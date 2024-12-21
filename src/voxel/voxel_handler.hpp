@@ -4,10 +4,10 @@
 #include <limits>
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <glm/gtx/hash.hpp>
 #include "constant.hpp"
 #include "chunk.hpp"
 #include "face_id.hpp"
-#include <glm/gtx/hash.hpp>
 #include "voxel_math.hpp"
 
 class VoxelHandler {

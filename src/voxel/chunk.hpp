@@ -4,10 +4,11 @@
 #include <array>
 #include <random>
 #include <cstring>
-#include "constant.hpp"
-#include "chunk_mesh.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/noise.hpp>
+
+#include "constant.hpp"
+#include "chunk_mesh.hpp"
 
 class Chunk {
 public:

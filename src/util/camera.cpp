@@ -1,8 +1,6 @@
 #include "camera.hpp"
-#include "constant.hpp"
-#include <iostream>
 
-const float SENSITIVITY = 6.0f;
+const float SENSITIVITY = 0.3f;
 
 Camera::Camera() {}
 
@@ -34,8 +32,8 @@ void Camera::pan(const SDL_Event &event, float delta_time) {
     float xoffset = (float)event.motion.xrel;
     float yoffset = (float)event.motion.yrel;
 
-    xoffset *= SENSITIVITY * delta_time;
-    yoffset *= SENSITIVITY * delta_time;
+    xoffset *= SENSITIVITY;
+    yoffset *= SENSITIVITY;
 
     m_yaw   += xoffset;
     m_pitch -= yoffset; 
