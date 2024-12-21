@@ -58,9 +58,14 @@ include_directories(${PROJECT_NAME}
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${DEPS_FILES})
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") 
+    target_link_libraries(${PROJECT_NAME} SDL2::SDL2main)
+endif()
+
 target_link_libraries(${PROJECT_NAME} SDL2::SDL2 GLEW::GLEW OpenGL::GL)
 
 execute_process(
     COMMAND mkdir -pv ../bin/resources
-    COMMAND cp -rv ../src/resources ../bin
+    COMMAND cp -ruv ../src/resources ../bin
 )
