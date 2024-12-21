@@ -67,12 +67,12 @@ target_link_libraries(${PROJECT_NAME} SDL2::SDL2 GLEW::GLEW OpenGL::GL)
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND mkdir -pv ../bin/resources
+    COMMAND bash -c "mkdir -pv ../bin/resources"
     VERBATIM
 )
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND cp -ruv ../src/resources ../bin
+    COMMAND bash -c "cp -ruv ../src/resources ../bin"
     VERBATIM
 )
