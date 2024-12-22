@@ -24,7 +24,7 @@ There may be more but I will focus on what's important for now.
 
 | Platform              | Compiler | Build system | Graphics API |
 |-----------------------|----------|--------------|--------------|
-| Windows               | g++ (MinGW64)     | CMake         | OpenGL       |
+| Windows 10               | g++ (MinGW64)     | CMake         | OpenGL       |
 | Debian-Based Distros  | g++      | CMake         | OpenGL       |
 
 # Building
