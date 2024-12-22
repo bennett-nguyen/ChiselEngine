@@ -57,7 +57,7 @@ Build Chisel via the MSYS2 UCRT Bash Terminal:
 $ mkdir build
 $ cd build
 $ cmake .. -G "MinGW Makefiles"
-$ cmake --build .. --parallel
+$ cmake --build . --parallel
 ```
 
 ## Debian-Based Distros
@@ -81,7 +81,7 @@ $ sudo apt install libsdl2-dev libglm-dev libglew-dev
 $ mkdir build
 $ cd build
 $ cmake .. -G "Unix Makefiles"
-$ cmake --build .. --parallel
+$ cmake --build . --parallel
 ```
 
 
