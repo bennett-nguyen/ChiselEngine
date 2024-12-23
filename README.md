@@ -31,7 +31,7 @@ There may be more but I will focus on what's important for now.
 
 The executable will be in the generated `bin` folder along side with some resources for the engine to run properly.
 
-If the program throw an error like `terminate called after throwing an instance of 'int'` or anything related to that even though it compiled successfully, then it might be that the program can't find certain resources like lacking shader files or images. Make sure the `resources` folder is always present in the same level as the executable.
+If the program throw an error like `ERROR: {path_to_file} can not be found!` or anything related to that even though it compiled successfully, then it might be that the program can't find the shader files it's looking for. Make sure the `resources` folder and all of its content is always present in the same level as the executable.
 
 ## Windows
 
