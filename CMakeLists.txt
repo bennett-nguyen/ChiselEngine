@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.24)
 project(Chisel)
 
+if (NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Windows" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
+    message(FATAL_ERROR "Unsupported platform.")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -59,11 +63,14 @@ include_directories(${PROJECT_NAME}
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${DEPS_FILES})
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") 
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2main)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    set(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++")
+    target_link_libraries(${PROJECT_NAME} SDL2::SDL2main SDL2::SDL2-static GLEW::glew_s OpenGL::GL)
 endif()
 
-target_link_libraries(${PROJECT_NAME} SDL2::SDL2 GLEW::GLEW OpenGL::GL)
+if ((${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
+    target_link_libraries(${PROJECT_NAME} SDL2::SDL2 GLEW::GLEW OpenGL::GL)
+endif()
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
