@@ -21,7 +21,7 @@ GLuint crosshair_vbo;
 GLuint crosshair_vao;
 
 int main(int argc, char** argv) {
-    Window window("OpenGL Window", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
+    Window window("Chisel", Constant::SCREEN_OCCUPATION_RATIO, SDL_INIT_VIDEO, SDL_WINDOW_OPENGL);
     ShaderProgram crosshair_shader("resources/shaders/crosshair.vert", "resources/shaders/crosshair.frag");
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
