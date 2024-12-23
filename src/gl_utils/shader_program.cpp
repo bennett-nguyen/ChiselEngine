@@ -4,7 +4,8 @@ std::string getFileContent(const char *filename) {
     std::ifstream in(filename, std::ios::binary);
 
     if (!in) {
-        throw (errno);
+        std::cerr << "ERROR: " << filename << " can not be found!";
+        exit(1);
     }
 
     std::string content;
