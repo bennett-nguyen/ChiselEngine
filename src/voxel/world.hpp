@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <unordered_set>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 #include <SDL2/SDL.h>
 #include <imgui.h>

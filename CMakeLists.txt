@@ -64,6 +64,7 @@ include_directories(${PROJECT_NAME}
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${DEPS_FILES})
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
     set(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++")
     target_link_libraries(${PROJECT_NAME} SDL2::SDL2main SDL2::SDL2-static GLEW::glew_s OpenGL::GL)
 endif()
