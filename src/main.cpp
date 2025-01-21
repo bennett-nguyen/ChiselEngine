@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 
     float crosshair_scale = 25.0f;
     while (true) {
-        window.clear(Colors::DARK_SLATE_GRAY);
+        window.clear(Colors::SKY_BLUE);
 
         last = now;
         now = SDL_GetPerformanceCounter();

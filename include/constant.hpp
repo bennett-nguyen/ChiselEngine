@@ -9,7 +9,7 @@ namespace Constant {
     constexpr unsigned CHUNK_HEIGHT = 50;
     constexpr unsigned CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
     constexpr unsigned CHUNK_VOLUME = CHUNK_AREA * CHUNK_HEIGHT;
-    constexpr unsigned LOAD_DISTANCE = 10;
+    constexpr unsigned LOAD_DISTANCE = 12;
 
     constexpr float PLAYER_HEIGHT = 1.5f;
     constexpr float PLAYER_SPEED = 30.0f;
