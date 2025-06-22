@@ -1,52 +1,35 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
-#include <cmath>
-#include <vector>
-#include <algorithm>
+#include <string>
+
 #include <SDL2/SDL.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <string>
-#include <iostream>
-#include "constant.hpp"
 
-extern const float SENSITIVITY;
+struct Camera {
+    glm::vec3 up;
+    glm::vec3 front;
+    glm::vec3 right;
+    glm::vec3 position;
 
-class Camera {
-public:
-    Camera();
-    Camera(float fov_y, float near, float far, float width_height_ratio);
+    float yaw = 90.0f;
+    float pitch = 0.0f;
 
-    void updateView();
-    void pan(const SDL_Event &event, float delta_time);
-    void computeCameraFront();
-    void computeCameraRight();
-    void computeCameraUp();
-    void setCameraPosition(glm::vec3 player_position);
-
-    glm::mat4 lookAt();
-    glm::mat4 getViewMat();
-    glm::mat4 getProjectionMat();
-    glm::vec3 getCameraFront();
-    glm::vec3 getCameraUp();
-    glm::vec3 getCameraRight();
-    glm::vec3 getCameraPosition();
-    std::string getXYZ_Directions();
-    std::string getCardinalDirections();
-
-private:
-    glm::vec3 m_camera_pos;
-    glm::vec3 m_camera_front;
-    glm::vec3 m_camera_up;
-    glm::vec3 m_camera_right;
-
-    float m_yaw = 90.0f;
-    float m_pitch = 0.0f;
-
-    glm::mat4 m_projection_mat;
-    glm::mat4 m_view_mat;
+    glm::mat4 projection_mat;
+    glm::mat4 view_mat;
 };
+
+Camera initCamera(float fov_y, float near, float far, float aspect_ratio);
+
+void computeCameraUp(Camera &camera);
+void computeCameraFront(Camera &camera);
+void computeCameraRight(Camera &camera);
+void updateView(Camera &camera);
+void pan(Camera &camera, const SDL_Event &event);
+void move(Camera &camera);
+
+std::string getCardinalDirections(const Camera &camera);
 
 #endif
