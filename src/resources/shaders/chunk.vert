@@ -1,27 +1,32 @@
-#version 410 core
-layout (location = 0) in ivec3 in_pos;
-layout (location = 1) in uint voxel_id;
-layout (location = 2) in uint face_id;
+#version 460 core
+
+struct VertexData {
+    int position[3]; uint voxel_id; uint face_id;
+};
+
+layout(binding = 0, std430) restrict readonly buffer Vertices {
+    VertexData in_vertices[];
+};
+
+vec3 getPosition(int vertex_id) {
+    return vec3(
+        in_vertices[vertex_id].position[0],
+        in_vertices[vertex_id].position[1],
+        in_vertices[vertex_id].position[2]
+    );
+}
+
+uint getVoxelID(int vertex_id) {
+    return in_vertices[vertex_id].voxel_id;
+}
+
+uint getFaceID(int vertex_id) {
+    return in_vertices[vertex_id].face_id;
+}
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
-// Dirt,
-// Grass,
-// CobbleStone,
-// Stone,
-// Sand,
-
-vec3 colors[6] = vec3[6](
-    vec3(0.0, 0.0, 0.0),
-    vec3(0.61,0.46,0.33),
-    vec3(0.24,0.57,0.25),
-    vec3(0.66,0.66,0.66),
-    vec3(0.50,0.50,0.50),
-    vec3(0.76,0.70,0.50)
-);
-
 
 out vec3 out_color;
 
@@ -38,6 +43,6 @@ float shades[6] = float[6](
 );
 
 void main() {
-    gl_Position = projection * view * model * vec4(in_pos, 1.0f);
-    out_color = colors[voxel_id] * shades[face_id];
+    gl_Position = projection * view * model * vec4(getPosition(gl_VertexID), 1.0f);
+    out_color = hash31(getVoxelID(gl_VertexID)) * shades[getFaceID(gl_VertexID)];
 }
