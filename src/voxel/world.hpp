@@ -1,47 +1,32 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
-#include <vector>
+#include <unordered_map>
 #include <unordered_set>
 #include <glm/gtx/hash.hpp>
-#include <SDL2/SDL.h>
-#include <imgui.h>
+
 #include "chunk.hpp"
 #include "camera.hpp"
-#include "voxel_handler.hpp"
-#include "player.hpp"
-#include "cubemesh.hpp"
+#include "shader.hpp"
 
-class World {
-public:
-    World(float getWidthHeightRatio);
-    ~World();
+struct World {
+    Camera camera;
+    ShaderProgramID chunk_shader_program;
+    std::unordered_map<glm::ivec3, Chunk*> chunk_map;
 
-    void update(float delta_time);
-    void render();
-    void buildChunk(glm::ivec3 chunk_coords);
-    void rebuildChunk(glm::ivec3 chunk_coords);
-    void loadChunks();
-    void removeChunks();
-    void rebuildChunks();
-    void breakBlock();
-    void placeBlock();
-    void pollEvent(const SDL_Event &event, float delta_time);
-    unsigned* getChunkNeighborVoxelsPointer(glm::ivec3 coord);
-
-    Player *getPlayerPointer();
-private:
-    Player m_player;
-    ShaderProgram m_chunk_shader;
-    ShaderProgram m_cubemesh_shader;
-    std::unordered_map<glm::ivec3, Chunk*> m_chunk_map;
-    VoxelHandler m_voxel_handler;
-    CubeMesh m_cubemesh;
-
-    glm::ivec3 m_prev_player_chunk_pos;
-    bool m_is_block_interaction_enabled = false;
-    bool m_is_render_cube_mesh = false;
-    int m_block_interaction_mode = 0;
+    glm::ivec3 prev_player_chunk_pos;
 };
+
+Chunk* getChunkPointer(World &world, glm::ivec3 chunk_position);
+// void initWorld(World &world);
+void initChunkShader(World &world, std::string vshader_path, std::string fshader_path);
+void buildChunk(World &world, glm::ivec3 chunk_position);
+void loadChunks(World &world);
+void removeChunks(World &world);
+void rebuildChunks(World &world);
+void renderWorld(const World &world);
+bool isChunkExist(const World &world, glm::ivec3 chunk_position);
+void breakBlock(World &world, glm::ivec3 voxel_position);
+void placeBlock(World &world, glm::ivec3 adjacent_voxel_position);
 
 #endif

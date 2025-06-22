@@ -1,36 +1,65 @@
 #ifndef CHUNK_HPP
 #define CHUNK_HPP
 
-#include <array>
-#include <random>
-#include <cstring>
-#include <glm/glm.hpp>
+
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+#include <GL/glew.h>
 #include <glm/gtc/noise.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
+#include "vertex.hpp"
 #include "constant.hpp"
-#include "chunk_mesh.hpp"
+#include "conversions.hpp"
 
-class Chunk {
-public:
-    Chunk(glm::ivec3 chunk_coord);
-    ~Chunk();
-
-    void unload();
-    void render();
-    void buildVoxels();
-    void buildMesh(unsigned *north_neighbor, unsigned *south_neighbor,
-        unsigned *east_neighbor, unsigned *west_neighbor);
-    void destroyMesh();
-    void setVoxelID(unsigned voxel_idx, unsigned value);
-    bool isAirAt(unsigned voxel_idx);
-    glm::mat4 getChunkModel();
-    unsigned* getVoxelsPointer();
-
-private:
-    unsigned *m_pvoxels;
-    ChunkMesh m_mesh;
-    glm::ivec3 m_chunk_coord;
-    bool m_is_empty = true;
+enum FaceID {
+    Top,    // Y+
+    Bottom, // Y-
+    North,  // X+
+    South,  // X-
+    East,   // Z+
+    West,   // Z-
+    Nil
 };
+
+struct ChunkMesh {
+    GLuint ssbo_vertices, ebo, vao;
+    
+    std::vector<Vertex> vertices;
+    std::vector<GLuint> indices;
+};
+
+struct Chunk {
+    unsigned *ptr_voxels;
+    ChunkMesh mesh;
+    glm::ivec3 position;
+
+    Chunk(const int x, const int y, const int z) : position(x, y, z) {}
+    Chunk(const glm::ivec3 position) : position(position) {}
+};
+
+bool isVoid(glm::uvec3 local_position, const Chunk* ptr_chunk);
+bool isVoidEast(glm::uvec3 local_position, const Chunk* ptr_chunk, const Chunk* ptr_echunk);
+bool isVoidWest(glm::uvec3 local_position, const Chunk* ptr_chunk, const Chunk* ptr_wchunk);
+bool isVoidNorth(glm::uvec3 local_position, const Chunk* ptr_chunk, const Chunk* ptr_nchunk);
+bool isVoidSouth(glm::uvec3 local_position, const Chunk* ptr_chunk, const Chunk* ptr_schunk);
+bool isVoidTop(glm::uvec3 local_position, const Chunk* ptr_chunk);
+bool isVoidBottom(glm::uvec3 local_position, const Chunk* ptr_chunk);
+
+void buildVoxels(Chunk *ptr_chunk);
+
+void buildMesh(Chunk* ptr_chunk,
+                Chunk* ptr_nchunk,
+                Chunk* ptr_schunk,
+                Chunk* ptr_echunk,
+                Chunk* ptr_wchunk);
+
+void destroyMesh(Chunk* ptr_chunk);
+void destroyChunk(Chunk* ptr_chunk);
+void renderChunk(const Chunk* ptr_chunk);
+unsigned getVoxelID(const Chunk* ptr_chunk, glm::uvec3 local_position);
+glm::mat4 getChunkModel(const Chunk* ptr_chunk);
 
 #endif
