@@ -14,21 +14,20 @@ find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(GLEW REQUIRED)
 
-set(VOXEL_SOURCE_FILES)
+set(INIT_SOURCE_FILES)
 set(UTIL_SOURCE_FILES)
-set(GL_UTILS_SOURCE_FILES)
-set(ENTITIES_SOURCE_FILES)
+set(VOXEL_SOURCE_FILES)
 set(MAIN_SOURCE_FILES src/main.cpp)
 
 set(IMGUI_SOURCE_FILES)
 set(STB_SOURCE_FILE deps/stb/stb.cpp)
 set(DEPS_FILES)
 
-file(GLOB VOXEL_SOURCE_FILES CONFIGURE_DEPENDS "src/voxel/*.cpp")
+file(GLOB INIT_SOURCE_FILES CONFIGURE_DEPENDS "src/init/*.cpp")
 file(GLOB UTIL_SOURCE_FILES CONFIGURE_DEPENDS "src/util/*.cpp")
-file(GLOB GL_UTILS_SOURCE_FILES CONFIGURE_DEPENDS "src/gl_utils/*.cpp")
-file(GLOB ENTITIES_SOURCE_FILES CONFIGURE_DEPENDS "src/entities/*.cpp")
+file(GLOB VOXEL_SOURCE_FILES CONFIGURE_DEPENDS "src/voxel/*.cpp")
 file(GLOB IMGUI_SOURCE_FILES CONFIGURE_DEPENDS "deps/imgui/*.cpp")
+
 
 set(SOURCE_FILES)
 
@@ -36,10 +35,9 @@ list (APPEND DEPS_FILES
     ${IMGUI_SOURCE_FILES}
     ${STB_SOURCE_FILE})
 list (APPEND SOURCE_FILES
-    ${VOXEL_SOURCE_FILES}
+    ${INIT_SOURCE_FILES}
     ${UTIL_SOURCE_FILES}
-    ${GL_UTILS_SOURCE_FILES}
-    ${ENTITIES_SOURCE_FILES}
+    ${VOXEL_SOURCE_FILES}
     ${MAIN_SOURCE_FILES})
 
 set_source_files_properties(
@@ -55,10 +53,9 @@ include_directories(${PROJECT_NAME}
     include/
     include/imgui
     include/stb
-    src/voxel
-    src/gl_utils
+    src/init
     src/util
-    src/entities
+    src/voxel
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${DEPS_FILES})
