@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
-project(Chisel)
+project(Chisel CXX)
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Windows" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
     message(FATAL_ERROR "Unsupported platform.")
@@ -28,7 +30,6 @@ file(GLOB UTIL_SOURCE_FILES CONFIGURE_DEPENDS "src/util/*.cpp")
 file(GLOB VOXEL_SOURCE_FILES CONFIGURE_DEPENDS "src/voxel/*.cpp")
 file(GLOB IMGUI_SOURCE_FILES CONFIGURE_DEPENDS "deps/imgui/*.cpp")
 
-
 set(SOURCE_FILES)
 
 list (APPEND DEPS_FILES
@@ -40,15 +41,6 @@ list (APPEND SOURCE_FILES
     ${VOXEL_SOURCE_FILES}
     ${MAIN_SOURCE_FILES})
 
-set_source_files_properties(
-    ${SOURCE_FILES}
-    PROPERTIES
-    COMPILE_FLAGS "-O2 -DNDEBUG -Wall -Wextra -Wconversion -Wsign-conversion")
-
-set_source_files_properties(
-    ${DEPS_FILES} PROPERTIES COMPILE_FLAGS "-O2 -DNDEBUG"
-)
-
 include_directories(${PROJECT_NAME}
     include/
     include/imgui
@@ -58,11 +50,18 @@ include_directories(${PROJECT_NAME}
     src/voxel
 )
 
+set(WARNING_FLAGS "-Wall -Wextra -Wconversion -Wsign-conversion")
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 ${WARNING_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+
+# Suppress all warnings, debugging information, and perform optimizations for dependency files
+set_source_files_properties(${DEPS_FILES} PROPERTIES COMPILE_FLAGS "-w -g0 -O2 -DNDEBUG")
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${DEPS_FILES})
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
-    set(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++")
+    add_compile_options(-static -static-libgcc -static-libstdc++)
     target_link_libraries(${PROJECT_NAME} SDL2::SDL2main SDL2::SDL2-static GLEW::glew_s OpenGL::GL)
 endif()
 
