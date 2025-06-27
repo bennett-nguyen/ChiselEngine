@@ -13,10 +13,12 @@ There aren't any notable feature yet as this engine has been around for only ~4 
 # Goals
 Of course, I want to add more content to this engine so it's less boring. Here's a list of stuff I want to add next:
 
-- [ ] Texturing for each block.
+- [x] Texturing for each block.
 - [ ] MSAA so the graphics looks less edgy.
-- [ ] Frustum culling.
+- [x] Frustum culling.
 - [ ] SSAO.
+- [ ] Advanced lighting system.
+- [ ] Improved terrain generation.
 
 There may be more but I will focus on what's important for now.
 
