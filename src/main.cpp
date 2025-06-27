@@ -33,6 +33,11 @@ int main(int argc, char** argv) {
     World world;
     RayCastResult ray_cast_result;
 
+    bool is_using_cinematic_camera = false;
+    bool is_switching_controls = false;
+    Camera cinematic_camera = initCamera(glm::radians(60.0f), 0.1f, 500.0f, computeAspectRatio(window));
+    cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
+
     world.camera = initCamera(glm::radians(60.0f), 0.1f, 150.0f, computeAspectRatio(window));
     world.camera.position = glm::vec3(0, 0, -1.0f);
     world.prev_player_chunk_pos = world.camera.position;
@@ -107,6 +112,40 @@ int main(int argc, char** argv) {
     auto crosshair_model = glm::translate(glm::mat4(1.0f), glm::vec3(((float)window_width - crosshair_scale) * 0.5f, ((float)window_height - crosshair_scale) * 0.5f, 0.0f));
     crosshair_model = glm::scale(crosshair_model, glm::vec3(crosshair_scale));
 
+    GLuint texture_array;
+    int arr_width, arr_height, arr_numCh;
+    unsigned char* dirt_bytes = stbi_load("resources/imgs/block_textures/dirt.png", &arr_width, &arr_height, &arr_numCh, 0);
+    unsigned char* grass_bytes = stbi_load("resources/imgs/block_textures/grass.png", &arr_width, &arr_height, &arr_numCh, 0);
+    unsigned char* stone_bytes = stbi_load("resources/imgs/block_textures/stone.png", &arr_width, &arr_height, &arr_numCh, 0);
+    unsigned char* test_bytes = stbi_load("resources/imgs/block_textures/test.png", &arr_width, &arr_height, &arr_numCh, 0);
+    unsigned char* tnt_bytes = stbi_load("resources/imgs/block_textures/tnt.png", &arr_width, &arr_height, &arr_numCh, 0);
+    unsigned char* cobblestone_bytes = stbi_load("resources/imgs/block_textures/cobblestone.png", &arr_width, &arr_height, &arr_numCh, 0);
+
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array);
+
+    glTextureParameteri(texture_array, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(texture_array, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(texture_array, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(texture_array, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    const auto NUM_MIPS = static_cast<GLsizei>(std::floor(std::log2(std::max(arr_width, arr_height))));
+
+    glTextureStorage3D(texture_array, NUM_MIPS, GL_RGBA8, arr_width, arr_height, 6);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 0, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, test_bytes);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 1, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, dirt_bytes);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 2, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, grass_bytes);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 3, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, stone_bytes);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 4, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, cobblestone_bytes);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 5, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, tnt_bytes);
+    glGenerateTextureMipmap(texture_array);
+
+    stbi_image_free(dirt_bytes);
+    stbi_image_free(grass_bytes);
+    stbi_image_free(stone_bytes);
+    stbi_image_free(test_bytes);
+    stbi_image_free(tnt_bytes);
+    stbi_image_free(cobblestone_bytes);
+
     while (running) {
         clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
 
@@ -134,6 +173,10 @@ int main(int argc, char** argv) {
                     } else {
                         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                     }
+                } else if (SDL_SCANCODE_E == event.key.keysym.scancode) {
+                    is_using_cinematic_camera = !is_using_cinematic_camera;
+                } else if (SDL_SCANCODE_R == event.key.keysym.scancode) {
+                    is_switching_controls = !is_switching_controls;
                 }
             }
 
@@ -144,11 +187,21 @@ int main(int argc, char** argv) {
                     enable_place_block = true;
                 }
             }
-
-            pan(world.camera, event);
+            if (!is_switching_controls) {
+                pan(world.camera, event);
+            } else {
+                pan(cinematic_camera, event);
+            }
         }
 
-        move(world.camera);
+        if (!is_switching_controls) {
+            move(world.camera);
+        } else {
+            move(cinematic_camera);
+        }
+
+        updateView(world.camera);
+        updateView(cinematic_camera);
 
         auto current_player_chunk_pos = Conversion::toChunk(world.camera.position);
 
@@ -170,10 +223,32 @@ int main(int argc, char** argv) {
             }
         }
 
-        renderWorld(world);
+        activateShaderProgram(world.chunk_shader_program);
+        glBindTextureUnit(0, texture_array);
+
+        glm::mat4 view, projection;
+        if (!is_using_cinematic_camera) {
+            view = world.camera.view_mat;
+            projection = world.camera.projection_mat;
+        } else {
+            view = cinematic_camera.view_mat;
+            projection = cinematic_camera.projection_mat;
+        }
+
+        uniformMat4f(world.chunk_shader_program, "view", 1, GL_FALSE, view);
+        uniformMat4f(world.chunk_shader_program, "projection", 1, GL_FALSE, projection);
+        std::vector<glm::vec4> frustum_planes = getFrustumPlanes(world.camera);
+
+        for (const auto &[_, ptr_chunk] : world.chunk_map) {
+            if (!isChunkVisible(ptr_chunk, frustum_planes)) continue;
+            uniformMat4f(world.chunk_shader_program, "model", 1, GL_FALSE, getChunkModel(ptr_chunk));
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ptr_chunk->mesh.ssbo_vertices);
+            renderChunk(ptr_chunk);
+        }
 
         activateShaderProgram(crosshair_shader_program);
         glBindVertexArray(empty_vao);
+        glBindTextureUnit(0, crosshair_texture);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_crosshair_vertices);
         uniformMat4f(crosshair_shader_program, "model", 1, GL_FALSE, crosshair_model);
         uniformMat4f(crosshair_shader_program, "ortho_projection", 1, GL_FALSE, ortho_projection);
@@ -198,8 +273,6 @@ int main(int argc, char** argv) {
         ImGui::Text("Shading Language Version: %s", shading  ? reinterpret_cast<const char*>(shading)  : "Unknown");
 
         ImGui::End();
-
-        updateView(world.camera);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -42,6 +42,7 @@ void buildChunk(World &world, const glm::ivec3 chunk_position) {
     Chunk* west_neighbor  = getChunkPointer(world, west_position);
 
     buildMesh(current_chunk, north_neighbor, south_neighbor, east_neighbor, west_neighbor);
+    buildBoundingBox(current_chunk);
 }
 
 void rebuildChunk(World &world, const glm::ivec3 chunk_position) {
@@ -150,8 +151,6 @@ void renderWorld(const World &world) {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ptr_chunk->mesh.ssbo_vertices);
         renderChunk(ptr_chunk);
     }
-
-    glBindVertexArray(0);
 }
 
 void destroyWorld(World &world) {

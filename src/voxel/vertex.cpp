@@ -11,3 +11,7 @@ size_t getOffsetOfVoxelID() {
 size_t getOffsetOfFaceID() {
     return offsetof(Vertex, face_id);
 }
+
+size_t getOffsetOfTexCoord() {
+    return offsetof(Vertex, tex_coord);
+}

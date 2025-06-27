@@ -1,5 +1,49 @@
 #include "chunk.hpp"
 
+void buildBoundingBox(Chunk *ptr_chunk) {
+    const std::vector<Vertex>& mesh_vertices = ptr_chunk->mesh.vertices;
+
+    glm::vec3 vmin = mesh_vertices[0].position;
+    glm::vec3 vmax = vmin;
+
+    for (size_t i = 1; i < ptr_chunk->mesh.vertices.size(); i++) {
+        const glm::vec3& current = mesh_vertices[i].position;
+        vmin = glm::min(vmin, current);
+        vmax = glm::max(vmax, current);
+    }
+
+    vmax += glm::vec3(1.0f);
+
+    // Transform it to match with the location in world space
+    const glm::mat4 chunk_model = getChunkModel(ptr_chunk);
+    vmin = glm::vec3(chunk_model * glm::vec4(vmin.x, vmin.y, vmin.z, 1.0f));
+    vmax = glm::vec3(chunk_model * glm::vec4(vmax.x, vmax.y, vmax.z, 1.0f));
+
+    ptr_chunk->bounding_box.vmin = vmin;
+    ptr_chunk->bounding_box.vmax = vmax;
+}
+
+bool isChunkVisible(const Chunk *ptr_chunk, const std::vector<glm::vec4>& frustum_planes) {
+    const glm::vec3& vmin = ptr_chunk->bounding_box.vmin;
+    const glm::vec3& vmax = ptr_chunk->bounding_box.vmax;
+
+    for (auto const &g : frustum_planes) {
+        if ((glm::dot(g, glm::vec4(vmin.x, vmin.y, vmin.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmax.x, vmin.y, vmin.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmin.x, vmax.y, vmin.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmax.x, vmax.y, vmin.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmin.x, vmin.y, vmax.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmax.x, vmin.y, vmax.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmin.x, vmax.y, vmax.z, 1.0f)) < 0.0) &&
+            (glm::dot(g, glm::vec4(vmax.x, vmax.y, vmax.z, 1.0f)) < 0.0))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool isVoid(const glm::uvec3 local_position, const Chunk *ptr_chunk) {
     return 0 == ptr_chunk->ptr_voxels[Conversion::toIndex(local_position)];
 }
@@ -94,9 +138,9 @@ unsigned heightMap(unsigned num_iterations, float x, float z, float persistence,
 
 void buildVoxels(Chunk *ptr_chunk) {
     ptr_chunk->ptr_voxels = new unsigned[Constant::CHUNK_VOLUME] {};
-    srand(time(0));
 
     unsigned y_level;
+    unsigned voxel_id = 1;
 
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
@@ -104,7 +148,9 @@ void buildVoxels(Chunk *ptr_chunk) {
                 float((int)z + ptr_chunk->position.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.007f, 0, Constant::CHUNK_HEIGHT);
 
             for (unsigned y = 0; y <= y_level; y++) {
-                ptr_chunk->ptr_voxels[Conversion::toIndex(x, y, z)] = static_cast<unsigned>(1 + rand() % 10);
+                ptr_chunk->ptr_voxels[Conversion::toIndex(x, y, z)] = voxel_id;
+                voxel_id %= 5;
+                voxel_id++;
             }
         }
     }
@@ -130,11 +176,11 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // Top
                 if (isVoidTop(position, ptr_chunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), { 
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT,   voxel_id, FaceID::Top), 
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   voxel_id, FaceID::Top), 
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, voxel_id, FaceID::Top),
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, voxel_id, FaceID::Top)
+                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
+                        Vertex(X_VERT,   Y_VERT+1, Z_VERT,   1.0f, 0.0f, voxel_id, Top),
+                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   0.0f, 0.0f, voxel_id, Top),
+                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, Top),
+                        Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, Top)
                     });
 
                     ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+3, index+2, index, index+2, index+1 });
@@ -143,11 +189,11 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // Bottom
                 if (isVoidBottom(position, ptr_chunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), { 
-                        Vertex(X_VERT,   Y_VERT, Z_VERT,   voxel_id, FaceID::Bottom),
-                        Vertex(X_VERT+1, Y_VERT, Z_VERT,   voxel_id, FaceID::Bottom),
-                        Vertex(X_VERT+1, Y_VERT, Z_VERT+1, voxel_id, FaceID::Bottom),
-                        Vertex(X_VERT,   Y_VERT, Z_VERT+1, voxel_id, FaceID::Bottom)                    
+                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
+                        Vertex(X_VERT,   Y_VERT, Z_VERT,   0.0f, 0.0f, voxel_id, Bottom),
+                        Vertex(X_VERT+1, Y_VERT, Z_VERT,   1.0f, 0.0f, voxel_id, Bottom),
+                        Vertex(X_VERT+1, Y_VERT, Z_VERT+1, 1.0f, 1.0f, voxel_id, Bottom),
+                        Vertex(X_VERT,   Y_VERT, Z_VERT+1, 0.0f, 1.0f, voxel_id, Bottom)
                     });
 
                     ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+2, index+3, index, index+1, index+2 });
@@ -156,12 +202,13 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // North
                 if (isVoidNorth(position, ptr_chunk, ptr_nchunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), { 
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT,   voxel_id, FaceID::North),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   voxel_id, FaceID::North),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, voxel_id, FaceID::North),
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, voxel_id, FaceID::North)                    
+                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
+                        Vertex(X_VERT+1, Y_VERT,   Z_VERT,   1.0f, 0.0f, voxel_id, North),
+                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   1.0f, 1.0f, voxel_id, North),
+                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, North),
+                        Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, North)
                     });
+
 
                     ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
@@ -169,11 +216,11 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // South
                 if (isVoidSouth(position, ptr_chunk, ptr_schunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), { 
-                        Vertex(X_VERT, Y_VERT,   Z_VERT,   voxel_id, FaceID::South),
-                        Vertex(X_VERT, Y_VERT+1, Z_VERT,   voxel_id, FaceID::South),
-                        Vertex(X_VERT, Y_VERT+1, Z_VERT+1, voxel_id, FaceID::South),
-                        Vertex(X_VERT, Y_VERT,   Z_VERT+1, voxel_id, FaceID::South)                    
+                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
+                        Vertex(X_VERT, Y_VERT,   Z_VERT,   0.0f, 0.0f, voxel_id, South),
+                        Vertex(X_VERT, Y_VERT+1, Z_VERT,   0.0f, 1.0f, voxel_id, South),
+                        Vertex(X_VERT, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, South),
+                        Vertex(X_VERT, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, South)
                     });
 
                     ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
@@ -182,11 +229,11 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // East
                 if (isVoidEast(position, ptr_chunk, ptr_echunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), { 
-                        Vertex(X_VERT,   Y_VERT,   Z_VERT+1, voxel_id, FaceID::East),
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, voxel_id, FaceID::East),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, voxel_id, FaceID::East),
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, voxel_id, FaceID::East)                    
+                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
+                        Vertex(X_VERT,   Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, East),
+                        Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, East),
+                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, East),
+                        Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, East)
                     });
 
                     ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
@@ -195,11 +242,11 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // West
                 if (isVoidWest(position, ptr_chunk, ptr_wchunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), { 
-                        Vertex(X_VERT,   Y_VERT,   Z_VERT, voxel_id, FaceID::West),
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT, voxel_id, FaceID::West),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT, voxel_id, FaceID::West),
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT, voxel_id, FaceID::West)                    
+                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
+                        Vertex(X_VERT,   Y_VERT,   Z_VERT, 1.0f, 0.0f, voxel_id, West),
+                        Vertex(X_VERT,   Y_VERT+1, Z_VERT, 1.0f, 1.0f, voxel_id, West),
+                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT, 0.0f, 1.0f, voxel_id, West),
+                        Vertex(X_VERT+1, Y_VERT,   Z_VERT, 0.0f, 0.0f, voxel_id, West)
                     });
 
                     ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });

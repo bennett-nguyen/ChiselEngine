@@ -3,8 +3,7 @@
 
 
 #include <vector>
-#include <cstdlib>
-#include <ctime>
+#include <algorithm>
 
 #include <GL/glew.h>
 #include <glm/gtc/noise.hpp>
@@ -24,6 +23,10 @@ enum FaceID {
     Nil
 };
 
+struct AABB {
+    glm::vec3 vmin, vmax;
+};
+
 struct ChunkMesh {
     GLuint ssbo_vertices, ebo, vao;
     
@@ -35,6 +38,7 @@ struct Chunk {
     unsigned *ptr_voxels;
     ChunkMesh mesh;
     glm::ivec3 position;
+    AABB bounding_box;
 
     Chunk(const int x, const int y, const int z) : position(x, y, z) {}
     Chunk(const glm::ivec3 position) : position(position) {}
@@ -61,5 +65,8 @@ void destroyChunk(Chunk* ptr_chunk);
 void renderChunk(const Chunk* ptr_chunk);
 unsigned getVoxelID(const Chunk* ptr_chunk, glm::uvec3 local_position);
 glm::mat4 getChunkModel(const Chunk* ptr_chunk);
+
+void buildBoundingBox(Chunk* ptr_chunk);
+bool isChunkVisible(const Chunk *ptr_chunk, const std::vector<glm::vec4>& frustum_planes);
 
 #endif
