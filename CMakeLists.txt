@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(Chisel CXX)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 if (NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Windows" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
     message(FATAL_ERROR "Unsupported platform.")
 endif()
