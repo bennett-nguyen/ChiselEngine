@@ -25,6 +25,7 @@ void shaderCompilationCheck(const ShaderID shader) {
     if (success) return;
     glGetShaderInfoLog(shader, 512, nullptr, log);
     std::cerr << "error while compiling shader: " << log << std::endl;
+    exit(1);
 }
 
 void programLinkingCheck(const ShaderProgramID shader_program) {
@@ -35,6 +36,7 @@ void programLinkingCheck(const ShaderProgramID shader_program) {
     if (success) return;
     glGetProgramInfoLog(shader_program, 512, nullptr, log);
     std::cerr << "error while linking shaders: " << log << std::endl;
+    exit(1);
 }
 
 ShaderID makeShader(const char *filename, const GLenum shader_type) {
