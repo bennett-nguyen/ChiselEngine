@@ -79,6 +79,20 @@ void move(Camera &camera) {
     }
 }
 
+std::vector<glm::vec4> getFrustumPlanes(Camera &camera) {
+    const glm::mat4 vpt = glm::transpose(camera.projection_mat * camera.view_mat);
+    return {
+        // left, right, bottom, top
+        (vpt[3] + vpt[0]),
+        (vpt[3] - vpt[0]),
+        (vpt[3] + vpt[1]),
+        (vpt[3] - vpt[1]),
+        // near, far
+        (vpt[3] + vpt[2]),
+        (vpt[3] - vpt[2]),
+    };
+}
+
 std::string getCardinalDirections(const Camera &camera) {
     const std::string x_direction = camera.front.x >= 0 ? "North" : "South";
     const std::string y_direction = camera.front.y >= 0 ? "Up" : "Down";

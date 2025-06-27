@@ -2,6 +2,7 @@
 #define CAMERA_HPP
 
 #include <string>
+#include <vector>
 
 #include <SDL2/SDL.h>
 
@@ -30,6 +31,7 @@ void updateView(Camera &camera);
 void pan(Camera &camera, const SDL_Event &event);
 void move(Camera &camera);
 
+std::vector<glm::vec4> getFrustumPlanes(Camera &camera);
 std::string getCardinalDirections(const Camera &camera);
 
 #endif
