@@ -1,26 +1,18 @@
 #include "chunk.hpp"
 
-void buildBoundingBox(Chunk *ptr_chunk) {
-    const std::vector<Vertex>& mesh_vertices = ptr_chunk->mesh.vertices;
+void updateBoundingBox(AABB& bounding_box, const Vertex& v0, const Vertex& v1, const Vertex& v2, const Vertex& v3) {
+    glm::vec3& vmin = bounding_box.vmin;
+    glm::vec3& vmax = bounding_box.vmax;
 
-    glm::vec3 vmin = mesh_vertices[0].position;
-    glm::vec3 vmax = vmin;
+    vmin = glm::min(vmin, glm::vec3(v0.position));
+    vmin = glm::min(vmin, glm::vec3(v1.position));
+    vmin = glm::min(vmin, glm::vec3(v2.position));
+    vmin = glm::min(vmin, glm::vec3(v3.position));
 
-    for (size_t i = 1; i < ptr_chunk->mesh.vertices.size(); i++) {
-        const glm::vec3& current = mesh_vertices[i].position;
-        vmin = glm::min(vmin, current);
-        vmax = glm::max(vmax, current);
-    }
-
-    vmax += glm::vec3(1.0f);
-
-    // Transform it to match with the location in world space
-    const glm::mat4 chunk_model = getChunkModel(ptr_chunk);
-    vmin = glm::vec3(chunk_model * glm::vec4(vmin.x, vmin.y, vmin.z, 1.0f));
-    vmax = glm::vec3(chunk_model * glm::vec4(vmax.x, vmax.y, vmax.z, 1.0f));
-
-    ptr_chunk->bounding_box.vmin = vmin;
-    ptr_chunk->bounding_box.vmax = vmax;
+    vmax = glm::max(vmax, glm::vec3(v0.position));
+    vmax = glm::max(vmax, glm::vec3(v1.position));
+    vmax = glm::max(vmax, glm::vec3(v2.position));
+    vmax = glm::max(vmax, glm::vec3(v3.position));
 }
 
 bool isChunkVisible(const Chunk *ptr_chunk, const std::vector<glm::vec4>& frustum_planes) {
@@ -162,6 +154,15 @@ void buildMesh(Chunk *ptr_chunk,
                 Chunk *ptr_echunk,
                 Chunk *ptr_wchunk) {
     GLuint index = 0;
+    auto& mesh_indices  = ptr_chunk->mesh.indices;
+    auto& mesh_vertices = ptr_chunk->mesh.vertices;
+    auto& bounding_box = ptr_chunk->bounding_box;
+
+    // Setting them to an extreme point so we can update them later
+    bounding_box.vmin = glm::vec3(10000.0f);
+    bounding_box.vmax = glm::vec3(-10000.0f);
+
+    Vertex v0, v1, v2, v3;
 
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
@@ -176,97 +177,103 @@ void buildMesh(Chunk *ptr_chunk,
 
                 // Top
                 if (isVoidTop(position, ptr_chunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT,   1.0f, 0.0f, voxel_id, Top),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   0.0f, 0.0f, voxel_id, Top),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, Top),
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, Top)
-                    });
+                    v0 = Vertex(X_VERT,   Y_VERT+1, Z_VERT,   1.0f, 0.0f, voxel_id, Top);
+                    v1 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   0.0f, 0.0f, voxel_id, Top);
+                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, Top);
+                    v3 = Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, Top);
 
-                    ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+3, index+2, index, index+2, index+1 });
+                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
+                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
+                    mesh_indices.insert(mesh_indices.end(), { index, index+3, index+2, index, index+2, index+1 });
                     index += 4;
                 }
 
                 // Bottom
                 if (isVoidBottom(position, ptr_chunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
-                        Vertex(X_VERT,   Y_VERT, Z_VERT,   0.0f, 0.0f, voxel_id, Bottom),
-                        Vertex(X_VERT+1, Y_VERT, Z_VERT,   1.0f, 0.0f, voxel_id, Bottom),
-                        Vertex(X_VERT+1, Y_VERT, Z_VERT+1, 1.0f, 1.0f, voxel_id, Bottom),
-                        Vertex(X_VERT,   Y_VERT, Z_VERT+1, 0.0f, 1.0f, voxel_id, Bottom)
-                    });
+                    v0 = Vertex(X_VERT,   Y_VERT, Z_VERT,   0.0f, 0.0f, voxel_id, Bottom);
+                    v1 = Vertex(X_VERT+1, Y_VERT, Z_VERT,   1.0f, 0.0f, voxel_id, Bottom);
+                    v2 = Vertex(X_VERT+1, Y_VERT, Z_VERT+1, 1.0f, 1.0f, voxel_id, Bottom);
+                    v3 = Vertex(X_VERT,   Y_VERT, Z_VERT+1, 0.0f, 1.0f, voxel_id, Bottom);
 
-                    ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+2, index+3, index, index+1, index+2 });
+                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
+                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
+                    mesh_indices.insert(mesh_indices.end(), { index, index+2, index+3, index, index+1, index+2 });
                     index += 4;
                 }
 
                 // North
                 if (isVoidNorth(position, ptr_chunk, ptr_nchunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT,   1.0f, 0.0f, voxel_id, North),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   1.0f, 1.0f, voxel_id, North),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, North),
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, North)
-                    });
+                    v0 = Vertex(X_VERT+1, Y_VERT,   Z_VERT,   1.0f, 0.0f, voxel_id, North);
+                    v1 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   1.0f, 1.0f, voxel_id, North);
+                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, North);
+                    v3 = Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, North);
 
-
-                    ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
+                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
+                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
+                    mesh_indices.insert(mesh_indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
                 }
 
                 // South
                 if (isVoidSouth(position, ptr_chunk, ptr_schunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
-                        Vertex(X_VERT, Y_VERT,   Z_VERT,   0.0f, 0.0f, voxel_id, South),
-                        Vertex(X_VERT, Y_VERT+1, Z_VERT,   0.0f, 1.0f, voxel_id, South),
-                        Vertex(X_VERT, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, South),
-                        Vertex(X_VERT, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, South)
-                    });
+                    v0 = Vertex(X_VERT, Y_VERT,   Z_VERT,   0.0f, 0.0f, voxel_id, South);
+                    v1 = Vertex(X_VERT, Y_VERT+1, Z_VERT,   0.0f, 1.0f, voxel_id, South);
+                    v2 = Vertex(X_VERT, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, South);
+                    v3 = Vertex(X_VERT, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, South);
 
-                    ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
+                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
+                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
+                    mesh_indices.insert(mesh_indices.end(), { index, index+2, index+1, index, index+3, index+2 });
                     index += 4;
                 }
 
                 // East
                 if (isVoidEast(position, ptr_chunk, ptr_echunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
-                        Vertex(X_VERT,   Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, East),
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, East),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, East),
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, East)
-                    });
+                    v0 = Vertex(X_VERT,   Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, East);
+                    v1 = Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, East);
+                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, East);
+                    v3 = Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, East);
 
-                    ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
+                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
+                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
+                    mesh_indices.insert(mesh_indices.end(), { index, index+2, index+1, index, index+3, index+2 });
                     index += 4;
                 }
 
                 // West
                 if (isVoidWest(position, ptr_chunk, ptr_wchunk)) {
-                    ptr_chunk->mesh.vertices.insert(ptr_chunk->mesh.vertices.end(), {
-                        Vertex(X_VERT,   Y_VERT,   Z_VERT, 1.0f, 0.0f, voxel_id, West),
-                        Vertex(X_VERT,   Y_VERT+1, Z_VERT, 1.0f, 1.0f, voxel_id, West),
-                        Vertex(X_VERT+1, Y_VERT+1, Z_VERT, 0.0f, 1.0f, voxel_id, West),
-                        Vertex(X_VERT+1, Y_VERT,   Z_VERT, 0.0f, 0.0f, voxel_id, West)
-                    });
+                    v0 = Vertex(X_VERT,   Y_VERT,   Z_VERT, 1.0f, 0.0f, voxel_id, West);
+                    v1 = Vertex(X_VERT,   Y_VERT+1, Z_VERT, 1.0f, 1.0f, voxel_id, West);
+                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT, 0.0f, 1.0f, voxel_id, West);
+                    v3 = Vertex(X_VERT+1, Y_VERT,   Z_VERT, 0.0f, 0.0f, voxel_id, West);
 
-                    ptr_chunk->mesh.indices.insert(ptr_chunk->mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
+                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
+                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
+                    mesh_indices.insert(mesh_indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
                 }
             }
         }
     }
 
+    if (mesh_vertices.empty()) return;
+
     glCreateBuffers(1, &ptr_chunk->mesh.ssbo_vertices);
     glCreateBuffers(1, &ptr_chunk->mesh.ebo);
     glCreateVertexArrays(1, &ptr_chunk->mesh.vao);
 
-    const auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(ptr_chunk->mesh.vertices.size() * sizeof(Vertex));
-    const auto VERTEX_DATA = reinterpret_cast<void *>(ptr_chunk->mesh.vertices.data());
-    const auto ELEMENT_BUFFER_SIZE = static_cast<GLsizeiptr>(ptr_chunk->mesh.indices.size() * sizeof(GLuint));
-    const auto ELEMENT_DATA = reinterpret_cast<void *>(ptr_chunk->mesh.indices.data());
+    const auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(mesh_vertices.size() * sizeof(Vertex));
+    const auto VERTEX_DATA = reinterpret_cast<void *>(mesh_vertices.data());
+    const auto ELEMENT_BUFFER_SIZE = static_cast<GLsizeiptr>(mesh_indices.size() * sizeof(GLuint));
+    const auto ELEMENT_DATA = reinterpret_cast<void *>(mesh_indices.data());
     glNamedBufferStorage(ptr_chunk->mesh.ssbo_vertices, VERTEX_BUFFER_SIZE, VERTEX_DATA, 0);
     glNamedBufferStorage(ptr_chunk->mesh.ebo, ELEMENT_BUFFER_SIZE, ELEMENT_DATA, 0);
     glVertexArrayElementBuffer(ptr_chunk->mesh.vao, ptr_chunk->mesh.ebo);
+
+    bounding_box.vmax += glm::vec3(1.0f);
+    const glm::mat4 chunk_model = getChunkModel(ptr_chunk);
+    bounding_box.vmin = glm::vec3(chunk_model * glm::vec4(bounding_box.vmin.x, bounding_box.vmin.y, bounding_box.vmin.z, 1.0f));
+    bounding_box.vmax = glm::vec3(chunk_model * glm::vec4(bounding_box.vmax.x, bounding_box.vmax.y, bounding_box.vmax.z, 1.0f));
 }
 
 void destroyChunk(Chunk *ptr_chunk) {

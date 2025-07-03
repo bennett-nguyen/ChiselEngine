@@ -5,11 +5,12 @@
 #include <glm/glm.hpp>
 
 struct Vertex {
-    glm::ivec3 position;
-    glm::vec2 tex_coord;
-    GLuint voxel_id;
-    GLuint face_id;
+    glm::ivec3 position {};
+    glm::vec2 tex_coord {};
+    GLuint voxel_id {};
+    GLuint face_id {};
 
+    Vertex() = default;
     Vertex(const glm::ivec3 position, const glm::vec2 tex_coord, const GLuint voxel_id, const GLuint face_id) :
         position(position), tex_coord(tex_coord), voxel_id(voxel_id), face_id(face_id) {}
 

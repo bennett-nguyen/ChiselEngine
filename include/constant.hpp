@@ -1,6 +1,8 @@
 #ifndef CONSTANT_HPP
 #define CONSTANT_HPP
 
+#include <GL/glew.h>
+
 namespace Constant {
     constexpr unsigned FPS = 60;
     constexpr float SCREEN_OCCUPATION_RATIO = 0.9f;
@@ -13,6 +15,7 @@ namespace Constant {
 
     constexpr float MAX_RAY_LENGTH = 8.78f;
     constexpr unsigned MAX_VOXEL_TRAVERSED = 8;
+    constexpr GLsizei MULTISAMPLE_LEVEL = 4;
 }
 
 #endif

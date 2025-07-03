@@ -66,7 +66,7 @@ void renderChunk(const Chunk* ptr_chunk);
 unsigned getVoxelID(const Chunk* ptr_chunk, glm::uvec3 local_position);
 glm::mat4 getChunkModel(const Chunk* ptr_chunk);
 
-void buildBoundingBox(Chunk* ptr_chunk);
+void updateBoundingBox(Chunk* ptr_chunk);
 bool isChunkVisible(const Chunk *ptr_chunk, const std::vector<glm::vec4>& frustum_planes);
 
 #endif

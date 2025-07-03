@@ -8,18 +8,23 @@ layout(binding = 0, std430) restrict readonly buffer Vertices {
     VertexData in_vertices[];
 };
 
+layout(binding = 0, std140) uniform ViewProjection {
+    mat4 view;
+    mat4 projection;
+};
+
 vec3 getPosition(int vertex_id) {
     return vec3(
-        in_vertices[vertex_id].position[0],
-        in_vertices[vertex_id].position[1],
-        in_vertices[vertex_id].position[2]
+    in_vertices[vertex_id].position[0],
+    in_vertices[vertex_id].position[1],
+    in_vertices[vertex_id].position[2]
     );
 }
 
 vec2 getTexCoords(int vertex_id) {
     return vec2(
-        in_vertices[vertex_id].tex_coords[0],
-        in_vertices[vertex_id].tex_coords[1]
+    in_vertices[vertex_id].tex_coords[0],
+    in_vertices[vertex_id].tex_coords[1]
     );
 }
 
@@ -32,11 +37,10 @@ uint getFaceID(int vertex_id) {
 }
 
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
 
 out vec3 out_color;
 out vec2 tex_coords;
+out float out_shades;
 flat out uint voxel_id;
 flat out uint face_id;
 
@@ -47,9 +51,9 @@ vec3 hash31(float p) {
 }
 
 float shades[6] = float[6](
-    1.0, 0.7,
-    0.8, 0.6,
-    0.84, 0.8
+1.0, 0.7,
+0.8, 0.6,
+0.84, 0.8
 );
 
 void main() {
@@ -57,5 +61,5 @@ void main() {
     face_id = getFaceID(gl_VertexID);
     tex_coords = getTexCoords(gl_VertexID);
     gl_Position = projection * view * model * vec4(getPosition(gl_VertexID), 1.0f);
-    out_color = hash31(getVoxelID(gl_VertexID)) * shades[getFaceID(gl_VertexID)];
+    out_shades = shades[getFaceID(gl_VertexID)];
 }

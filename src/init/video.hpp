@@ -7,6 +7,7 @@
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <glm/vec4.hpp>
+#include "constant.hpp"
 
 struct Window {
     std::string window_name;

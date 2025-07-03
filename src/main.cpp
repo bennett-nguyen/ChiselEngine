@@ -30,12 +30,78 @@ int main(int argc, char** argv) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+    GLuint empty_vao;
+    glCreateVertexArrays(1, &empty_vao);
+
+    int window_width, window_height;
+    SDL_GetWindowSize(window.ptr_window, &window_width, &window_height);
+
+    const ShaderID screen_vshader = makeShader("resources/shaders/screen.vert", GL_VERTEX_SHADER);
+    const ShaderID screen_fshader = makeShader("resources/shaders/screen.frag", GL_FRAGMENT_SHADER);
+    const ShaderProgramID screen_shader_program = glCreateProgram();
+    glAttachShader(screen_shader_program, screen_vshader);
+    glAttachShader(screen_shader_program, screen_fshader);
+    glLinkProgram(screen_shader_program);
+    programLinkingCheck(screen_shader_program);
+    glDeleteShader(screen_vshader);
+    glDeleteShader(screen_fshader);
+
+    GLuint multisampled_texture_color_buffer, intermediate_texture_color_buffer;
+    glCreateTextures(GL_TEXTURE_2D, 1, &intermediate_texture_color_buffer);
+    glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &multisampled_texture_color_buffer);
+    glTextureStorage2DMultisample(multisampled_texture_color_buffer, Constant::MULTISAMPLE_LEVEL, GL_RGB8, window_width, window_height, GL_TRUE);
+
+    glBindTexture(GL_TEXTURE_2D, intermediate_texture_color_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTextureParameteri(intermediate_texture_color_buffer, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(intermediate_texture_color_buffer, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    GLuint multisampled_renderbuffer, intermediate_renderbuffer;
+    glCreateRenderbuffers(1, &multisampled_renderbuffer);
+    glCreateRenderbuffers(1, &intermediate_renderbuffer);
+    glNamedRenderbufferStorage(intermediate_renderbuffer, GL_DEPTH_COMPONENT24, window_width, window_height);
+    glNamedRenderbufferStorageMultisample(multisampled_renderbuffer, Constant::MULTISAMPLE_LEVEL, GL_DEPTH_COMPONENT24, window_width, window_height);
+
+    GLuint multisampled_framebuffer, intermediate_framebuffer;
+    glCreateFramebuffers(1, &multisampled_framebuffer);
+    glCreateFramebuffers(1, &intermediate_framebuffer);
+
+    glNamedFramebufferTexture(multisampled_framebuffer, GL_COLOR_ATTACHMENT0, multisampled_texture_color_buffer, 0);
+    glNamedFramebufferRenderbuffer(multisampled_framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampled_renderbuffer);
+
+    glNamedFramebufferTexture(intermediate_framebuffer, GL_COLOR_ATTACHMENT0, intermediate_texture_color_buffer, 0);
+    glNamedFramebufferRenderbuffer(intermediate_framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, intermediate_renderbuffer);
+
+    if (glCheckNamedFramebufferStatus(multisampled_framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE || glCheckNamedFramebufferStatus(intermediate_framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << '\n';
+        exit(1);
+    }
+
+    float screen_quad_vertices[] = {
+        // positions   // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
+
+    GLuint screen_ssbo;
+    glCreateBuffers(1, &screen_ssbo);
+    glNamedBufferStorage(screen_ssbo, static_cast<GLsizeiptr>(sizeof(screen_quad_vertices)), screen_quad_vertices, 0);
+
+    GLuint ubo_view_projection;
+    glCreateBuffers(1, &ubo_view_projection);
+    glNamedBufferStorage(ubo_view_projection, static_cast<GLsizeiptr>(2 * sizeof(glm::mat4)), nullptr, GL_DYNAMIC_STORAGE_BIT);
+
     World world;
     RayCastResult ray_cast_result;
 
     bool is_using_cinematic_camera = false;
     bool is_switching_controls = false;
-    Camera cinematic_camera = initCamera(glm::radians(60.0f), 0.1f, 500.0f, computeAspectRatio(window));
+    Camera cinematic_camera = initCamera(glm::radians(60.0f), 20.0f, 500.0f, computeAspectRatio(window));
     cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
 
     world.camera = initCamera(glm::radians(60.0f), 0.1f, 150.0f, computeAspectRatio(window));
@@ -78,12 +144,11 @@ int main(int argc, char** argv) {
         1.0f, 0.0f, 1.0f, 0.0f
     };
 
-    GLuint empty_vao, ssbo_crosshair_vertices;
+    GLuint ssbo_crosshair_vertices;
     constexpr auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(sizeof(crosshair_vertices));
     const auto VERTEX_DATA = reinterpret_cast<void*>(crosshair_vertices);
 
     glCreateBuffers(1, &ssbo_crosshair_vertices);
-    glCreateVertexArrays(1, &empty_vao);
     glNamedBufferStorage(ssbo_crosshair_vertices, VERTEX_BUFFER_SIZE, VERTEX_DATA, 0);
 
     int width, height, numCh;
@@ -103,9 +168,6 @@ int main(int argc, char** argv) {
     glTextureSubImage2D(crosshair_texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
     glGenerateTextureMipmap(crosshair_texture);
     stbi_image_free(bytes);
-
-    int window_width, window_height;
-    SDL_GetWindowSize(window.ptr_window, &window_width, &window_height);
 
     float crosshair_scale = 25.0f;
     glm::mat4 ortho_projection = glm::ortho(0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
@@ -129,6 +191,7 @@ int main(int argc, char** argv) {
     glTextureParameteri(texture_array, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     const auto NUM_MIPS = static_cast<GLsizei>(std::floor(std::log2(std::max(arr_width, arr_height))));
+    std::cout << NUM_MIPS << '\n';
 
     glTextureStorage3D(texture_array, NUM_MIPS, GL_RGBA8, arr_width, arr_height, 6);
     glTextureSubImage3D(texture_array, 0, 0, 0, 0, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, test_bytes);
@@ -147,8 +210,6 @@ int main(int argc, char** argv) {
     stbi_image_free(cobblestone_bytes);
 
     while (running) {
-        clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
-
         enable_break_block = false;
         enable_place_block = false;
 
@@ -203,6 +264,18 @@ int main(int argc, char** argv) {
         updateView(world.camera);
         updateView(cinematic_camera);
 
+        glm::mat4 view, projection;
+        if (!is_using_cinematic_camera) {
+            view = world.camera.view_mat;
+            projection = world.camera.projection_mat;
+        } else {
+            view = cinematic_camera.view_mat;
+            projection = cinematic_camera.projection_mat;
+        }
+
+        glNamedBufferSubData(ubo_view_projection, 0, sizeof(glm::mat4), glm::value_ptr(view));
+        glNamedBufferSubData(ubo_view_projection, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
+
         auto current_player_chunk_pos = Conversion::toChunk(world.camera.position);
 
         if (world.prev_player_chunk_pos.x != current_player_chunk_pos.x
@@ -223,20 +296,14 @@ int main(int argc, char** argv) {
             }
         }
 
+        glBindFramebuffer(GL_FRAMEBUFFER, multisampled_framebuffer);
+        clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
+        glEnable(GL_DEPTH_TEST);
+
         activateShaderProgram(world.chunk_shader_program);
         glBindTextureUnit(0, texture_array);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_view_projection);
 
-        glm::mat4 view, projection;
-        if (!is_using_cinematic_camera) {
-            view = world.camera.view_mat;
-            projection = world.camera.projection_mat;
-        } else {
-            view = cinematic_camera.view_mat;
-            projection = cinematic_camera.projection_mat;
-        }
-
-        uniformMat4f(world.chunk_shader_program, "view", 1, GL_FALSE, view);
-        uniformMat4f(world.chunk_shader_program, "projection", 1, GL_FALSE, projection);
         std::vector<glm::vec4> frustum_planes = getFrustumPlanes(world.camera);
 
         for (const auto &[_, ptr_chunk] : world.chunk_map) {
@@ -245,6 +312,19 @@ int main(int argc, char** argv) {
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ptr_chunk->mesh.ssbo_vertices);
             renderChunk(ptr_chunk);
         }
+
+        glBlitNamedFramebuffer(multisampled_framebuffer, intermediate_framebuffer, 0, 0, window_width, window_height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glBindVertexArray(empty_vao);
+        activateShaderProgram(screen_shader_program);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, screen_ssbo);
+        glDisable(GL_DEPTH_TEST);
+        glBindTexture(GL_TEXTURE_2D, intermediate_texture_color_buffer);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         activateShaderProgram(crosshair_shader_program);
         glBindVertexArray(empty_vao);

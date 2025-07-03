@@ -42,7 +42,6 @@ void buildChunk(World &world, const glm::ivec3 chunk_position) {
     Chunk* west_neighbor  = getChunkPointer(world, west_position);
 
     buildMesh(current_chunk, north_neighbor, south_neighbor, east_neighbor, west_neighbor);
-    buildBoundingBox(current_chunk);
 }
 
 void rebuildChunk(World &world, const glm::ivec3 chunk_position) {
