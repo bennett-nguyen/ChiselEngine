@@ -182,6 +182,7 @@ int main(int argc, char** argv) {
     unsigned char* test_bytes = stbi_load("resources/imgs/block_textures/test.png", &arr_width, &arr_height, &arr_numCh, 0);
     unsigned char* tnt_bytes = stbi_load("resources/imgs/block_textures/tnt.png", &arr_width, &arr_height, &arr_numCh, 0);
     unsigned char* cobblestone_bytes = stbi_load("resources/imgs/block_textures/cobblestone.png", &arr_width, &arr_height, &arr_numCh, 0);
+    unsigned char* sand_bytes = stbi_load("resources/imgs/block_textures/sand.png", &arr_width, &arr_height, &arr_numCh, 0);
 
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array);
 
@@ -191,15 +192,16 @@ int main(int argc, char** argv) {
     glTextureParameteri(texture_array, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     const auto NUM_MIPS = static_cast<GLsizei>(std::floor(std::log2(std::max(arr_width, arr_height))));
-    std::cout << NUM_MIPS << '\n';
 
-    glTextureStorage3D(texture_array, NUM_MIPS, GL_RGBA8, arr_width, arr_height, 6);
+    glTextureStorage3D(texture_array, NUM_MIPS, GL_RGBA8, arr_width, arr_height, 7);
     glTextureSubImage3D(texture_array, 0, 0, 0, 0, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, test_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 1, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, dirt_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 2, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, grass_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 3, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, stone_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 4, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, cobblestone_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 5, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, tnt_bytes);
+    glTextureSubImage3D(texture_array, 0, 0, 0, 6, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, sand_bytes);
+
     glGenerateTextureMipmap(texture_array);
 
     stbi_image_free(dirt_bytes);

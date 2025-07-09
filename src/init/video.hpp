@@ -4,8 +4,9 @@
 #include <string>
 #include <iostream>
 
-#include <GL/glew.h>
+#include <glad.h>
 #include <SDL2/SDL.h>
+#include <SDL_opengl.h>
 #include <glm/vec4.hpp>
 #include "constant.hpp"
 

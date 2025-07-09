@@ -132,7 +132,7 @@ void buildVoxels(Chunk *ptr_chunk) {
     ptr_chunk->ptr_voxels = new unsigned[Constant::CHUNK_VOLUME] {};
 
     unsigned y_level;
-    unsigned voxel_id = 1;
+    unsigned voxel_id;
 
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
@@ -140,9 +140,15 @@ void buildVoxels(Chunk *ptr_chunk) {
                 float((int)z + ptr_chunk->position.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.007f, 0, Constant::CHUNK_HEIGHT);
 
             for (unsigned y = 0; y <= y_level; y++) {
+                if (y <= 15) {
+                    voxel_id = 6;
+                } else if (y < y_level || y <= 20) {
+                    voxel_id = 1;
+                } else if (y == y_level) {
+                    voxel_id = 2;
+                }
+
                 ptr_chunk->ptr_voxels[Conversion::toIndex(x, y, z)] = voxel_id;
-                voxel_id %= 5;
-                voxel_id++;
             }
         }
     }

@@ -54,12 +54,8 @@ void initWindow(Window &window, const std::string& window_name, const float scre
     window.gl_context = SDL_GL_CreateContext(window.ptr_window);
     std::cout << "GL context is initialized" << '\n';
 
-    if (GLEW_OK != glewInit()) {
-        std::cerr << "Failed to initialize GLEW" << '\n';
-        exit(1);
-    }
-
-    std::cout << "GLEW is initialized" << '\n' << '\n';
+    gladLoadGLLoader(SDL_GL_GetProcAddress);
+    std::cout << "GLAD is initialized" << '\n' << '\n';
 
     std::cout << "GPU Vendor: " << glGetString(GL_VENDOR) << '\n';
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';

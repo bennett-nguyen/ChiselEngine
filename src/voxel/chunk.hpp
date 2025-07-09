@@ -5,7 +5,7 @@
 #include <vector>
 #include <algorithm>
 
-#include <GL/glew.h>
+#include <glad.h>
 #include <glm/gtc/noise.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
