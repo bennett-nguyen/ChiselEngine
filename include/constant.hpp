@@ -1,7 +1,7 @@
 #ifndef CONSTANT_HPP
 #define CONSTANT_HPP
 
-#include <GL/glew.h>
+#include <glad.h>
 
 namespace Constant {
     constexpr unsigned FPS = 60;

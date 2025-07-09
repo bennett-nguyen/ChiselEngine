@@ -14,7 +14,7 @@ There aren't any notable feature yet as this engine has been around for only ~4 
 Of course, I want to add more content to this engine so it's less boring. Here's a list of stuff I want to add next:
 
 - [x] Texturing for each block.
-- [ ] MSAA so the graphics looks less edgy.
+- [x] MSAA so the graphics looks less edgy.
 - [x] Frustum culling.
 - [ ] SSAO.
 - [ ] Advanced lighting system.
@@ -26,8 +26,8 @@ There may be more but I will focus on what's important for now.
 
 | Platform              | Compiler | Build system | Graphics API |
 |-----------------------|----------|--------------|--------------|
-| Windows 10               | g++ (MinGW64)     | CMake         | OpenGL       |
-| Debian-Based Distros  | g++      | CMake         | OpenGL       |
+| Windows 10               | g++ (MinGW64)     | CMake         | OpenGL 4.6   |
+| Debian-Based Distros  | g++      | CMake         | OpenGL 4.6   |
 
 # Building
 
@@ -45,12 +45,11 @@ If the program throw an error like `ERROR: {path_to_file} can not be found!` or 
 - `mingw-w64-ucrt-x86_64-cmake`
 - `mingw-w64-ucrt-x86_64-SDL2`
 - `mingw-w64-ucrt-x86_64-glm`
-- `mingw-w64-ucrt-x86_64-glew`
 
 Install the packages via the MSYS2 UCRT Bash Terminal:
 
 ```
-$ pacman -S mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-glm mingw-w64-ucrt-x86_64-glew
+$ pacman -S mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-glm
 ```
 
 ### Building
@@ -70,11 +69,10 @@ For now, I only provide support for any Debian-based distros that have `apt` sin
 
 - `libsdl2-dev`
 - `libglm-dev`
-- `libglew-dev`
 
 ```
 $ sudo apt update
-$ sudo apt install libsdl2-dev libglm-dev libglew-dev
+$ sudo apt install libsdl2-dev libglm-dev
 ```
 
 ### Building
@@ -114,7 +112,7 @@ limitations under the License.
 
 - [Dear Imgui](https://github.com/ocornut/imgui): Bloat-free graphical user interface library for C++
 
-- [glew](https://glew.sourceforge.net/): The OpenGL Extension Wrangler Library.
+- [glad](https://github.com/Dav1dde/glad): Vulkan/GL/GLES/EGL/GLX/WGL Loader-Generator.
 
 - [glm](https://glm.g-truc.net/0.9.9/index.html): OpenGL Mathematics.
 
