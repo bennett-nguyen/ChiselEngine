@@ -8,7 +8,7 @@ namespace Constant {
     constexpr float SCREEN_OCCUPATION_RATIO = 0.9f;
 
     constexpr unsigned CHUNK_SIZE = 16;
-    constexpr unsigned CHUNK_HEIGHT = 50;
+    constexpr unsigned CHUNK_HEIGHT = 32;
     constexpr unsigned CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
     constexpr unsigned CHUNK_VOLUME = CHUNK_AREA * CHUNK_HEIGHT;
     constexpr unsigned LOAD_DISTANCE = 15;
