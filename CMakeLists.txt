@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(Chisel CXX C)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 if (NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Windows" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
     message(FATAL_ERROR "Unsupported platform.")
 endif()
@@ -29,8 +27,6 @@ file(GLOB INIT_SOURCE_FILES CONFIGURE_DEPENDS "src/init/*.cpp")
 file(GLOB UTIL_SOURCE_FILES CONFIGURE_DEPENDS "src/util/*.cpp")
 file(GLOB VOXEL_SOURCE_FILES CONFIGURE_DEPENDS "src/voxel/*.cpp")
 file(GLOB IMGUI_SOURCE_FILES CONFIGURE_DEPENDS "deps/imgui/*.cpp")
-
-set(SOURCE_FILES)
 
 list (APPEND DEPS_FILES
     ${IMGUI_SOURCE_FILES}
