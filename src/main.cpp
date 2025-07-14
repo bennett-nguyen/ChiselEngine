@@ -7,16 +7,16 @@
 #include "video.hpp"
 #include "world.hpp"
 #include "constant.hpp"
+#include "framebuffer.hpp"
 #include "ray_casting.hpp"
-#include "debug_output.hpp"
+#include "ubo_view_projection.hpp"
 
 int main(int argc, char** argv) {
+    // Program Init
     Window window;
 
     initVideo();
-    requestDebugContext();
     initWindow(window, "Chisel", Constant::SCREEN_OCCUPATION_RATIO);
-    initDebugOutput();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -30,109 +30,50 @@ int main(int argc, char** argv) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+    stbi_set_flip_vertically_on_load(true);
+    setupUBOViewProjection();
+
     GLuint empty_vao;
     glCreateVertexArrays(1, &empty_vao);
 
-    int window_width, window_height;
-    SDL_GetWindowSize(window.ptr_window, &window_width, &window_height);
+    auto [window_width, window_height] = getWindowWidthHeight(window);
 
-    const ShaderID screen_vshader = makeShader("resources/shaders/screen.vert", GL_VERTEX_SHADER);
-    const ShaderID screen_fshader = makeShader("resources/shaders/screen.frag", GL_FRAGMENT_SHADER);
+    // Screen Init
     const ShaderProgramID screen_shader_program = glCreateProgram();
-    glAttachShader(screen_shader_program, screen_vshader);
-    glAttachShader(screen_shader_program, screen_fshader);
-    glLinkProgram(screen_shader_program);
-    programLinkingCheck(screen_shader_program);
-    glDeleteShader(screen_vshader);
-    glDeleteShader(screen_fshader);
+    attachShader("resources/shaders/screen.vert", screen_shader_program);
+    attachShader("resources/shaders/screen.frag", screen_shader_program);
+    linkProgram(screen_shader_program);
 
-    GLuint multisampled_texture_color_buffer, intermediate_texture_color_buffer;
-    glCreateTextures(GL_TEXTURE_2D, 1, &intermediate_texture_color_buffer);
-    glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &multisampled_texture_color_buffer);
-    glTextureStorage2DMultisample(multisampled_texture_color_buffer, Constant::MULTISAMPLE_LEVEL, GL_RGB8, window_width, window_height, GL_TRUE);
+    Framebuffer multisample_framebuffer, intermediate_framebuffer;
 
-    glBindTexture(GL_TEXTURE_2D, intermediate_texture_color_buffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTextureParameteri(intermediate_texture_color_buffer, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(intermediate_texture_color_buffer, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    intermediate_framebuffer.init();
+    multisample_framebuffer.initMultiSample(Constant::MULTISAMPLE_LEVEL);
 
-    GLuint multisampled_renderbuffer, intermediate_renderbuffer;
-    glCreateRenderbuffers(1, &multisampled_renderbuffer);
-    glCreateRenderbuffers(1, &intermediate_renderbuffer);
-    glNamedRenderbufferStorage(intermediate_renderbuffer, GL_DEPTH_COMPONENT24, window_width, window_height);
-    glNamedRenderbufferStorageMultisample(multisampled_renderbuffer, Constant::MULTISAMPLE_LEVEL, GL_DEPTH_COMPONENT24, window_width, window_height);
+    intermediate_framebuffer.setSize(window_width, window_height);
+    multisample_framebuffer.setSize(window_width, window_height);
 
-    GLuint multisampled_framebuffer, intermediate_framebuffer;
-    glCreateFramebuffers(1, &multisampled_framebuffer);
-    glCreateFramebuffers(1, &intermediate_framebuffer);
+    intermediate_framebuffer.setSizedInternalFormat(GL_DEPTH_COMPONENT24);
+    multisample_framebuffer.setSizedInternalFormat(GL_DEPTH_COMPONENT24);
 
-    glNamedFramebufferTexture(multisampled_framebuffer, GL_COLOR_ATTACHMENT0, multisampled_texture_color_buffer, 0);
-    glNamedFramebufferRenderbuffer(multisampled_framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampled_renderbuffer);
-
-    glNamedFramebufferTexture(intermediate_framebuffer, GL_COLOR_ATTACHMENT0, intermediate_texture_color_buffer, 0);
-    glNamedFramebufferRenderbuffer(intermediate_framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, intermediate_renderbuffer);
-
-    if (glCheckNamedFramebufferStatus(multisampled_framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE || glCheckNamedFramebufferStatus(intermediate_framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << '\n';
-        exit(1);
-    }
+    intermediate_framebuffer.setUp();
+    multisample_framebuffer.setUp();
 
     float screen_quad_vertices[] = {
         // positions   // texCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
         -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
+        1.0f, -1.0f,  1.0f, 0.0f,
 
         -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
+        1.0f, -1.0f,  1.0f, 0.0f,
+        1.0f,  1.0f,  1.0f, 1.0f
     };
 
     GLuint screen_ssbo;
     glCreateBuffers(1, &screen_ssbo);
     glNamedBufferStorage(screen_ssbo, static_cast<GLsizeiptr>(sizeof(screen_quad_vertices)), screen_quad_vertices, 0);
 
-    GLuint ubo_view_projection;
-    glCreateBuffers(1, &ubo_view_projection);
-    glNamedBufferStorage(ubo_view_projection, static_cast<GLsizeiptr>(2 * sizeof(glm::mat4)), nullptr, GL_DYNAMIC_STORAGE_BIT);
-
-    World world;
-    RayCastResult ray_cast_result;
-
-    bool is_using_cinematic_camera = false;
-    bool is_switching_controls = false;
-    Camera cinematic_camera = initCamera(glm::radians(60.0f), 20.0f, 500.0f, computeAspectRatio(window));
-    cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
-
-    world.camera = initCamera(glm::radians(60.0f), 0.1f, 150.0f, computeAspectRatio(window));
-    world.camera.position = glm::vec3(0, 0, -1.0f);
-    world.prev_player_chunk_pos = world.camera.position;
-
-    // initWorld(world);
-    initChunkShader(world, "resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
-    loadChunks(world);
-
-    bool enable_break_block = false;
-    bool enable_place_block = false;
-    bool wireframe = false;
-    bool running = true;
-    SDL_Event event;
-
-    const GLubyte* vendor   = glGetString(GL_VENDOR);
-    const GLubyte* renderer = glGetString(GL_RENDERER);
-    const GLubyte* version  = glGetString(GL_VERSION);
-    const GLubyte* shading  = glGetString(GL_SHADING_LANGUAGE_VERSION);
-
-    const ShaderID crosshair_vshader = makeShader("resources/shaders/crosshair.vert", GL_VERTEX_SHADER);
-    const ShaderID crosshair_fshader = makeShader("resources/shaders/crosshair.frag", GL_FRAGMENT_SHADER);
-    const ShaderProgramID crosshair_shader_program = glCreateProgram();
-    glAttachShader(crosshair_shader_program, crosshair_vshader);
-    glAttachShader(crosshair_shader_program, crosshair_fshader);
-    glLinkProgram(crosshair_shader_program);
-    programLinkingCheck(crosshair_shader_program);
-    glDeleteShader(crosshair_vshader);
-    glDeleteShader(crosshair_fshader);
-
+    // Crosshair Init
     GLfloat crosshair_vertices[] = {
         // pos      // tex
         0.0f, 1.0f, 0.0f, 1.0f,
@@ -152,13 +93,10 @@ int main(int argc, char** argv) {
     glNamedBufferStorage(ssbo_crosshair_vertices, VERTEX_BUFFER_SIZE, VERTEX_DATA, 0);
 
     int width, height, numCh;
-    stbi_set_flip_vertically_on_load(true);
     unsigned char* bytes = stbi_load("resources/imgs/crosshair.png", &width, &height, &numCh, 0);
 
     GLuint crosshair_texture;
     glCreateTextures(GL_TEXTURE_2D, 1, &crosshair_texture);
-    glBindTextureUnit(0, crosshair_texture);
-
     glTextureParameteri(crosshair_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(crosshair_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTextureParameteri(crosshair_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -169,12 +107,35 @@ int main(int argc, char** argv) {
     glGenerateTextureMipmap(crosshair_texture);
     stbi_image_free(bytes);
 
-    float crosshair_scale = 25.0f;
-    glm::mat4 ortho_projection = glm::ortho(0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
-    auto crosshair_model = glm::translate(glm::mat4(1.0f), glm::vec3(((float)window_width - crosshair_scale) * 0.5f, ((float)window_height - crosshair_scale) * 0.5f, 0.0f));
+    constexpr float crosshair_scale = 25.0f;
+    const glm::mat4 ortho_projection = glm::ortho(0.0f, static_cast<float>(window_width), static_cast<float>(window_height), 0.0f, -1.0f, 1.0f);
+    auto crosshair_model = glm::translate(glm::mat4(1.0f), glm::vec3((static_cast<float>(window_width) - crosshair_scale) * 0.5f, (static_cast<float>(window_height) - crosshair_scale) * 0.5f, 0.0f));
     crosshair_model = glm::scale(crosshair_model, glm::vec3(crosshair_scale));
 
+    const ShaderProgramID crosshair_shader_program = glCreateProgram();
+    attachShader("resources/shaders/crosshair.vert", crosshair_shader_program);
+    attachShader("resources/shaders/crosshair.frag", crosshair_shader_program);
+    linkProgram(crosshair_shader_program);
+
+    // World Init
+    World world;
+    RayCastResult ray_cast_result;
+
+    bool is_using_cinematic_camera = false;
+    bool is_switching_controls = false;
+    Camera cinematic_camera = initCamera(glm::radians(60.0f), 20.0f, 500.0f, computeAspectRatio(window));
+    cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
+
+    world.camera = initCamera(glm::radians(60.0f), 0.1f, 150.0f, computeAspectRatio(window));
+    world.camera.position = glm::vec3(0, 0, -1.0f);
+    world.prev_player_chunk_pos = world.camera.position;
+
+    initChunkShader(world, "resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
+    loadChunks(world);
+
+    // Texture Array
     GLuint texture_array;
+
     int arr_width, arr_height, arr_numCh;
     unsigned char* dirt_bytes = stbi_load("resources/imgs/block_textures/dirt.png", &arr_width, &arr_height, &arr_numCh, 0);
     unsigned char* grass_bytes = stbi_load("resources/imgs/block_textures/grass.png", &arr_width, &arr_height, &arr_numCh, 0);
@@ -211,6 +172,19 @@ int main(int argc, char** argv) {
     stbi_image_free(tnt_bytes);
     stbi_image_free(cobblestone_bytes);
 
+    // Game State
+    bool enable_break_block = false;
+    bool enable_place_block = false;
+    bool wireframe = false;
+    bool running = true;
+    SDL_Event event;
+
+    // Graphics Specs
+    const GLubyte* vendor   = glGetString(GL_VENDOR);
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+    const GLubyte* version  = glGetString(GL_VERSION);
+    const GLubyte* shading  = glGetString(GL_SHADING_LANGUAGE_VERSION);
+
     while (running) {
         enable_break_block = false;
         enable_place_block = false;
@@ -219,7 +193,7 @@ int main(int argc, char** argv) {
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (SDL_QUIT == event.type) {
                 running = false;
-            } 
+            }
 
             if (SDL_KEYDOWN == event.type) {
                 if (SDL_SCANCODE_TAB == event.key.keysym.scancode) {
@@ -230,12 +204,6 @@ int main(int argc, char** argv) {
                     }
                 } else if (SDL_SCANCODE_Q == event.key.keysym.scancode) {
                     wireframe = !wireframe;
-
-                    if (wireframe) {
-                        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    } else {
-                        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                    }
                 } else if (SDL_SCANCODE_E == event.key.keysym.scancode) {
                     is_using_cinematic_camera = !is_using_cinematic_camera;
                 } else if (SDL_SCANCODE_R == event.key.keysym.scancode) {
@@ -266,22 +234,18 @@ int main(int argc, char** argv) {
         updateView(world.camera);
         updateView(cinematic_camera);
 
-        glm::mat4 view, projection;
         if (!is_using_cinematic_camera) {
-            view = world.camera.view_mat;
-            projection = world.camera.projection_mat;
+            setView(world.camera.view_mat);
+            setProjection(world.camera.projection_mat);
         } else {
-            view = cinematic_camera.view_mat;
-            projection = cinematic_camera.projection_mat;
+            setView(cinematic_camera.view_mat);
+            setProjection(cinematic_camera.projection_mat);
         }
-
-        glNamedBufferSubData(ubo_view_projection, 0, sizeof(glm::mat4), glm::value_ptr(view));
-        glNamedBufferSubData(ubo_view_projection, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
         auto current_player_chunk_pos = Conversion::toChunk(world.camera.position);
 
         if (world.prev_player_chunk_pos.x != current_player_chunk_pos.x
-                || world.prev_player_chunk_pos.z != current_player_chunk_pos.z) {
+            || world.prev_player_chunk_pos.z != current_player_chunk_pos.z) {
             removeChunks(world);
             loadChunks(world);
             rebuildChunks(world);
@@ -298,15 +262,17 @@ int main(int argc, char** argv) {
             }
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, multisampled_framebuffer);
+        multisample_framebuffer.bind();
         clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
         glEnable(GL_DEPTH_TEST);
 
         activateShaderProgram(world.chunk_shader_program);
         glBindTextureUnit(0, texture_array);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_view_projection);
+        bindUBOViewProjection();
 
         std::vector<glm::vec4> frustum_planes = getFrustumPlanes(world.camera);
+
+        if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         for (const auto &[_, ptr_chunk] : world.chunk_map) {
             if (!isChunkVisible(ptr_chunk, frustum_planes)) continue;
@@ -315,8 +281,9 @@ int main(int argc, char** argv) {
             renderChunk(ptr_chunk);
         }
 
-        glBlitNamedFramebuffer(multisampled_framebuffer, intermediate_framebuffer, 0, 0, window_width, window_height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        multisample_framebuffer.blitTo(intermediate_framebuffer);
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -325,7 +292,7 @@ int main(int argc, char** argv) {
         activateShaderProgram(screen_shader_program);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, screen_ssbo);
         glDisable(GL_DEPTH_TEST);
-        glBindTexture(GL_TEXTURE_2D, intermediate_texture_color_buffer);
+        glBindTextureUnit(0, intermediate_framebuffer.getTextureName());
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         activateShaderProgram(crosshair_shader_program);

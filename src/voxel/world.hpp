@@ -19,7 +19,7 @@ struct World {
 
 Chunk* getChunkPointer(World &world, glm::ivec3 chunk_position);
 // void initWorld(World &world);
-void initChunkShader(World &world, std::string vshader_path, std::string fshader_path);
+void initChunkShader(World &world, const std::string &vshader_path, const std::string &fshader_path);
 void buildChunk(World &world, glm::ivec3 chunk_position);
 void loadChunks(World &world);
 void removeChunks(World &world);

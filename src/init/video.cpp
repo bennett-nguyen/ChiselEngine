@@ -2,9 +2,8 @@
 
 void initVideo() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cerr << "Video could not be initialized:" << '\n'
-            << SDL_GetError();
-        exit(1);
+        const auto ERROR_MESSAGE = std::string(SDL_GetError());
+        throw std::runtime_error("Video Error:\n" + ERROR_MESSAGE);
     }
 
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
@@ -21,6 +20,10 @@ void initVideo() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+    if constexpr (IS_DEBUGGING_ENABLE) {
+        requestDebugContext();
+    }
 
     std::cout << "Video is initialized" << '\n';
 }
@@ -44,9 +47,8 @@ void initWindow(Window &window, const std::string& window_name, const float scre
     );
 
     if (nullptr == window.ptr_window) {
-        std::cerr << "Failed to initialize window" << '\n'
-            << SDL_GetError();
-        exit(1);
+        const auto ERROR_MESSAGE = std::string(SDL_GetError());
+        throw std::runtime_error("Window Creation Error:\n" + ERROR_MESSAGE);
     }
 
     std::cout << "Window is initialized" << '\n';
@@ -61,6 +63,10 @@ void initWindow(Window &window, const std::string& window_name, const float scre
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';
     std::cout << "Version: " << glGetString(GL_VERSION) << '\n';
     std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n' << '\n';
+
+    if constexpr (IS_DEBUGGING_ENABLE) {
+        initDebugOutput();
+    }
 }
 
 void destroyWindow(const Window &window) {
@@ -86,8 +92,13 @@ void clearWindow(const glm::vec4 color) {
 }
 
 float computeAspectRatio(const Window &window) {
+    const auto [WIDTH, HEIGHT] = getWindowWidthHeight(window);
+    return static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
+}
+
+std::pair<int, int> getWindowWidthHeight(const Window &window) {
     int width, height;
     SDL_GetWindowSize(window.ptr_window, &width, &height);
 
-    return static_cast<float>(width) / static_cast<float>(height);
+    return std::make_pair(width, height);
 }

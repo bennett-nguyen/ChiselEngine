@@ -13,14 +13,16 @@
 typedef GLuint ShaderID;
 typedef GLuint ShaderProgramID;
 
-ShaderID makeShader(const char *filename, GLenum shader_type);
+ShaderID makeShader(const std::string &filename);
 void deleteShader(ShaderID shader);
 
+void attachShader(const std::string &filename, ShaderProgramID shader_program);
 void activateShaderProgram(ShaderProgramID shader_program);
 void deleteShaderProgram(ShaderProgramID shader_program);
 
-std::string getFileContent(const char *filename);
+std::string getFileContent(const std::string &filename);
 void shaderCompilationCheck(ShaderID shader);
+void linkProgram(ShaderProgramID shader_program);
 void programLinkingCheck(ShaderProgramID shader_program);
 
 // Uniform Variable

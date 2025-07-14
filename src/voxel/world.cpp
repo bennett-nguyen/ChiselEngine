@@ -4,16 +4,11 @@
 //     glCreateVertexArrays(1, &world.empty_VAO);
 // }
 
-void initChunkShader(World &world, std::string vshader_path, std::string fshader_path) {
-    const ShaderID vshader = makeShader(vshader_path.c_str(), GL_VERTEX_SHADER);
-    const ShaderID fshader = makeShader(fshader_path.c_str(), GL_FRAGMENT_SHADER);
+void initChunkShader(World &world, const std::string &vshader_path, const std::string &fshader_path) {
     world.chunk_shader_program = glCreateProgram();
-    glAttachShader(world.chunk_shader_program, vshader);
-    glAttachShader(world.chunk_shader_program, fshader);
-    glLinkProgram(world.chunk_shader_program);
-    programLinkingCheck(world.chunk_shader_program);
-    glDeleteShader(vshader);
-    glDeleteShader(fshader);
+    attachShader(vshader_path, world.chunk_shader_program);
+    attachShader(fshader_path, world.chunk_shader_program);
+    linkProgram(world.chunk_shader_program);
 }
 
 Chunk* getChunkPointer(World &world, const glm::ivec3 chunk_position) {

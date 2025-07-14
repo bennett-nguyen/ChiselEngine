@@ -1,11 +1,20 @@
 #include "shader.hpp"
 
-std::string getFileContent(const char *filename) {
+GLenum getShaderType(const std::string &file_extension) {
+    if ("vert" == file_extension) return GL_VERTEX_SHADER;
+    if ("tesc" == file_extension) return GL_TESS_CONTROL_SHADER;
+    if ("tese" == file_extension) return GL_TESS_EVALUATION_SHADER;
+    if ("geom" == file_extension) return GL_GEOMETRY_SHADER;
+    if ("frag" == file_extension) return GL_FRAGMENT_SHADER;
+    if ("comp" == file_extension) return GL_COMPUTE_SHADER;
+    throw std::runtime_error("Shader Error: Unknown GLSL shader extension: " + file_extension);
+}
+
+std::string getFileContent(const std::string &filename) {
     std::ifstream in(filename, std::ios::binary);
 
     if (!in) {
-        std::cerr << "ERROR: " << filename << " can not be found!";
-        exit(1);
+        throw std::runtime_error("Shader File Error: Shader file cannot be found: " + filename);
     }
 
     std::string content;
@@ -24,8 +33,7 @@ void shaderCompilationCheck(const ShaderID shader) {
 
     if (success) return;
     glGetShaderInfoLog(shader, 512, nullptr, log);
-    std::cerr << "error while compiling shader: " << log << std::endl;
-    exit(1);
+    throw std::runtime_error("Shader Compilation Error: " + std::string(log));
 }
 
 void programLinkingCheck(const ShaderProgramID shader_program) {
@@ -35,15 +43,23 @@ void programLinkingCheck(const ShaderProgramID shader_program) {
 
     if (success) return;
     glGetProgramInfoLog(shader_program, 512, nullptr, log);
-    std::cerr << "error while linking shaders: " << log << std::endl;
-    exit(1);
+    throw std::runtime_error("Shader Program Linking Error: " + std::string(log));
 }
 
-ShaderID makeShader(const char *filename, const GLenum shader_type) {
+void attachShader(const std::string &filename, const ShaderProgramID shader_program) {
+    const ShaderID shader = makeShader(filename);
+    glAttachShader(shader_program, shader);
+    deleteShader(shader);
+}
+
+ShaderID makeShader(const std::string &filename) {
     const std::string shader_content = getFileContent(filename);
     const char *source = shader_content.c_str();
 
-    const ShaderID shader = glCreateShader(shader_type);
+    const std::string FILE_EXTENSION = filename.substr(filename.find_last_of(".") + 1);
+    const GLenum SHADER_TYPE = getShaderType(FILE_EXTENSION);
+
+    const ShaderID shader = glCreateShader(SHADER_TYPE);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
     shaderCompilationCheck(shader);
@@ -53,6 +69,11 @@ ShaderID makeShader(const char *filename, const GLenum shader_type) {
 
 void deleteShader(const ShaderID shader) {
     glDeleteShader(shader);
+}
+
+void linkProgram(const ShaderProgramID shader_program) {
+    glLinkProgram(shader_program);
+    programLinkingCheck(shader_program);
 }
 
 void activateShaderProgram(const ShaderProgramID shader_program) {
