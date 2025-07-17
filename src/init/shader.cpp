@@ -33,7 +33,7 @@ void shaderCompilationCheck(const ShaderID shader) {
 
     if (success) return;
     glGetShaderInfoLog(shader, 512, nullptr, log);
-    throw std::runtime_error("Shader Compilation Error: " + std::string(log));
+    throw std::runtime_error("Shader Compilation Error:\n\n" + std::string(log));
 }
 
 void programLinkingCheck(const ShaderProgramID shader_program) {
@@ -43,7 +43,7 @@ void programLinkingCheck(const ShaderProgramID shader_program) {
 
     if (success) return;
     glGetProgramInfoLog(shader_program, 512, nullptr, log);
-    throw std::runtime_error("Shader Program Linking Error: " + std::string(log));
+    throw std::runtime_error("Shader Program Linking Error:\n\n" + std::string(log));
 }
 
 void attachShader(const std::string &filename, const ShaderProgramID shader_program) {

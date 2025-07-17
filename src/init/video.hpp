@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <SDL_opengl.h>
 #include <glm/vec4.hpp>
+
 #include "constant.hpp"
 #include "debug_output.hpp"
 

@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include <glad.h>
-#include <glm/glm.hpp>
+#include <glm/matrix.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 typedef GLuint ShaderID;
