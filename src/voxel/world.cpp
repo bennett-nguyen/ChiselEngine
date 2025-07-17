@@ -1,9 +1,5 @@
 #include "world.hpp"
 
-// void initWorld(World &world) {
-//     glCreateVertexArrays(1, &world.empty_VAO);
-// }
-
 void initChunkShader(World &world, const std::string &vshader_path, const std::string &fshader_path) {
     world.chunk_shader_program = glCreateProgram();
     attachShader(vshader_path, world.chunk_shader_program);
@@ -31,29 +27,29 @@ void buildChunk(World &world, const glm::ivec3 chunk_position) {
     const glm::ivec3 west_position  = chunk_position - glm::ivec3(0, 0, 1);
 
     Chunk* current_chunk  = getChunkPointer(world, chunk_position);
-    Chunk* north_neighbor = getChunkPointer(world, north_position);
-    Chunk* south_neighbor = getChunkPointer(world, south_position);
-    Chunk* east_neighbor  = getChunkPointer(world, east_position);
-    Chunk* west_neighbor  = getChunkPointer(world, west_position);
+    const Chunk* north_neighbor = getChunkPointer(world, north_position);
+    const Chunk* south_neighbor = getChunkPointer(world, south_position);
+    const Chunk* east_neighbor  = getChunkPointer(world, east_position);
+    const Chunk* west_neighbor  = getChunkPointer(world, west_position);
 
-    buildMesh(current_chunk, north_neighbor, south_neighbor, east_neighbor, west_neighbor);
+    current_chunk->buildMesh(north_neighbor, south_neighbor, east_neighbor, west_neighbor);
 }
 
 void rebuildChunk(World &world, const glm::ivec3 chunk_position) {
     if (!isChunkExist(world, chunk_position)) return;
     Chunk* ptr_chunk = getChunkPointer(world, chunk_position);
-    destroyMesh(ptr_chunk);
+    ptr_chunk->destroyMesh();
     buildChunk(world, chunk_position);
 }
 
 void loadChunks(World &world) {
-    const glm::ivec3 player_chunk_coords = Conversion::toChunk(world.camera.position);
+    const ChunkPosition player_position = Conversion::toChunk(world.camera.position);
     std::vector<glm::ivec3> chunks_to_load;
 
-    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.x;
-    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.x;
-    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.z;
-    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.z;
+    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
 
     for (int x = X_MIN; x <= X_MAX; x++) {
         for (int z = Z_MIN; z <= Z_MAX; z++) {
@@ -62,7 +58,7 @@ void loadChunks(World &world) {
 
             chunks_to_load.push_back(chunk_position);
             auto* ptr_chunk = new Chunk(chunk_position);
-            buildVoxels(ptr_chunk);
+            ptr_chunk->buildVoxels();
             world.chunk_map[chunk_position] = ptr_chunk;
         }
     }
@@ -73,13 +69,13 @@ void loadChunks(World &world) {
 }
 
 void removeChunks(World &world) {
-    const auto player_chunk_coords = Conversion::toChunk(world.camera.position);
+    const auto player_position = Conversion::toChunk(world.camera.position);
     std::vector<glm::ivec3> chunks_to_remove;
 
-    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.x;
-    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.x;
-    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.z;
-    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_chunk_coords.z;
+    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
 
     for (const auto &[chunk_position, ptr_chunk] : world.chunk_map) {
         if (X_MIN <= chunk_position.x && chunk_position.x <= X_MAX &&
@@ -89,15 +85,14 @@ void removeChunks(World &world) {
     }
 
     for (auto const &chunk_position : chunks_to_remove) {
-        Chunk* ptr_chunk = getChunkPointer(world, chunk_position);
-        destroyChunk(ptr_chunk);
+        const Chunk* ptr_chunk = getChunkPointer(world, chunk_position);
         delete ptr_chunk;
         world.chunk_map.erase(chunk_position);
     }
 }
 
 void rebuildChunks(World &world) {
-    const auto current_player_chunk_pos = Conversion::toChunk(world.camera.position);
+    const auto current_player_position = Conversion::toChunk(world.camera.position);
     std::unordered_set<glm::ivec3> chunks_to_rebuild;
 
     const int old_x_min = world.prev_player_chunk_pos.x - static_cast<int>(Constant::LOAD_DISTANCE);
@@ -105,10 +100,10 @@ void rebuildChunks(World &world) {
     const int old_z_min = world.prev_player_chunk_pos.z - static_cast<int>(Constant::LOAD_DISTANCE);
     const int old_z_max = world.prev_player_chunk_pos.z + static_cast<int>(Constant::LOAD_DISTANCE);
 
-    const int new_x_min = current_player_chunk_pos.x - static_cast<int>(Constant::LOAD_DISTANCE);
-    const int new_x_max = current_player_chunk_pos.x + static_cast<int>(Constant::LOAD_DISTANCE);
-    const int new_z_min = current_player_chunk_pos.z - static_cast<int>(Constant::LOAD_DISTANCE);
-    const int new_z_max = current_player_chunk_pos.z + static_cast<int>(Constant::LOAD_DISTANCE);
+    const int new_x_min = current_player_position.x - static_cast<int>(Constant::LOAD_DISTANCE);
+    const int new_x_max = current_player_position.x + static_cast<int>(Constant::LOAD_DISTANCE);
+    const int new_z_min = current_player_position.z - static_cast<int>(Constant::LOAD_DISTANCE);
+    const int new_z_max = current_player_position.z + static_cast<int>(Constant::LOAD_DISTANCE);
 
     for (int x = new_x_min; x <= new_x_max; x++) {
         for (int z = new_z_min; z <= new_z_max; z++) {
@@ -135,34 +130,20 @@ void rebuildChunks(World &world) {
     }
 }
 
-void renderWorld(const World &world) {
-    activateShaderProgram(world.chunk_shader_program);
-    uniformMat4f(world.chunk_shader_program, "view", 1, GL_FALSE, world.camera.view_mat);
-    uniformMat4f(world.chunk_shader_program, "projection", 1, GL_FALSE, world.camera.projection_mat);
-
-    for (const auto &[_, ptr_chunk] : world.chunk_map) {
-        uniformMat4f(world.chunk_shader_program, "model", 1, GL_FALSE, getChunkModel(ptr_chunk));
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ptr_chunk->mesh.ssbo_vertices);
-        renderChunk(ptr_chunk);
-    }
-}
-
 void destroyWorld(World &world) {
     for (auto &[_, ptr_chunk] : world.chunk_map) {
-        destroyChunk(ptr_chunk);
         delete ptr_chunk;
     }
 
     world.chunk_map.clear();
 }
 
-void breakBlock(World &world, const glm::ivec3 voxel_position) {
+void breakBlock(World &world, const WorldPosition voxel_position) {
     const auto chunk_position = Conversion::toChunk(voxel_position);
     const auto local_position = Conversion::toLocal(voxel_position, chunk_position);
-    const auto voxel_index = Conversion::toIndex(local_position);
 
     const Chunk* ptr_chunk = getChunkPointer(world, chunk_position);
-    ptr_chunk->ptr_voxels[voxel_index] = 0;
+    ptr_chunk->setVoxelIDAtPosition(0, local_position);
     rebuildChunk(world, chunk_position);
 
     if (0 == local_position.x) {
@@ -184,14 +165,14 @@ void breakBlock(World &world, const glm::ivec3 voxel_position) {
     }
 }
 
-void placeBlock(World &world, const glm::ivec3 adjacent_voxel) {
+void placeBlock(World &world, const WorldPosition adjacent_voxel) {
     const auto chunk_position = Conversion::toChunk(adjacent_voxel);
     const auto local_position = Conversion::toLocal(adjacent_voxel, chunk_position);
-    const auto voxel_index = Conversion::toIndex(local_position);
-    const Chunk* ptr_chunk = getChunkPointer(world, chunk_position);
 
+    const Chunk* ptr_chunk = getChunkPointer(world, chunk_position);
     if (chunk_position.y != 0) return;
-    ptr_chunk->ptr_voxels[voxel_index] = 1;
+
+    ptr_chunk->setVoxelIDAtPosition(1, local_position);
     rebuildChunk(world, chunk_position);
 
     if (0 == local_position.x) {

@@ -18,13 +18,11 @@ struct World {
 };
 
 Chunk* getChunkPointer(World &world, glm::ivec3 chunk_position);
-// void initWorld(World &world);
 void initChunkShader(World &world, const std::string &vshader_path, const std::string &fshader_path);
 void buildChunk(World &world, glm::ivec3 chunk_position);
 void loadChunks(World &world);
-void removeChunks(World &world);
 void rebuildChunks(World &world);
-void renderWorld(const World &world);
+void removeChunks(World &world);
 bool isChunkExist(const World &world, glm::ivec3 chunk_position);
 void breakBlock(World &world, glm::ivec3 voxel_position);
 void placeBlock(World &world, glm::ivec3 adjacent_voxel_position);

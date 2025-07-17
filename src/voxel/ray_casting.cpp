@@ -22,13 +22,13 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     float t_delta_x = 0.0f, t_delta_y = 0.0f, t_delta_z = 0.0f;
     float t_max_x = 0.0f, t_max_y = 0.0f, t_max_z = 0.0f;
 
-    glm::uvec3 local_position;
-    glm::ivec3 chunk_position_of_voxel;
+    LocalPosition voxel_origin;
+    ChunkPosition chunk_position_of_voxel;
 
     if (step_x == 0) {
         t_delta_x = 10000000.0f;
     } else {
-        face_x = step_x > 0 ? FaceID::South : FaceID::North;
+        face_x = step_x > 0 ? South : North;
         t_delta_x = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.x), 10000000.0f));
 
         if (step_x > 0) {
@@ -41,7 +41,7 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     if (step_y == 0) {
         t_delta_y = 10000000.0f;
     } else {
-        face_y = step_y > 0 ? FaceID::Bottom : FaceID::Top;
+        face_y = step_y > 0 ? Bottom : Top;
         t_delta_y = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.y), 10000000.0f));
 
         if (step_y > 0) {
@@ -54,7 +54,7 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     if (step_z == 0) {
         t_delta_z = 10000000.0f;
     } else {
-        face_z = step_z > 0 ? FaceID::West : FaceID::East;
+        face_z = step_z > 0 ? West : East;
         t_delta_z = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.z), 10000000.0f));
 
         if (step_z > 0) {
@@ -71,12 +71,12 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
         chunk_position_of_voxel = Conversion::toChunk(current_voxel);
 
         if (isChunkExist(world, chunk_position_of_voxel)) {
-            local_position = Conversion::toLocal(current_voxel, chunk_position_of_voxel);
+            voxel_origin = Conversion::toLocal(current_voxel, chunk_position_of_voxel);
             Chunk* ptr_chunk_of_current_voxel = getChunkPointer(world, chunk_position_of_voxel);
 
-            if (!isVoid(local_position, ptr_chunk_of_current_voxel)) {
+            if (!ptr_chunk_of_current_voxel->isVoidAt(voxel_origin)) {
                 ray_cast_result.is_detected_voxel = true;
-                ray_cast_result.detected_voxel_world_pos = current_voxel;
+                ray_cast_result.detected_voxel_position = current_voxel;
                 break;
             }
         }
@@ -111,9 +111,9 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     }
 }
 
-glm::ivec3 getAdjacentVoxel(const RayCastResult &ray_cast_result) {
+WorldPosition getAdjacentVoxel(const RayCastResult &ray_cast_result) {
     if (!ray_cast_result.is_detected_voxel) return glm::ivec3(0);
-    glm::ivec3 adjacent_voxel = ray_cast_result.detected_voxel_world_pos;
+    WorldPosition adjacent_voxel = ray_cast_result.detected_voxel_position;
 
     switch (ray_cast_result.detected_face) {
         case North:
