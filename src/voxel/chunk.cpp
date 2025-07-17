@@ -1,23 +1,151 @@
 #include "chunk.hpp"
 
-void updateBoundingBox(AABB& bounding_box, const Vertex& v0, const Vertex& v1, const Vertex& v2, const Vertex& v3) {
-    glm::vec3& vmin = bounding_box.vmin;
-    glm::vec3& vmax = bounding_box.vmax;
+constexpr std::array<FaceID, 6> ACCEPTABLE_FACE_VALUE = { Top, Bottom, North, South, East, West };
 
-    vmin = glm::min(vmin, glm::vec3(v0.position));
-    vmin = glm::min(vmin, glm::vec3(v1.position));
-    vmin = glm::min(vmin, glm::vec3(v2.position));
-    vmin = glm::min(vmin, glm::vec3(v3.position));
+constexpr int X_SIZE = 5,
+              Y_SIZE = 6,
+              Z_SIZE = 5,
+              FACE_ID_SIZE = 3,
+              VOXEL_ID_SIZE = 8;
 
-    vmax = glm::max(vmax, glm::vec3(v0.position));
-    vmax = glm::max(vmax, glm::vec3(v1.position));
-    vmax = glm::max(vmax, glm::vec3(v2.position));
-    vmax = glm::max(vmax, glm::vec3(v3.position));
+inline void appendBits(unsigned &base, const unsigned data, const int size) {
+    base <<= size;
+    base |= data;
 }
 
-bool isChunkVisible(const Chunk *ptr_chunk, const std::vector<glm::vec4>& frustum_planes) {
-    const glm::vec3& vmin = ptr_chunk->bounding_box.vmin;
-    const glm::vec3& vmax = ptr_chunk->bounding_box.vmax;
+[[nodiscard]] bool isFaceAcceptable(const FaceID face) {
+    return std::any_of(ACCEPTABLE_FACE_VALUE.begin(), ACCEPTABLE_FACE_VALUE.end(),
+        [&face](const FaceID valid_face){ return valid_face == face; });
+}
+
+[[nodiscard]] glm::uvec3 getVertexPositionOfFaceByIndex(const FaceID face, const int vertex_index, const glm::uvec3 &voxel_origin) {
+    if (!isFaceAcceptable(face)) {
+        throw std::invalid_argument("Face Enum Error: invalid face enum: " + std::to_string(face));
+    }
+
+    if (vertex_index < 0 || vertex_index > 3) {
+        throw std::invalid_argument("Vertex Index Error: index out of range: " + std::to_string(vertex_index));
+    }
+
+    glm::uvec3 vertex_vector {};
+
+    if (Top == face) {
+        switch (vertex_index) {
+            case 0:
+                vertex_vector = {0,1,0};
+                break;
+            case 1:
+                vertex_vector = {1,1,0};
+                break;
+            case 2:
+                vertex_vector = {1,1,1};
+                break;
+            case 3:
+                vertex_vector = {0,1,1};
+                break;
+        }
+    } else if (Bottom == face) {
+        switch (vertex_index) {
+            case 0:
+                vertex_vector = {0,0,0};
+                break;
+            case 1:
+                vertex_vector = {1,0,0};
+                break;
+            case 2:
+                vertex_vector = {1,0,1};
+                break;
+            case 3:
+                vertex_vector = {0,0,1};
+                break;
+        }
+    } else if (North == face) {
+        switch (vertex_index) {
+            case 0:
+                vertex_vector = {1,0,0};
+                break;
+            case 1:
+                vertex_vector = {1,1,0};
+                break;
+            case 2:
+                vertex_vector = {1,1,1};
+                break;
+            case 3:
+                vertex_vector = {1,0,1};
+                break;
+        }
+    } else if (South == face) {
+        switch (vertex_index) {
+            case 0:
+                vertex_vector = {0,0,0};
+                break;
+            case 1:
+                vertex_vector = {0,1,0};
+                break;
+            case 2:
+                vertex_vector = {0,1,1};
+                break;
+            case 3:
+                vertex_vector = {0,0,1};
+                break;
+        }
+    } else if (East == face) {
+        switch (vertex_index) {
+            case 0:
+                vertex_vector = {0,0,1};
+                break;
+            case 1:
+                vertex_vector = {0,1,1};
+                break;
+            case 2:
+                vertex_vector = {1,1,1};
+                break;
+            case 3:
+                vertex_vector = {1,0,1};
+                break;
+        }
+    } else {
+        switch (vertex_index) {
+            case 0:
+                vertex_vector = {0,0,0};
+                break;
+            case 1:
+                vertex_vector = {0,1,0};
+                break;
+            case 2:
+                vertex_vector = {1,1,0};
+                break;
+            case 3:
+                vertex_vector = {1,0,0};
+                break;
+        }
+    }
+
+    return voxel_origin + vertex_vector;
+}
+
+[[nodiscard]] GLuint packData(const glm::uvec3 &vertex_position, const unsigned face_id, const VoxelID voxel_id) {
+    GLuint packed_data = 0;
+    appendBits(packed_data, vertex_position.x, X_SIZE);
+    appendBits(packed_data, vertex_position.y, Y_SIZE);
+    appendBits(packed_data, vertex_position.z, Z_SIZE);
+    appendBits(packed_data, face_id, FACE_ID_SIZE);
+    appendBits(packed_data, voxel_id, VOXEL_ID_SIZE);
+
+    return packed_data;
+}
+
+Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const FaceID face_id, const VoxelID voxel_id) {
+    packed_data = packData(
+        getVertexPositionOfFaceByIndex(face_id, vertex_index, voxel_origin),
+        face_id,
+        voxel_id
+    );
+}
+
+bool Chunk::isChunkVisible(const std::vector<glm::vec4>& frustum_planes) const {
+    const glm::vec3& vmin = bounding_box.vmin;
+    const glm::vec3& vmax = bounding_box.vmax;
 
     for (auto const &g : frustum_planes) {
         if ((glm::dot(g, glm::vec4(vmin.x, vmin.y, vmin.z, 1.0f)) < 0.0) &&
@@ -36,78 +164,140 @@ bool isChunkVisible(const Chunk *ptr_chunk, const std::vector<glm::vec4>& frustu
     return true;
 }
 
-bool isVoid(const glm::uvec3 local_position, const Chunk *ptr_chunk) {
-    return 0 == ptr_chunk->ptr_voxels[Conversion::toIndex(local_position)];
+[[nodiscard]] inline bool isVoxelAtChunkBoundaryEast(const LocalPosition local) {
+    return Constant::CHUNK_SIZE-1 == local.z;
 }
 
-bool isVoidEast(glm::uvec3 local_position, const Chunk *ptr_chunk, const Chunk *ptr_echunk) {
-    if (Constant::CHUNK_SIZE-1 == local_position.z) {
-        if (nullptr == ptr_echunk) return true;
+[[nodiscard]] inline bool isVoxelAtChunkBoundaryWest(const LocalPosition local) {
+    return 0 == local.z;
+}
 
-        local_position.z = 0;
-        return isVoid(local_position, ptr_echunk);
+[[nodiscard]] inline bool isVoxelAtChunkBoundaryNorth(const LocalPosition local) {
+    return Constant::CHUNK_SIZE-1 == local.x;
+}
+
+[[nodiscard]] inline bool isVoxelAtChunkBoundarySouth(const LocalPosition local) {
+    return 0 == local.x;
+}
+
+[[nodiscard]] inline bool isVoxelAtChunkBoundaryTop(const LocalPosition local) {
+    return Constant::CHUNK_HEIGHT-1 == local.y;
+}
+
+[[nodiscard]] inline bool isVoxelAtChunkBoundaryBottom(const LocalPosition local) {
+    return 0 == local.y;
+}
+
+bool Chunk::isVoidAt(const LocalPosition local) const {
+    return 0 == getVoxelID(local);
+}
+
+bool Chunk::isVoidEast(const LocalPosition voxel_origin, const Chunk *ptr_east_neighbor) const {
+    LocalPosition neighbor_voxel = voxel_origin;
+
+    if (isVoxelAtChunkBoundaryEast(voxel_origin)) {
+        if (nullptr == ptr_east_neighbor) return true;
+
+        neighbor_voxel.z = 0;
+        return ptr_east_neighbor->isVoidAt(neighbor_voxel);
     }
 
-    local_position.z += 1;
-    return isVoid(local_position, ptr_chunk);
+    neighbor_voxel.z++;
+    return isVoidAt(neighbor_voxel);
 }
 
-bool isVoidWest(glm::uvec3 local_position, const Chunk *ptr_chunk, const Chunk *ptr_wchunk) {
-    if (0 == local_position.z) {
-        if (nullptr == ptr_wchunk) return true;
+bool Chunk::isVoidWest(const LocalPosition voxel_origin, const Chunk *ptr_west_neighbor) const {
+    LocalPosition neighbor_voxel = voxel_origin;
 
-        local_position.z = Constant::CHUNK_SIZE-1;
-        return isVoid(local_position, ptr_wchunk);
+    if (isVoxelAtChunkBoundaryWest(voxel_origin)) {
+        if (nullptr == ptr_west_neighbor) return true;
+
+        neighbor_voxel.z = Constant::CHUNK_SIZE-1;
+        return ptr_west_neighbor->isVoidAt(neighbor_voxel);
     }
 
-    local_position.z -= 1;
-    return isVoid(local_position, ptr_chunk);
+    neighbor_voxel.z--;
+    return isVoidAt(neighbor_voxel);
 }
 
-bool isVoidNorth(glm::uvec3 local_position, const Chunk *ptr_chunk, const Chunk *ptr_nchunk) {
-    if (Constant::CHUNK_SIZE-1 == local_position.x) {
-        if (nullptr == ptr_nchunk) return true;
+bool Chunk::isVoidNorth(const LocalPosition voxel_origin, const Chunk *ptr_north_neighbor) const {
+    LocalPosition neighbor_voxel = voxel_origin;
 
-        local_position.x = 0;
-        return isVoid(local_position, ptr_nchunk);
+    if (isVoxelAtChunkBoundaryNorth(voxel_origin)) {
+        if (nullptr == ptr_north_neighbor) return true;
+
+        neighbor_voxel.x = 0;
+        return ptr_north_neighbor->isVoidAt(neighbor_voxel);
     }
 
-    local_position.x += 1;
-    return isVoid(local_position, ptr_chunk);
+    neighbor_voxel.x++;
+    return isVoidAt(neighbor_voxel);
 }
 
-bool isVoidSouth(glm::uvec3 local_position, const Chunk *ptr_chunk, const Chunk *ptr_schunk) {
-    if (0 == local_position.x) {
-        if (nullptr == ptr_schunk) return true;
+bool Chunk::isVoidSouth(const LocalPosition voxel_origin, const Chunk *ptr_south_neighbor) const {
+    LocalPosition neighbor_voxel = voxel_origin;
 
-        local_position.x = Constant::CHUNK_SIZE-1;
-        return isVoid(local_position, ptr_schunk);
+    if (isVoxelAtChunkBoundarySouth(voxel_origin)) {
+        if (nullptr == ptr_south_neighbor) return true;
+
+        neighbor_voxel.x = Constant::CHUNK_SIZE-1;
+        return ptr_south_neighbor->isVoidAt(neighbor_voxel);
     }
 
-    local_position.x -= 1;
-    return isVoid(local_position, ptr_chunk);
+    neighbor_voxel.x--;
+    return isVoidAt(neighbor_voxel);
 }
 
-bool isVoidTop(glm::uvec3 local_position, const Chunk *ptr_chunk) {
-    if (Constant::CHUNK_HEIGHT-1 == local_position.y) {
+bool Chunk::isVoidTop(const LocalPosition voxel_origin) const {
+    LocalPosition neighbor_voxel = voxel_origin;
+
+    if (isVoxelAtChunkBoundaryTop(voxel_origin)) {
         // check for neighboring chunk
         return true;
     }
 
-    return isVoid(local_position + glm::uvec3(0, 1, 0), ptr_chunk);
+    neighbor_voxel.y++;
+    return isVoidAt(neighbor_voxel);
 }
 
-bool isVoidBottom(glm::uvec3 local_position, const Chunk *ptr_chunk) {
-    if (0 == local_position.y) {
+bool Chunk::isVoidBottom(const LocalPosition voxel_origin) const {
+    LocalPosition neighbor_voxel = voxel_origin;
+
+    if (isVoxelAtChunkBoundaryBottom(voxel_origin)) {
         // check for neighboring chunk
         return false;
     }
 
-    return isVoid(local_position - glm::uvec3(0, 1, 0), ptr_chunk);
+    neighbor_voxel.y--;
+    return isVoidAt(neighbor_voxel);
 }
 
-unsigned getVoxelID(const Chunk *ptr_chunk, const glm::uvec3 local_position) {
-    return ptr_chunk->ptr_voxels[Conversion::toIndex(local_position)];
+VoxelID Chunk::getVoxelID(const LocalPosition local) const {
+    return ptr_voxels[Conversion::toIndex(local)];
+}
+
+void Chunk::setVoxelIDAtPosition(const VoxelID voxel_id, const LocalPosition local) const {
+    ptr_voxels[Conversion::toIndex(local)] = voxel_id;
+}
+
+void Chunk::updateBoundingBoxWithCubeFace(const FaceID face, const LocalPosition &voxel_origin) {
+    const glm::vec3 v0 = getVertexPositionOfFaceByIndex(face, 0, voxel_origin);
+    const glm::vec3 v1 = getVertexPositionOfFaceByIndex(face, 1, voxel_origin);
+    const glm::vec3 v2 = getVertexPositionOfFaceByIndex(face, 2, voxel_origin);
+    const glm::vec3 v3 = getVertexPositionOfFaceByIndex(face, 3, voxel_origin);
+
+    const glm::vec3 min_v = glm::min(v0, v1, v2, v3);
+    const glm::vec3 max_v = glm::max(v0, v1, v2, v3);
+
+    bounding_box.vmin = glm::min(bounding_box.vmin, min_v);
+    bounding_box.vmax = glm::max(bounding_box.vmax, max_v);
+}
+
+void Chunk::translateBoundingBox() {
+    bounding_box.vmax += glm::vec3(1.0f);
+    const glm::mat4 chunk_model = getChunkModel();
+    bounding_box.vmin = glm::vec3(chunk_model * glm::vec4(bounding_box.vmin.x, bounding_box.vmin.y, bounding_box.vmin.z, 1.0f));
+    bounding_box.vmax = glm::vec3(chunk_model * glm::vec4(bounding_box.vmax.x, bounding_box.vmax.y, bounding_box.vmax.z, 1.0f));
 }
 
 unsigned heightMap(unsigned num_iterations, float x, float z, float persistence, float scale, unsigned low, unsigned high) {
@@ -128,181 +318,168 @@ unsigned heightMap(unsigned num_iterations, float x, float z, float persistence,
     return static_cast<unsigned>(noise);
 }
 
-void buildVoxels(Chunk *ptr_chunk) {
-    ptr_chunk->ptr_voxels = new unsigned[Constant::CHUNK_VOLUME] {};
-
-    unsigned y_level;
-    unsigned voxel_id;
+void Chunk::buildVoxels() {
+    ptr_voxels = new VoxelID[Constant::CHUNK_VOLUME] {};
 
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
-            y_level = heightMap(6, float((int)x + ptr_chunk->position.x * (int)Constant::CHUNK_SIZE),
-                float((int)z + ptr_chunk->position.z * (int)Constant::CHUNK_SIZE), 0.6f, 0.007f, 0, Constant::CHUNK_HEIGHT);
+            unsigned y_level = heightMap(6, float((int) x + position.x * (int) Constant::CHUNK_SIZE),
+                                         float((int) z + position.z * (int) Constant::CHUNK_SIZE), 0.6f, 0.007f,
+                                         0, Constant::CHUNK_HEIGHT);
 
             for (unsigned y = 0; y <= y_level; y++) {
+                const LocalPosition local { x, y, z };
+                VoxelID voxel_id;
+
                 if (y <= 15) {
                     voxel_id = 6;
                 } else if (y < y_level || y <= 20) {
                     voxel_id = 1;
                 } else if (y == y_level) {
                     voxel_id = 2;
+                } else {
+                    voxel_id = 0;
                 }
 
-                ptr_chunk->ptr_voxels[Conversion::toIndex(x, y, z)] = voxel_id;
+                setVoxelIDAtPosition(voxel_id, local);
             }
         }
     }
 }
 
-void buildMesh(Chunk *ptr_chunk,
-                Chunk *ptr_nchunk,
-                Chunk *ptr_schunk,
-                Chunk *ptr_echunk,
-                Chunk *ptr_wchunk) {
+void Chunk::buildMesh(const Chunk *ptr_north_neighbor,
+                      const Chunk *ptr_south_neighbor,
+                      const Chunk *ptr_east_neighbor,
+                      const Chunk *ptr_west_neighbor) {
     GLuint index = 0;
-    auto& mesh_indices  = ptr_chunk->mesh.indices;
-    auto& mesh_vertices = ptr_chunk->mesh.vertices;
-    auto& bounding_box = ptr_chunk->bounding_box;
 
     // Setting them to an extreme point so we can update them later
     bounding_box.vmin = glm::vec3(10000.0f);
     bounding_box.vmax = glm::vec3(-10000.0f);
 
-    Vertex v0, v1, v2, v3;
+    Vertex vtx0 {}, vtx1 {}, vtx2 {}, vtx3 {};
 
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
             for (unsigned y = 0; y < Constant::CHUNK_HEIGHT; y++) {
-                const auto position = glm::uvec3(x, y, z);
-                const unsigned voxel_id = getVoxelID(ptr_chunk, position);
-                if (0 == voxel_id) continue;
+                LocalPosition voxel_origin = { x, y, z };
+                if (isVoidAt(voxel_origin)) continue;
+                const VoxelID voxel_id = getVoxelID(voxel_origin);
 
-                const int X_VERT = static_cast<int>(x);
-                const int Y_VERT = static_cast<int>(y);
-                const int Z_VERT = static_cast<int>(z);
+                if (isVoidTop(voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Top, voxel_id };
+                    vtx1 = { 1, voxel_origin, Top, voxel_id };
+                    vtx2 = { 2, voxel_origin, Top, voxel_id };
+                    vtx3 = { 3, voxel_origin, Top, voxel_id };
 
-                // Top
-                if (isVoidTop(position, ptr_chunk)) {
-                    v0 = Vertex(X_VERT,   Y_VERT+1, Z_VERT,   1.0f, 0.0f, voxel_id, Top);
-                    v1 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   0.0f, 0.0f, voxel_id, Top);
-                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, Top);
-                    v3 = Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, Top);
-
-                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
-                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
-                    mesh_indices.insert(mesh_indices.end(), { index, index+3, index+2, index, index+2, index+1 });
+                    updateBoundingBoxWithCubeFace(Top, voxel_origin);
+                    mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
+                    mesh.indices.insert(mesh.indices.end(), { index, index+3, index+2, index, index+2, index+1 });
                     index += 4;
                 }
 
-                // Bottom
-                if (isVoidBottom(position, ptr_chunk)) {
-                    v0 = Vertex(X_VERT,   Y_VERT, Z_VERT,   0.0f, 0.0f, voxel_id, Bottom);
-                    v1 = Vertex(X_VERT+1, Y_VERT, Z_VERT,   1.0f, 0.0f, voxel_id, Bottom);
-                    v2 = Vertex(X_VERT+1, Y_VERT, Z_VERT+1, 1.0f, 1.0f, voxel_id, Bottom);
-                    v3 = Vertex(X_VERT,   Y_VERT, Z_VERT+1, 0.0f, 1.0f, voxel_id, Bottom);
+                if (isVoidBottom(voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Bottom, voxel_id };
+                    vtx1 = { 1, voxel_origin, Bottom, voxel_id };
+                    vtx2 = { 2, voxel_origin, Bottom, voxel_id };
+                    vtx3 = { 3, voxel_origin, Bottom, voxel_id };
 
-                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
-                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
-                    mesh_indices.insert(mesh_indices.end(), { index, index+2, index+3, index, index+1, index+2 });
+                    updateBoundingBoxWithCubeFace(Bottom, voxel_origin);
+                    mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
+                    mesh.indices.insert(mesh.indices.end(), { index, index+2, index+3, index, index+1, index+2 });
                     index += 4;
                 }
 
-                // North
-                if (isVoidNorth(position, ptr_chunk, ptr_nchunk)) {
-                    v0 = Vertex(X_VERT+1, Y_VERT,   Z_VERT,   1.0f, 0.0f, voxel_id, North);
-                    v1 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT,   1.0f, 1.0f, voxel_id, North);
-                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, North);
-                    v3 = Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, North);
+                if (isVoidNorth(voxel_origin, ptr_north_neighbor)) {
+                    vtx0 = { 0, voxel_origin, North, voxel_id };
+                    vtx1 = { 1, voxel_origin, North, voxel_id };
+                    vtx2 = { 2, voxel_origin, North, voxel_id };
+                    vtx3 = { 3, voxel_origin, North, voxel_id };
 
-                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
-                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
-                    mesh_indices.insert(mesh_indices.end(), { index, index+1, index+2, index, index+2, index+3 });
+                    updateBoundingBoxWithCubeFace(North, voxel_origin);
+                    mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
+                    mesh.indices.insert(mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
                 }
 
-                // South
-                if (isVoidSouth(position, ptr_chunk, ptr_schunk)) {
-                    v0 = Vertex(X_VERT, Y_VERT,   Z_VERT,   0.0f, 0.0f, voxel_id, South);
-                    v1 = Vertex(X_VERT, Y_VERT+1, Z_VERT,   0.0f, 1.0f, voxel_id, South);
-                    v2 = Vertex(X_VERT, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, South);
-                    v3 = Vertex(X_VERT, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, South);
+                if (isVoidSouth(voxel_origin, ptr_south_neighbor)) {
+                    vtx0 = { 0, voxel_origin, South, voxel_id };
+                    vtx1 = { 1, voxel_origin, South, voxel_id };
+                    vtx2 = { 2, voxel_origin, South, voxel_id };
+                    vtx3 = { 3, voxel_origin, South, voxel_id };
 
-                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
-                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
-                    mesh_indices.insert(mesh_indices.end(), { index, index+2, index+1, index, index+3, index+2 });
+                    updateBoundingBoxWithCubeFace(South, voxel_origin);
+                    mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
+                    mesh.indices.insert(mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
                     index += 4;
                 }
 
-                // East
-                if (isVoidEast(position, ptr_chunk, ptr_echunk)) {
-                    v0 = Vertex(X_VERT,   Y_VERT,   Z_VERT+1, 0.0f, 0.0f, voxel_id, East);
-                    v1 = Vertex(X_VERT,   Y_VERT+1, Z_VERT+1, 0.0f, 1.0f, voxel_id, East);
-                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT+1, 1.0f, 1.0f, voxel_id, East);
-                    v3 = Vertex(X_VERT+1, Y_VERT,   Z_VERT+1, 1.0f, 0.0f, voxel_id, East);
+                if (isVoidEast(voxel_origin, ptr_east_neighbor)) {
+                    vtx0 = { 0, voxel_origin, East, voxel_id };
+                    vtx1 = { 1, voxel_origin, East, voxel_id };
+                    vtx2 = { 2, voxel_origin, East, voxel_id };
+                    vtx3 = { 3, voxel_origin, East, voxel_id };
 
-                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
-                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
-                    mesh_indices.insert(mesh_indices.end(), { index, index+2, index+1, index, index+3, index+2 });
+                    updateBoundingBoxWithCubeFace(East, voxel_origin);
+                    mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
+                    mesh.indices.insert(mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
                     index += 4;
                 }
 
-                // West
-                if (isVoidWest(position, ptr_chunk, ptr_wchunk)) {
-                    v0 = Vertex(X_VERT,   Y_VERT,   Z_VERT, 1.0f, 0.0f, voxel_id, West);
-                    v1 = Vertex(X_VERT,   Y_VERT+1, Z_VERT, 1.0f, 1.0f, voxel_id, West);
-                    v2 = Vertex(X_VERT+1, Y_VERT+1, Z_VERT, 0.0f, 1.0f, voxel_id, West);
-                    v3 = Vertex(X_VERT+1, Y_VERT,   Z_VERT, 0.0f, 0.0f, voxel_id, West);
+                if (isVoidWest(voxel_origin, ptr_west_neighbor)) {
+                    vtx0 = { 0, voxel_origin, West, voxel_id };
+                    vtx1 = { 1, voxel_origin, West, voxel_id };
+                    vtx2 = { 2, voxel_origin, West, voxel_id };
+                    vtx3 = { 3, voxel_origin, West, voxel_id };
 
-                    updateBoundingBox(bounding_box, v0, v1, v2, v3);
-                    mesh_vertices.insert(mesh_vertices.end(), { v0, v1, v2, v3 });
-                    mesh_indices.insert(mesh_indices.end(), { index, index+1, index+2, index, index+2, index+3 });
+                    updateBoundingBoxWithCubeFace(West, voxel_origin);
+                    mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
+                    mesh.indices.insert(mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
                 }
             }
         }
     }
 
-    if (mesh_vertices.empty()) return;
+    if (mesh.vertices.empty()) return;
 
-    glCreateBuffers(1, &ptr_chunk->mesh.ssbo_vertices);
-    glCreateBuffers(1, &ptr_chunk->mesh.ebo);
-    glCreateVertexArrays(1, &ptr_chunk->mesh.vao);
+    translateBoundingBox();
 
-    const auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(mesh_vertices.size() * sizeof(Vertex));
-    const auto VERTEX_DATA = reinterpret_cast<void *>(mesh_vertices.data());
-    const auto ELEMENT_BUFFER_SIZE = static_cast<GLsizeiptr>(mesh_indices.size() * sizeof(GLuint));
-    const auto ELEMENT_DATA = reinterpret_cast<void *>(mesh_indices.data());
-    glNamedBufferStorage(ptr_chunk->mesh.ssbo_vertices, VERTEX_BUFFER_SIZE, VERTEX_DATA, 0);
-    glNamedBufferStorage(ptr_chunk->mesh.ebo, ELEMENT_BUFFER_SIZE, ELEMENT_DATA, 0);
-    glVertexArrayElementBuffer(ptr_chunk->mesh.vao, ptr_chunk->mesh.ebo);
+    glCreateBuffers(1, &mesh.ssbo_vertices);
+    glCreateBuffers(1, &mesh.ebo);
+    glCreateVertexArrays(1, &mesh.vao);
 
-    bounding_box.vmax += glm::vec3(1.0f);
-    const glm::mat4 chunk_model = getChunkModel(ptr_chunk);
-    bounding_box.vmin = glm::vec3(chunk_model * glm::vec4(bounding_box.vmin.x, bounding_box.vmin.y, bounding_box.vmin.z, 1.0f));
-    bounding_box.vmax = glm::vec3(chunk_model * glm::vec4(bounding_box.vmax.x, bounding_box.vmax.y, bounding_box.vmax.z, 1.0f));
+    const auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(mesh.vertices.size() * sizeof(Vertex));
+    const auto VERTEX_DATA = reinterpret_cast<void *>(mesh.vertices.data());
+    const auto ELEMENT_BUFFER_SIZE = static_cast<GLsizeiptr>(mesh.indices.size() * sizeof(GLuint));
+    const auto ELEMENT_DATA = reinterpret_cast<void *>(mesh.indices.data());
+    glNamedBufferStorage(mesh.ssbo_vertices, VERTEX_BUFFER_SIZE, VERTEX_DATA, 0);
+    glNamedBufferStorage(mesh.ebo, ELEMENT_BUFFER_SIZE, ELEMENT_DATA, 0);
+    glVertexArrayElementBuffer(mesh.vao, mesh.ebo);
 }
 
-void destroyChunk(Chunk *ptr_chunk) {
-    destroyMesh(ptr_chunk);
-    delete[] ptr_chunk->ptr_voxels;
+void Chunk::destroyMesh() {
+    glDeleteVertexArrays(1, &mesh.vao);
+    glDeleteBuffers(1, &mesh.ssbo_vertices);
+    glDeleteBuffers(1, &mesh.ebo);
+    mesh.vertices.clear();
+    mesh.indices.clear();
 }
 
-void destroyMesh(Chunk *ptr_chunk) {
-    glDeleteVertexArrays(1, &ptr_chunk->mesh.vao);
-    glDeleteBuffers(1, &ptr_chunk->mesh.ssbo_vertices);
-    glDeleteBuffers(1, &ptr_chunk->mesh.ebo);
-    ptr_chunk->mesh.vertices.clear();
-    ptr_chunk->mesh.indices.clear();
+void Chunk::destroyChunk() {
+    destroyMesh();
+    delete[] ptr_voxels;
 }
 
-void renderChunk(const Chunk *ptr_chunk) {
-    glBindVertexArray(ptr_chunk->mesh.vao);
-    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(ptr_chunk->mesh.indices.size()), GL_UNSIGNED_INT, 0);
+void Chunk::render() const {
+    glBindVertexArray(mesh.vao);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, mesh.ssbo_vertices);
+    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
 }
 
-glm::mat4 getChunkModel(const Chunk *ptr_chunk) {
+glm::mat4 Chunk::getChunkModel() const {
     glm::mat4 model(1.0f);
-    const glm::ivec3 chunk_position_to_world = Conversion::chunkToWorld(ptr_chunk->position);
+    const ChunkPosition chunk_position_to_world = Conversion::chunkToWorld(position);
     model = glm::translate(model, glm::vec3(chunk_position_to_world));
     return model;
 }
