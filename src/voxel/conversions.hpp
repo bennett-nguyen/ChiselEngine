@@ -1,32 +1,27 @@
 #ifndef CONVERSIONS_HPP
 #define CONVERSIONS_HPP
 
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
+#include <glm/common.hpp>
 
 #include "constant.hpp"
 
-/*
-* Coordinate Systems:
-* Local: The coordinate system for voxels in a single chunk  (uvec3)
-* Chunk: The coordinate system for chunks in the world       (ivec3)
-* World: The coordinate system for voxels in the world       (ivec3)
-
-* Misc:
-* Index: The index of a voxel in a chunk
-*/
+typedef unsigned VoxelIndex;
+typedef glm::ivec3 WorldPosition;
+typedef glm::ivec3 ChunkPosition;
+typedef glm::uvec3 LocalPosition;
 
 namespace Conversion {
-    unsigned toIndex(unsigned x, unsigned y, unsigned z);
-    unsigned toIndex(glm::uvec3 local_position);
+    [[nodiscard]] VoxelIndex toIndex(LocalPosition);
 
-    glm::ivec3 toWorld(glm::uvec3 local_position, glm::ivec3 chunk_position);
-    glm::ivec3 toWorld(glm::vec3 any_position);
-    glm::ivec3 chunkToWorld(glm::ivec3 chunk_position);
+    [[nodiscard]] WorldPosition toWorld(LocalPosition, ChunkPosition);
+    [[nodiscard]] WorldPosition toWorld(glm::vec3 any_position);
+    [[nodiscard]] WorldPosition chunkToWorld(ChunkPosition);
 
-    glm::ivec3 toChunk(glm::ivec3 world_position);
-    glm::ivec3 toChunk(glm::vec3 any_position);
+    [[nodiscard]] ChunkPosition toChunk(WorldPosition);
+    [[nodiscard]] ChunkPosition toChunk(glm::vec3 any_position);
 
-    glm::uvec3 toLocal(glm::ivec3 world_position, glm::ivec3 chunk_position);
+    [[nodiscard]] LocalPosition toLocal(WorldPosition, ChunkPosition);
 }
 
 #endif

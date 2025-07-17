@@ -1,57 +1,49 @@
 #include "conversions.hpp"
 
-unsigned Conversion::toIndex(const unsigned x, const unsigned y, const unsigned z) {
-    return x + Constant::CHUNK_SIZE * z + Constant::CHUNK_AREA * y;
+VoxelIndex Conversion::toIndex(const LocalPosition local) {
+    return local.x + Constant::CHUNK_SIZE * local.z + Constant::CHUNK_AREA * local.y;
 }
 
-unsigned Conversion::toIndex(const glm::uvec3 local_position) {
-    return toIndex(local_position.x, local_position.y, local_position.z);
-}
-
-glm::ivec3 Conversion::toWorld(const glm::uvec3 local_position, const glm::ivec3 chunk_position) {
+WorldPosition Conversion::toWorld(const LocalPosition local, const ChunkPosition chunk) {
     return {
-        static_cast<int>(local_position.x) + chunk_position.x * static_cast<int>(Constant::CHUNK_SIZE),
-        static_cast<int>(local_position.y) + chunk_position.y * static_cast<int>(Constant::CHUNK_HEIGHT),
-        static_cast<int>(local_position.z) + chunk_position.z * static_cast<int>(Constant::CHUNK_SIZE)
+        static_cast<int>(local.x) + chunk.x * static_cast<int>(Constant::CHUNK_SIZE),
+        static_cast<int>(local.y) + chunk.y * static_cast<int>(Constant::CHUNK_HEIGHT),
+        static_cast<int>(local.z) + chunk.z * static_cast<int>(Constant::CHUNK_SIZE)
     };
 }
 
-glm::ivec3 Conversion::toWorld(const glm::vec3 any_position) {
+WorldPosition Conversion::toWorld(const glm::vec3 any_position) {
+    return WorldPosition { glm::floor(any_position) };
+}
+
+WorldPosition Conversion::chunkToWorld(const ChunkPosition chunk) {
     return {
-        static_cast<int>(std::floor(any_position.x)),
-        static_cast<int>(std::floor(any_position.y)),
-        static_cast<int>(std::floor(any_position.z))
+        chunk.x * static_cast<int>(Constant::CHUNK_SIZE),
+        chunk.y * static_cast<int>(Constant::CHUNK_HEIGHT),
+        chunk.z * static_cast<int>(Constant::CHUNK_SIZE)
     };
 }
 
-glm::ivec3 Conversion::chunkToWorld(const glm::ivec3 chunk_position) {
+ChunkPosition Conversion::toChunk(const WorldPosition world) {
     return {
-        chunk_position.x * static_cast<int>(Constant::CHUNK_SIZE),
-        chunk_position.y * static_cast<int>(Constant::CHUNK_HEIGHT),
-        chunk_position.z * static_cast<int>(Constant::CHUNK_SIZE)
+        static_cast<int>(glm::floor(static_cast<float>(world.x) / static_cast<float>(Constant::CHUNK_SIZE))),
+        static_cast<int>(glm::floor(static_cast<float>(world.y) / static_cast<float>(Constant::CHUNK_HEIGHT))),
+        static_cast<int>(glm::floor(static_cast<float>(world.z) / static_cast<float>(Constant::CHUNK_SIZE)))
     };
 }
 
-glm::ivec3 Conversion::toChunk(const glm::ivec3 world_position) {
+ChunkPosition Conversion::toChunk(const glm::vec3 any_position) {
     return {
-        static_cast<int>(std::floor(static_cast<float>(world_position.x) / static_cast<float>(Constant::CHUNK_SIZE))),
-        static_cast<int>(std::floor(static_cast<float>(world_position.y) / static_cast<float>(Constant::CHUNK_HEIGHT))),
-        static_cast<int>(std::floor(static_cast<float>(world_position.z) / static_cast<float>(Constant::CHUNK_SIZE)))
+        static_cast<int>(glm::floor(any_position.x / static_cast<float>(Constant::CHUNK_SIZE))),
+        static_cast<int>(glm::floor(any_position.y / static_cast<float>(Constant::CHUNK_HEIGHT))),
+        static_cast<int>(glm::floor(any_position.z / static_cast<float>(Constant::CHUNK_SIZE)))
     };
 }
 
-glm::ivec3 Conversion::toChunk(const glm::vec3 any_position) {
+LocalPosition Conversion::toLocal(const WorldPosition world, const ChunkPosition chunk) {
     return {
-        static_cast<int>(std::floor(any_position.x / static_cast<float>(Constant::CHUNK_SIZE))),
-        static_cast<int>(std::floor(any_position.y / static_cast<float>(Constant::CHUNK_HEIGHT))),
-        static_cast<int>(std::floor(any_position.z / static_cast<float>(Constant::CHUNK_SIZE)))
-    };
-}
-
-glm::uvec3 Conversion::toLocal(const glm::ivec3 world_position, const glm::ivec3 chunk_position) {
-    return {
-        static_cast<unsigned>(world_position.x - chunk_position.x * static_cast<int>(Constant::CHUNK_SIZE)),
-        static_cast<unsigned>(world_position.y - chunk_position.y * static_cast<int>(Constant::CHUNK_HEIGHT)),
-        static_cast<unsigned>(world_position.z - chunk_position.z * static_cast<int>(Constant::CHUNK_SIZE))
+        static_cast<unsigned>(world.x - chunk.x * static_cast<int>(Constant::CHUNK_SIZE)),
+        static_cast<unsigned>(world.y - chunk.y * static_cast<int>(Constant::CHUNK_HEIGHT)),
+        static_cast<unsigned>(world.z - chunk.z * static_cast<int>(Constant::CHUNK_SIZE))
     };
 }
