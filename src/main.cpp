@@ -4,6 +4,9 @@
 #include <imgui_impl_opengl3.h>
 #include <stb_image.h>
 
+#define GLM_FORCE_CXX17
+#define GLM_FORCE_EXPLICIT_CTOR
+
 #include "video.hpp"
 #include "world.hpp"
 #include "constant.hpp"
@@ -242,6 +245,16 @@ int main(int argc, char** argv) {
             setProjection(cinematic_camera.projection_mat);
         }
 
+        rayCast(ray_cast_result, world, world.camera.position, world.camera.front);
+
+        if (ray_cast_result.is_detected_voxel) {
+            if (enable_break_block) {
+                breakBlock(world, ray_cast_result.detected_voxel_position);
+            } else if (enable_place_block) {
+                placeBlock(world, getAdjacentVoxel(ray_cast_result));
+            }
+        }
+
         auto current_player_chunk_pos = Conversion::toChunk(world.camera.position);
 
         if (world.prev_player_chunk_pos.x != current_player_chunk_pos.x
@@ -250,16 +263,6 @@ int main(int argc, char** argv) {
             loadChunks(world);
             rebuildChunks(world);
             world.prev_player_chunk_pos = current_player_chunk_pos;
-        }
-
-        rayCast(ray_cast_result, world, world.camera.position, world.camera.front);
-
-        if (ray_cast_result.is_detected_voxel) {
-            if (enable_break_block) {
-                breakBlock(world, ray_cast_result.detected_voxel_world_pos);
-            } else if (enable_place_block) {
-                placeBlock(world, getAdjacentVoxel(ray_cast_result));
-            }
         }
 
         multisample_framebuffer.bind();
@@ -275,10 +278,9 @@ int main(int argc, char** argv) {
         if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         for (const auto &[_, ptr_chunk] : world.chunk_map) {
-            if (!isChunkVisible(ptr_chunk, frustum_planes)) continue;
-            uniformMat4f(world.chunk_shader_program, "model", 1, GL_FALSE, getChunkModel(ptr_chunk));
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ptr_chunk->mesh.ssbo_vertices);
-            renderChunk(ptr_chunk);
+            if (!ptr_chunk->isChunkVisible(frustum_planes)) continue;
+            uniformMat4f(world.chunk_shader_program, "model", 1, GL_FALSE, ptr_chunk->getChunkModel());
+            ptr_chunk->render();
         }
 
         multisample_framebuffer.blitTo(intermediate_framebuffer);
