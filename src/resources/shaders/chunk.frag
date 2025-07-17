@@ -3,14 +3,15 @@ out vec4 frag_color;
 
 uniform sampler2DArray texture_array0;
 
-in vec2 tex_coords;
-in float out_shades;
-flat in uint voxel_id;
-flat in uint face_id;
+in vec2 fs_uv_coords;
+in float fs_shades;
+
+flat in uint fs_face_id;
+flat in uint fs_voxel_id;
 
 void main() {
-    vec2 face_uv = tex_coords;
-    face_uv.x = (tex_coords.x / 6) + (float(face_id) / 6);
+    vec2 face_uv = fs_uv_coords;
+    face_uv.x = (fs_uv_coords.x / 6) + (float(fs_face_id) / 6);
 
-    frag_color = vec4(texture(texture_array0, vec3(face_uv, voxel_id)).rgb * out_shades, 1.0f);
+    frag_color = vec4(texture(texture_array0, vec3(face_uv, fs_voxel_id)).rgb * fs_shades, 1.0f);
 }
