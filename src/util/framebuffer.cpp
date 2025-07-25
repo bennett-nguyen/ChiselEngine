@@ -3,13 +3,10 @@
 GLenum getRenderbufferAttachment(const GLenum sized_internal_formal) {
     switch (sized_internal_formal) {
         case GL_DEPTH_COMPONENT16:
-            return GL_DEPTH_ATTACHMENT;
         case GL_DEPTH_COMPONENT24:
-            return GL_DEPTH_ATTACHMENT;
         case GL_DEPTH_COMPONENT32F:
             return GL_DEPTH_ATTACHMENT;
         case GL_DEPTH24_STENCIL8:
-            return GL_DEPTH_STENCIL_ATTACHMENT;
         case GL_DEPTH32F_STENCIL8:
             return GL_DEPTH_STENCIL_ATTACHMENT;
         case GL_STENCIL_INDEX8:
