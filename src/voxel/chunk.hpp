@@ -29,14 +29,17 @@
 
 typedef uint8_t VoxelID;
 
-enum FaceID {
-    Top,    // Y+
-    Bottom, // Y-
-    North,  // X+
-    South,  // X-
-    East,   // Z+
-    West,   // Z-
-    Nil
+enum class FaceID : unsigned {
+    Top     = 0, // Y+
+    Bottom  = 1, // Y-
+    North   = 2, // X+
+    South   = 3, // X-
+    East    = 4, // Z+
+    West    = 5, // Z-
+    Nil        ,
+
+    begin   = 0,
+    end     = Nil - 1
 };
 
 struct Vertex {
@@ -60,8 +63,12 @@ struct AABB {
 class Chunk {
     ChunkMesh mesh;
     AABB bounding_box {};
-    VoxelID *ptr_voxels {};
-    ChunkPosition position;
+    ChunkPosition position {};
+
+    std::array<VoxelID, Constant::CHUNK_VOLUME> voxel_ids {};
+
+    bool is_empty = true;
+    bool is_built = false;
 
     [[nodiscard]] bool isVoidTop   (LocalPosition voxel_origin) const;
     [[nodiscard]] bool isVoidBottom(LocalPosition voxel_origin) const;
@@ -73,26 +80,31 @@ class Chunk {
     void translateBoundingBox();
     void updateBoundingBoxWithCubeFace(FaceID face, const LocalPosition &voxel_origin);
 
+    void setBuilt(bool);
+    void setEmpty(bool);
 public:
-    explicit Chunk(const glm::ivec3 position) : position(position) {}
-    Chunk(const int x, const int y, const int z) : position(x, y, z) {}
+    Chunk() = default;
+    explicit Chunk(const ChunkPosition position) : position(position) {}
 
-    ~Chunk() { destroyChunk(); }
+    ~Chunk() { destroyMesh(); }
 
     void buildVoxels();
     void buildMesh(const Chunk* ptr_north_neighbor, const Chunk* ptr_south_neighbor, const Chunk* ptr_east_neighbor, const Chunk* ptr_west_neighbor);
 
     void destroyMesh();
-    void destroyChunk();
+    void resetVoxels();
 
     void render() const;
-    void setVoxelIDAtPosition(VoxelID voxel_id, LocalPosition local) const;
 
+    void setPosition(ChunkPosition position);
+    void setVoxelIDAtPosition(VoxelID voxel_id, LocalPosition local);
+
+    [[nodiscard]] bool isBuilt() const;
+    [[nodiscard]] bool isEmpty() const;
     [[nodiscard]] bool isVoidAt(LocalPosition local) const;
     [[nodiscard]] bool isChunkVisible(const std::vector<glm::vec4>& frustum_planes) const;
 
     [[nodiscard]] VoxelID   getVoxelID(LocalPosition local) const;
-    [[nodiscard]] glm::mat4 getChunkModel() const;
 };
 
 #endif
