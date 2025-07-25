@@ -47,3 +47,10 @@ LocalPosition Conversion::toLocal(const WorldPosition world, const ChunkPosition
         static_cast<unsigned>(world.z - chunk.z * static_cast<int>(Constant::CHUNK_SIZE))
     };
 }
+
+glm::mat4 Conversion::toChunkModel(const ChunkPosition chunk) {
+    glm::mat4 model(1.0f);
+    const ChunkPosition chunk_position_to_world = chunkToWorld(chunk);
+    model = glm::translate(model, glm::vec3(chunk_position_to_world));
+    return model;
+}

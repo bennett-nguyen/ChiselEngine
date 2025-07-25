@@ -3,6 +3,7 @@
 
 #include <glm/vec3.hpp>
 #include <glm/common.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #include "constant.hpp"
 
@@ -22,6 +23,9 @@ namespace Conversion {
     [[nodiscard]] ChunkPosition toChunk(glm::vec3 any_position);
 
     [[nodiscard]] LocalPosition toLocal(WorldPosition, ChunkPosition);
+
+    [[nodiscard]] glm::mat4 toChunkModel(ChunkPosition);
+
 }
 
 #endif
