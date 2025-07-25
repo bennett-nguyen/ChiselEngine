@@ -8,7 +8,7 @@ float FRAC1(const float x) {
     return 1.0f - x + std::floor(x);
 }
 
-void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, glm::vec3 direction) {
+void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direction) {
     auto current_voxel = Conversion::toWorld(position);
     glm::vec3 normalized_direction = glm::normalize(direction);
 
@@ -17,7 +17,7 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     const auto step_x = static_cast<int>(glm::sign(normalized_direction.x));
     const auto step_y = static_cast<int>(glm::sign(normalized_direction.y));
     const auto step_z = static_cast<int>(glm::sign(normalized_direction.z));
-    FaceID face_x = Nil, face_y = Nil, face_z = Nil;
+    auto face_x = FaceID::Nil, face_y = FaceID::Nil, face_z = FaceID::Nil;
 
     float t_delta_x = 0.0f, t_delta_y = 0.0f, t_delta_z = 0.0f;
     float t_max_x = 0.0f, t_max_y = 0.0f, t_max_z = 0.0f;
@@ -28,7 +28,7 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     if (step_x == 0) {
         t_delta_x = 10000000.0f;
     } else {
-        face_x = step_x > 0 ? South : North;
+        face_x = step_x > 0 ? FaceID::South : FaceID::North;
         t_delta_x = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.x), 10000000.0f));
 
         if (step_x > 0) {
@@ -41,7 +41,7 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     if (step_y == 0) {
         t_delta_y = 10000000.0f;
     } else {
-        face_y = step_y > 0 ? Bottom : Top;
+        face_y = step_y > 0 ? FaceID::Bottom : FaceID::Top;
         t_delta_y = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.y), 10000000.0f));
 
         if (step_y > 0) {
@@ -54,7 +54,7 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     if (step_z == 0) {
         t_delta_z = 10000000.0f;
     } else {
-        face_z = step_z > 0 ? West : East;
+        face_z = step_z > 0 ? FaceID::West : FaceID::East;
         t_delta_z = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.z), 10000000.0f));
 
         if (step_z > 0) {
@@ -70,11 +70,10 @@ void rayCast(RayCastResult &ray_cast_result, World &world, glm::vec3 position, g
     while (voxel_traversed <= Constant::MAX_VOXEL_TRAVERSED || current_ray_length <= Constant::MAX_RAY_LENGTH) {
         chunk_position_of_voxel = Conversion::toChunk(current_voxel);
 
-        if (isChunkExist(world, chunk_position_of_voxel)) {
+        if (ChunkPool::isChunkUsed(chunk_position_of_voxel)) {
             voxel_origin = Conversion::toLocal(current_voxel, chunk_position_of_voxel);
-            Chunk* ptr_chunk_of_current_voxel = getChunkPointer(world, chunk_position_of_voxel);
 
-            if (!ptr_chunk_of_current_voxel->isVoidAt(voxel_origin)) {
+            if (!ChunkPool::isVoidAtInChunk(voxel_origin, chunk_position_of_voxel)) {
                 ray_cast_result.is_detected_voxel = true;
                 ray_cast_result.detected_voxel_position = current_voxel;
                 break;
@@ -116,26 +115,94 @@ WorldPosition getAdjacentVoxel(const RayCastResult &ray_cast_result) {
     WorldPosition adjacent_voxel = ray_cast_result.detected_voxel_position;
 
     switch (ray_cast_result.detected_face) {
-        case North:
+        case FaceID::North:
             adjacent_voxel.x += 1;
             break;
-        case South:
+        case FaceID::South:
             adjacent_voxel.x -= 1;
             break;
-        case East:
+        case FaceID::East:
             adjacent_voxel.z += 1;
             break;
-        case West:
+        case FaceID::West:
             adjacent_voxel.z -= 1;
             break;
-        case Top:
+        case FaceID::Top:
             adjacent_voxel.y += 1;
             break;
-        case Bottom:
+        case FaceID::Bottom:
             adjacent_voxel.z -= 1;
             break;
         default: break;
     }
 
     return adjacent_voxel;
+}
+
+void breakBlock(const WorldPosition voxel_position) {
+    const auto chunk_position = Conversion::toChunk(voxel_position);
+    const auto local_position = Conversion::toLocal(voxel_position, chunk_position);
+    ChunkPosition neighbor = chunk_position;
+
+    ChunkPool::setVoxelIDAtPositionInChunk(0, local_position, chunk_position);
+    ChunkPool::rebuild(chunk_position);
+
+    if (0 == local_position.x) {
+        neighbor.x--;
+        ChunkPool::rebuild(neighbor);
+    } else if (Constant::CHUNK_SIZE-1 == local_position.x) {
+        neighbor.x++;
+        ChunkPool::rebuild(neighbor);
+    }
+
+    if (0 == local_position.y) {
+        neighbor.y--;
+        ChunkPool::rebuild(neighbor);
+    } else if (Constant::CHUNK_HEIGHT-1 == local_position.y) {
+        neighbor.y++;
+        ChunkPool::rebuild(neighbor);
+    }
+
+    if (0 == local_position.z) {
+        neighbor.z--;
+        ChunkPool::rebuild(neighbor);
+    } else if (Constant::CHUNK_SIZE-1 == local_position.z) {
+        neighbor.z++;
+        ChunkPool::rebuild(neighbor);
+    }
+}
+
+void placeBlock(const WorldPosition adjacent_voxel_position) {
+    const auto chunk_position = Conversion::toChunk(adjacent_voxel_position);
+    const auto local_position = Conversion::toLocal(adjacent_voxel_position, chunk_position);
+    ChunkPosition neighbor = chunk_position;
+
+    if (chunk_position.y != 0) return;
+
+    ChunkPool::setVoxelIDAtPositionInChunk(1, local_position, chunk_position);
+    ChunkPool::rebuild(chunk_position);
+
+    if (0 == local_position.x) {
+        neighbor.x--;
+        ChunkPool::rebuild(neighbor);
+    } else if (Constant::CHUNK_SIZE-1 == local_position.x) {
+        neighbor.x++;
+        ChunkPool::rebuild(neighbor);
+    }
+
+    if (0 == local_position.y) {
+        neighbor.y--;
+        ChunkPool::rebuild(neighbor);
+    } else if (Constant::CHUNK_HEIGHT-1 == local_position.y) {
+        neighbor.y++;
+        ChunkPool::rebuild(neighbor);
+    }
+
+    if (0 == local_position.z) {
+        neighbor.z--;
+        ChunkPool::rebuild(neighbor);
+    } else if (Constant::CHUNK_SIZE-1 == local_position.z) {
+        neighbor.z++;
+        ChunkPool::rebuild(neighbor);
+    }
 }
