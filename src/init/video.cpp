@@ -16,7 +16,7 @@ void initVideo() {
     // Enable 4x MSAA
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, Constant::MULTISAMPLE_LEVEL);
-    
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -64,6 +64,10 @@ void initWindow(Window &window, const std::string& window_name, const float scre
     std::cout << "Version: " << glGetString(GL_VERSION) << '\n';
     std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n' << '\n';
 
+    if (SDL_GL_SetSwapInterval(1) < 0) {
+        std::cerr << "Failed to enable VSync: " << SDL_GetError() << '\n';
+    }
+
     if constexpr (IS_DEBUGGING_ENABLE) {
         initDebugOutput();
     }
@@ -79,11 +83,6 @@ void destroyWindow(const Window &window) {
 
 void swapBuffers(Window &window) {
     SDL_GL_SwapWindow(window.ptr_window);
-}
-
-void clearWindow(const GLclampf r, const GLclampf g, const GLclampf b, const GLclampf a) {
-    glClearColor(r, g, b, a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void clearWindow(const glm::vec4 color) {
