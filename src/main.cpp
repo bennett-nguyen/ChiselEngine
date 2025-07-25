@@ -8,11 +8,77 @@
 #define GLM_FORCE_EXPLICIT_CTOR
 
 #include "video.hpp"
-#include "world.hpp"
+#include "shader.hpp"
 #include "constant.hpp"
+#include "camera.hpp"
+#include "ray_casting.hpp"
 #include "framebuffer.hpp"
 #include "ray_casting.hpp"
 #include "ubo_view_projection.hpp"
+
+void loadWorld(const ChunkPosition player_position) {
+    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+
+    constexpr ChunkPosition NORTH {  1, 0,  0 };
+    constexpr ChunkPosition SOUTH { -1, 0,  0 };
+    constexpr ChunkPosition EAST  {  0, 0,  1 };
+    constexpr ChunkPosition WEST  {  0, 0, -1 };
+
+    const ChunkPosition CORNER_1 { X_MIN, 0, Z_MIN };
+    const ChunkPosition CORNER_2 { X_MAX, 0, Z_MIN };
+    const ChunkPosition CORNER_3 { X_MIN, 0, Z_MAX };
+    const ChunkPosition CORNER_4 { X_MAX, 0, Z_MAX };
+    const ChunkPosition CENTER   { player_position.x, 0, player_position.z };
+
+    const std::vector directions = { NORTH, SOUTH, EAST, WEST };
+    const std::vector starting_points = { CORNER_1, CORNER_2, CORNER_3, CORNER_4, CENTER };
+    std::queue<ChunkPosition> build_queue;
+
+    for (auto const point : starting_points) {
+        if (ChunkPool::isChunkUsed(point)) continue;
+        ChunkPool::use(point);
+        ChunkPool::enqueueForBuilding(point);
+        build_queue.push(point);
+    }
+
+    while (!build_queue.empty()) {
+        ChunkPosition position = build_queue.front();
+        build_queue.pop();
+
+        for (auto const &direction : directions) {
+            const ChunkPosition neighbor = position + direction;
+            if (ChunkPool::isChunkUsed(neighbor)) {
+                if (!ChunkPool::isBuilt(neighbor)) continue;
+                ChunkPool::enqueueForRebuilding(neighbor);
+                continue;
+            }
+
+            if (X_MIN > neighbor.x || neighbor.x > X_MAX || Z_MIN > neighbor.z || neighbor.z > Z_MAX) continue;
+
+            build_queue.push(neighbor);
+            ChunkPool::use(neighbor);
+            ChunkPool::enqueueForBuilding(neighbor);
+        }
+    }
+}
+
+void removeChunks(const ChunkPosition player_position) {
+    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
+    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+
+    const std::vector<ChunkPosition> used_chunks_positions = ChunkPool::getUsedChunksPositions();
+    for (const auto &position : used_chunks_positions) {
+        if (X_MIN <= position.x && position.x <= X_MAX &&
+                Z_MIN <= position.z && position.z <= Z_MAX) continue;
+
+        ChunkPool::free(position);
+    }
+}
 
 int main(int argc, char** argv) {
     // Program Init
@@ -61,23 +127,23 @@ int main(int argc, char** argv) {
     intermediate_framebuffer.setUp();
     multisample_framebuffer.setUp();
 
-    float screen_quad_vertices[] = {
+    std::array<GLfloat, 24> SCREEN_QUAD_VERTICES = {
         // positions   // texCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
         -1.0f, -1.0f,  0.0f, 0.0f,
-        1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
 
         -1.0f,  1.0f,  0.0f, 1.0f,
-        1.0f, -1.0f,  1.0f, 0.0f,
-        1.0f,  1.0f,  1.0f, 1.0f
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
     };
 
     GLuint screen_ssbo;
     glCreateBuffers(1, &screen_ssbo);
-    glNamedBufferStorage(screen_ssbo, static_cast<GLsizeiptr>(sizeof(screen_quad_vertices)), screen_quad_vertices, 0);
+    glNamedBufferStorage(screen_ssbo, static_cast<GLsizeiptr>(sizeof(SCREEN_QUAD_VERTICES)), SCREEN_QUAD_VERTICES.data(), 0);
 
     // Crosshair Init
-    GLfloat crosshair_vertices[] = {
+    std::array<GLfloat, 24> CROSSHAIR_VERTICES = {
         // pos      // tex
         0.0f, 1.0f, 0.0f, 1.0f,
         1.0f, 0.0f, 1.0f, 0.0f,
@@ -89,8 +155,8 @@ int main(int argc, char** argv) {
     };
 
     GLuint ssbo_crosshair_vertices;
-    constexpr auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(sizeof(crosshair_vertices));
-    const auto VERTEX_DATA = reinterpret_cast<void*>(crosshair_vertices);
+    constexpr auto VERTEX_BUFFER_SIZE = static_cast<GLsizeiptr>(sizeof(CROSSHAIR_VERTICES));
+    const auto VERTEX_DATA = reinterpret_cast<void*>(CROSSHAIR_VERTICES.data());
 
     glCreateBuffers(1, &ssbo_crosshair_vertices);
     glNamedBufferStorage(ssbo_crosshair_vertices, VERTEX_BUFFER_SIZE, VERTEX_DATA, 0);
@@ -121,20 +187,27 @@ int main(int argc, char** argv) {
     linkProgram(crosshair_shader_program);
 
     // World Init
-    World world;
+    const ShaderProgramID chunk_shader_program = glCreateProgram();
+    attachShader("resources/shaders/chunk.vert", chunk_shader_program);
+    attachShader("resources/shaders/chunk.frag", chunk_shader_program);
+    linkProgram(chunk_shader_program);
+
+    Camera player_camera;
     RayCastResult ray_cast_result;
+    ChunkPosition prev_player_position, current_player_position;
 
     bool is_using_cinematic_camera = false;
     bool is_switching_controls = false;
     Camera cinematic_camera = initCamera(glm::radians(60.0f), 20.0f, 500.0f, computeAspectRatio(window));
     cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
 
-    world.camera = initCamera(glm::radians(60.0f), 0.1f, 150.0f, computeAspectRatio(window));
-    world.camera.position = glm::vec3(0, 0, -1.0f);
-    world.prev_player_chunk_pos = world.camera.position;
+    player_camera = initCamera(glm::radians(60.0f), 0.1f, 500.0f, computeAspectRatio(window));
+    player_camera.position = glm::vec3(0.0f, 80.0f, 0.0f);
+    prev_player_position = Conversion::toChunk(player_camera.position);
+    current_player_position = Conversion::toChunk(player_camera.position);
 
-    initChunkShader(world, "resources/shaders/chunk.vert", "resources/shaders/chunk.frag");
-    loadChunks(world);
+    ChunkPool::init();
+    loadWorld(current_player_position);
 
     // Texture Array
     GLuint texture_array;
@@ -222,65 +295,70 @@ int main(int argc, char** argv) {
                 }
             }
             if (!is_switching_controls) {
-                pan(world.camera, event);
+                pan(player_camera, event);
             } else {
                 pan(cinematic_camera, event);
             }
         }
 
         if (!is_switching_controls) {
-            move(world.camera);
+            move(player_camera);
         } else {
             move(cinematic_camera);
         }
 
-        updateView(world.camera);
+        updateView(player_camera);
         updateView(cinematic_camera);
 
         if (!is_using_cinematic_camera) {
-            setView(world.camera.view_mat);
-            setProjection(world.camera.projection_mat);
+            setView(player_camera.view_mat);
+            setProjection(player_camera.projection_mat);
         } else {
             setView(cinematic_camera.view_mat);
             setProjection(cinematic_camera.projection_mat);
         }
 
-        rayCast(ray_cast_result, world, world.camera.position, world.camera.front);
+        if (enable_break_block || enable_place_block) {
+            rayCast(ray_cast_result, player_camera.position, player_camera.front);
 
-        if (ray_cast_result.is_detected_voxel) {
-            if (enable_break_block) {
-                breakBlock(world, ray_cast_result.detected_voxel_position);
-            } else if (enable_place_block) {
-                placeBlock(world, getAdjacentVoxel(ray_cast_result));
+            if (ray_cast_result.is_detected_voxel) {
+                if (enable_break_block) {
+                    breakBlock(ray_cast_result.detected_voxel_position);
+                } else {
+                    placeBlock(getAdjacentVoxel(ray_cast_result));
+                }
             }
         }
 
-        auto current_player_chunk_pos = Conversion::toChunk(world.camera.position);
+        current_player_position = Conversion::toChunk(player_camera.position);
 
-        if (world.prev_player_chunk_pos.x != current_player_chunk_pos.x
-            || world.prev_player_chunk_pos.z != current_player_chunk_pos.z) {
-            removeChunks(world);
-            loadChunks(world);
-            rebuildChunks(world);
-            world.prev_player_chunk_pos = current_player_chunk_pos;
+        if (prev_player_position.x != current_player_position.x
+            || prev_player_position.z != current_player_position.z) {
+            removeChunks(current_player_position);
+            loadWorld(current_player_position);
+            prev_player_position = current_player_position;
         }
 
+        ChunkPool::buildQueuedChunks();
+        ChunkPool::rebuildQueuedChunks();
+
         multisample_framebuffer.bind();
-        clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
+        clearWindow({ 0.45490f, 0.70196f, 1.0f, 1.0f });
         glEnable(GL_DEPTH_TEST);
 
-        activateShaderProgram(world.chunk_shader_program);
+        activateShaderProgram(chunk_shader_program);
         glBindTextureUnit(0, texture_array);
         bindUBOViewProjection();
 
-        std::vector<glm::vec4> frustum_planes = getFrustumPlanes(world.camera);
-
         if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        for (const auto &[_, ptr_chunk] : world.chunk_map) {
-            if (!ptr_chunk->isChunkVisible(frustum_planes)) continue;
-            uniformMat4f(world.chunk_shader_program, "model", 1, GL_FALSE, ptr_chunk->getChunkModel());
-            ptr_chunk->render();
+        std::vector<glm::vec4> frustum_planes = getFrustumPlanes(player_camera);
+        std::vector<ChunkPosition> used_chunks_positions = ChunkPool::getUsedChunksPositions();
+
+        for (const auto position : used_chunks_positions) {
+            if (!ChunkPool::isVisible(position, frustum_planes)) continue;
+            uniformMat4f(chunk_shader_program, "model", 1, GL_FALSE, Conversion::toChunkModel(position));
+            ChunkPool::render(position);
         }
 
         multisample_framebuffer.blitTo(intermediate_framebuffer);
@@ -313,8 +391,8 @@ int main(int argc, char** argv) {
         ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::SetWindowPos(ImVec2(0, 0), 0);
 
-        ImGui::Text("Coordinates: %f, %f, %f", world.camera.position.x, world.camera.position.y, world.camera.position.z);
-        ImGui::Text("Cardinal Direction: %s", getCardinalDirections(world.camera).c_str());
+        ImGui::Text("Coordinates: %f, %f, %f", player_camera.position.x, player_camera.position.y, player_camera.position.z);
+        ImGui::Text("Cardinal Direction: %s", getCardinalDirections(player_camera).c_str());
 
         ImGui::NewLine();
 
@@ -330,6 +408,7 @@ int main(int argc, char** argv) {
         swapBuffers(window);
     }
 
+    ChunkPool::destroy();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
