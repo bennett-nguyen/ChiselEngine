@@ -33,6 +33,6 @@ void pan(Camera &camera, const SDL_Event &event);
 void move(Camera &camera);
 
 [[nodiscard]] std::string getCardinalDirections(const Camera &camera);
-[[nodiscard]] std::vector<glm::vec4> getFrustumPlanes(Camera &camera);
+[[nodiscard]] std::vector<glm::vec4> getFrustumPlanes(const Camera &camera);
 
 #endif

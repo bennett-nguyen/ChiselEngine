@@ -22,18 +22,13 @@ void loadWorld(const ChunkPosition player_position) {
     const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
     const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
 
-    constexpr ChunkPosition NORTH {  1, 0,  0 };
-    constexpr ChunkPosition SOUTH { -1, 0,  0 };
-    constexpr ChunkPosition EAST  {  0, 0,  1 };
-    constexpr ChunkPosition WEST  {  0, 0, -1 };
-
     const ChunkPosition CORNER_1 { X_MIN, 0, Z_MIN };
     const ChunkPosition CORNER_2 { X_MAX, 0, Z_MIN };
     const ChunkPosition CORNER_3 { X_MIN, 0, Z_MAX };
     const ChunkPosition CORNER_4 { X_MAX, 0, Z_MAX };
     const ChunkPosition CENTER   { player_position.x, 0, player_position.z };
 
-    const std::vector directions = { NORTH, SOUTH, EAST, WEST };
+    const std::vector directions = { Direction::North, Direction::South, Direction::East, Direction::West };
     const std::vector starting_points = { CORNER_1, CORNER_2, CORNER_3, CORNER_4, CENTER };
     std::queue<ChunkPosition> build_queue;
 
@@ -49,7 +44,7 @@ void loadWorld(const ChunkPosition player_position) {
         build_queue.pop();
 
         for (auto const &direction : directions) {
-            const ChunkPosition neighbor = position + direction;
+            const ChunkPosition neighbor = position + DIRECTION_VECTORS.at(direction);
             if (ChunkPool::isChunkUsed(neighbor)) {
                 if (!ChunkPool::isBuilt(neighbor)) continue;
                 ChunkPool::enqueueForRebuilding(neighbor);
@@ -279,7 +274,7 @@ int main(int argc, char** argv) {
                         SDL_SetRelativeMouseMode(SDL_TRUE);
                     }
                 } else if (SDL_SCANCODE_Q == event.key.keysym.scancode) {
-                    wireframe = !wireframe;
+                    wireframe = not wireframe;
                 } else if (SDL_SCANCODE_E == event.key.keysym.scancode) {
                     is_using_cinematic_camera = !is_using_cinematic_camera;
                 } else if (SDL_SCANCODE_R == event.key.keysym.scancode) {
@@ -294,14 +289,14 @@ int main(int argc, char** argv) {
                     enable_place_block = true;
                 }
             }
-            if (!is_switching_controls) {
+            if (not is_switching_controls) {
                 pan(player_camera, event);
             } else {
                 pan(cinematic_camera, event);
             }
         }
 
-        if (!is_switching_controls) {
+        if (not is_switching_controls) {
             move(player_camera);
         } else {
             move(cinematic_camera);
@@ -310,7 +305,7 @@ int main(int argc, char** argv) {
         updateView(player_camera);
         updateView(cinematic_camera);
 
-        if (!is_using_cinematic_camera) {
+        if (not is_using_cinematic_camera) {
             setView(player_camera.view_mat);
             setProjection(player_camera.projection_mat);
         } else {
@@ -318,7 +313,7 @@ int main(int argc, char** argv) {
             setProjection(cinematic_camera.projection_mat);
         }
 
-        if (enable_break_block || enable_place_block) {
+        if (enable_break_block or enable_place_block) {
             rayCast(ray_cast_result, player_camera.position, player_camera.front);
 
             if (ray_cast_result.is_detected_voxel) {
@@ -333,7 +328,7 @@ int main(int argc, char** argv) {
         current_player_position = Conversion::toChunk(player_camera.position);
 
         if (prev_player_position.x != current_player_position.x
-            || prev_player_position.z != current_player_position.z) {
+            or prev_player_position.z != current_player_position.z) {
             removeChunks(current_player_position);
             loadWorld(current_player_position);
             prev_player_position = current_player_position;
@@ -356,7 +351,7 @@ int main(int argc, char** argv) {
         std::vector<ChunkPosition> used_chunks_positions = ChunkPool::getUsedChunksPositions();
 
         for (const auto position : used_chunks_positions) {
-            if (!ChunkPool::isVisible(position, frustum_planes)) continue;
+            if (not ChunkPool::isVisible(position, frustum_planes)) continue;
             uniformMat4f(chunk_shader_program, "model", 1, GL_FALSE, Conversion::toChunkModel(position));
             ChunkPool::render(position);
         }

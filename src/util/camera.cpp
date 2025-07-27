@@ -34,7 +34,7 @@ Camera initCamera(const float fov_y, const float near, const float far, const fl
 }
 
 void pan(Camera &camera, const SDL_Event &event) {
-    if (SDL_MOUSEMOTION != event.type || !SDL_GetRelativeMouseMode()) return;
+    if (SDL_MOUSEMOTION != event.type or not SDL_GetRelativeMouseMode()) return;
     auto xoffset = static_cast<float>(event.motion.xrel);
     auto yoffset = static_cast<float>(event.motion.yrel);
 
@@ -79,7 +79,7 @@ void move(Camera &camera) {
     }
 }
 
-std::vector<glm::vec4> getFrustumPlanes(Camera &camera) {
+std::vector<glm::vec4> getFrustumPlanes(const Camera &camera) {
     const glm::mat4 vpt = glm::transpose(camera.projection_mat * camera.view_mat);
     return {
         // left, right, bottom, top

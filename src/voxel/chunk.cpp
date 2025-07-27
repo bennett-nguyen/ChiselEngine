@@ -3,128 +3,76 @@
 #include "chunk_pool.hpp"
 
 constexpr unsigned X_SIZE = 5,
-              Y_SIZE = 6,
-              Z_SIZE = 5,
-              FACE_ID_SIZE = 3,
-              VOXEL_ID_SIZE = 8;
+                   Y_SIZE = 6,
+                   Z_SIZE = 5,
+                   FACE_ID_SIZE = 3,
+                   VOXEL_ID_SIZE = 8;
+
+const std::unordered_map<Direction, std::array<LocalPosition, 4>> FACE_VERTEX_VECTORS {
+    {
+        Direction::Top, {{
+                LocalPosition(0, 1, 0),
+                LocalPosition(1, 1, 0),
+                LocalPosition(1, 1, 1),
+                LocalPosition(0, 1, 1)
+            }}
+    },
+
+    {
+        Direction::Bottom, {{
+            LocalPosition(0, 0, 0),
+            LocalPosition(1, 0, 0),
+            LocalPosition(1, 0, 1),
+            LocalPosition(0, 0, 1)
+        }}
+    },
+
+    {
+        Direction::North, {{
+            LocalPosition(1, 0, 0),
+            LocalPosition(1, 1, 0),
+            LocalPosition(1, 1, 1),
+            LocalPosition(1, 0, 1)
+        }}
+    },
+
+    {
+        Direction::South, {{
+            LocalPosition(0, 0, 0),
+            LocalPosition(0, 1, 0),
+            LocalPosition(0, 1, 1),
+            LocalPosition(0, 0, 1)
+        }}
+    },
+
+    {
+        Direction::East, {{
+            LocalPosition(0, 0, 1),
+            LocalPosition(0, 1, 1),
+            LocalPosition(1, 1, 1),
+            LocalPosition(1, 0, 1)
+        }}
+    },
+
+    {
+        Direction::West, {{
+            LocalPosition(0, 0, 0),
+            LocalPosition(0, 1, 0),
+            LocalPosition(1, 1, 0),
+            LocalPosition(1, 0, 0)
+        }}
+    }
+};
+
+enum class Plane : unsigned {
+    XY,
+    XZ,
+    YZ,
+};
 
 inline void appendBits(unsigned &base, const unsigned data, const unsigned size) {
     base <<= size;
     base |= data;
-}
-
-[[nodiscard]] bool isFaceAcceptable(const FaceID face) {
-    for (auto face_enum = FaceID::begin; face_enum <= FaceID::end; face_enum = static_cast<FaceID>(static_cast<unsigned>(face_enum) + 1u)) {
-        if (face == face_enum) return true;
-    }
-
-    return false;
-}
-
-[[nodiscard]] glm::uvec3 getVertexPositionOfFaceByIndex(const FaceID face, const int vertex_index, const glm::uvec3 &voxel_origin) {
-    if (!isFaceAcceptable(face)) {
-        throw std::invalid_argument("Face Enum Error: invalid face enum: " + std::to_string(static_cast<unsigned>(face)));
-    }
-
-    if (vertex_index < 0 || vertex_index > 3) {
-        throw std::invalid_argument("Vertex Index Error: index out of range: " + std::to_string(vertex_index));
-    }
-
-    glm::uvec3 vertex_vector {};
-
-    if (FaceID::Top == face) {
-        switch (vertex_index) {
-            case 0:
-                vertex_vector = {0,1,0};
-                break;
-            case 1:
-                vertex_vector = {1,1,0};
-                break;
-            case 2:
-                vertex_vector = {1,1,1};
-                break;
-            case 3:
-                vertex_vector = {0,1,1};
-                break;
-        }
-    } else if (FaceID::Bottom == face) {
-        switch (vertex_index) {
-            case 0:
-                vertex_vector = {0,0,0};
-                break;
-            case 1:
-                vertex_vector = {1,0,0};
-                break;
-            case 2:
-                vertex_vector = {1,0,1};
-                break;
-            case 3:
-                vertex_vector = {0,0,1};
-                break;
-        }
-    } else if (FaceID::North == face) {
-        switch (vertex_index) {
-            case 0:
-                vertex_vector = {1,0,0};
-                break;
-            case 1:
-                vertex_vector = {1,1,0};
-                break;
-            case 2:
-                vertex_vector = {1,1,1};
-                break;
-            case 3:
-                vertex_vector = {1,0,1};
-                break;
-        }
-    } else if (FaceID::South == face) {
-        switch (vertex_index) {
-            case 0:
-                vertex_vector = {0,0,0};
-                break;
-            case 1:
-                vertex_vector = {0,1,0};
-                break;
-            case 2:
-                vertex_vector = {0,1,1};
-                break;
-            case 3:
-                vertex_vector = {0,0,1};
-                break;
-        }
-    } else if (FaceID::East == face) {
-        switch (vertex_index) {
-            case 0:
-                vertex_vector = {0,0,1};
-                break;
-            case 1:
-                vertex_vector = {0,1,1};
-                break;
-            case 2:
-                vertex_vector = {1,1,1};
-                break;
-            case 3:
-                vertex_vector = {1,0,1};
-                break;
-        }
-    } else {
-        switch (vertex_index) {
-            case 0:
-                vertex_vector = {0,0,0};
-                break;
-            case 1:
-                vertex_vector = {0,1,0};
-                break;
-            case 2:
-                vertex_vector = {1,1,0};
-                break;
-            case 3:
-                vertex_vector = {1,0,0};
-                break;
-        }
-    }
-
-    return voxel_origin + vertex_vector;
 }
 
 [[nodiscard]] GLuint packData(const glm::uvec3 &vertex_position, const unsigned face_id, const VoxelID voxel_id) {
@@ -138,16 +86,22 @@ inline void appendBits(unsigned &base, const unsigned data, const unsigned size)
     return packed_data;
 }
 
-Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const FaceID face_id, const VoxelID voxel_id) {
+Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const Direction face_id, const VoxelID voxel_id) {
+    const LocalPosition VERTEX_POSITION = voxel_origin + FACE_VERTEX_VECTORS.at(face_id).at(vertex_index);
+
     packed_data = packData(
-        getVertexPositionOfFaceByIndex(face_id, vertex_index, voxel_origin),
+        VERTEX_POSITION,
         static_cast<unsigned>(face_id),
         voxel_id
     );
 }
 
+void Chunk::fetchNeighbors(const ChunkNeighbors &neighbors) {
+    this->neighbors = neighbors;
+}
+
 bool Chunk::isChunkVisible(const std::vector<glm::vec4>& frustum_planes) const {
-    if (isEmpty() || !isBuilt()) return false;
+    if (isEmpty() or not isBuilt()) return false;
 
     const glm::vec3& vmin = bounding_box.vmin;
     const glm::vec3& vmax = bounding_box.vmax;
@@ -197,83 +151,51 @@ bool Chunk::isVoidAt(const LocalPosition local) const {
     return 0 == getVoxelID(local);
 }
 
-bool Chunk::isVoidEast(const LocalPosition voxel_origin, const Chunk *ptr_east_neighbor) const {
+bool Chunk::isVoidInNextTo(const Direction direction, const LocalPosition voxel_origin) const {
     LocalPosition neighbor_voxel = voxel_origin;
 
-    if (isVoxelAtChunkBoundaryEast(voxel_origin)) {
-        if (nullptr == ptr_east_neighbor) return false;
+    switch (direction) {
+        case Direction::East:
+            if (not isVoxelAtChunkBoundaryEast(voxel_origin)) break;
+            if (nullptr == neighbors.east) return false;
+            if (neighbors.east->isEmpty()) return true;
+            neighbor_voxel.z = 0;
+            return neighbors.east->isVoidAt(neighbor_voxel);
 
-        neighbor_voxel.z = 0;
-        return ptr_east_neighbor->isVoidAt(neighbor_voxel);
+        case Direction::West:
+            if (not isVoxelAtChunkBoundaryWest(voxel_origin)) break;
+            if (nullptr == neighbors.west) return false;
+            if (neighbors.west->isEmpty()) return true;
+            neighbor_voxel.z = Constant::CHUNK_SIZE-1;
+            return neighbors.west->isVoidAt(neighbor_voxel);
+
+        case Direction::North:
+            if (not isVoxelAtChunkBoundaryNorth(voxel_origin)) break;
+            if (nullptr == neighbors.north) return false;
+            if (neighbors.north->isEmpty()) return true;
+            neighbor_voxel.x = 0;
+            return neighbors.north->isVoidAt(neighbor_voxel);
+
+        case Direction::South:
+            if (not isVoxelAtChunkBoundarySouth(voxel_origin)) break;
+            if (nullptr == neighbors.south) return false;
+            if (neighbors.south->isEmpty()) return true;
+            neighbor_voxel.x = Constant::CHUNK_SIZE-1;
+            return neighbors.south->isVoidAt(neighbor_voxel);
+
+        case Direction::Top:
+            if (not isVoxelAtChunkBoundaryTop(voxel_origin)) break;
+            return true;
+
+        case Direction::Bottom:
+            if (not isVoxelAtChunkBoundaryBottom(voxel_origin)) break;
+            return true;
+
+        default:
+            throw std::invalid_argument("Chunk Error: Invalid direction\n");
     }
 
-    neighbor_voxel.z++;
-    return isVoidAt(neighbor_voxel);
-}
-
-bool Chunk::isVoidWest(const LocalPosition voxel_origin, const Chunk *ptr_west_neighbor) const {
-    LocalPosition neighbor_voxel = voxel_origin;
-
-    if (isVoxelAtChunkBoundaryWest(voxel_origin)) {
-        if (nullptr == ptr_west_neighbor) return false;
-
-        neighbor_voxel.z = Constant::CHUNK_SIZE-1;
-        return ptr_west_neighbor->isVoidAt(neighbor_voxel);
-    }
-
-    neighbor_voxel.z--;
-    return isVoidAt(neighbor_voxel);
-}
-
-bool Chunk::isVoidNorth(const LocalPosition voxel_origin, const Chunk *ptr_north_neighbor) const {
-    LocalPosition neighbor_voxel = voxel_origin;
-
-    if (isVoxelAtChunkBoundaryNorth(voxel_origin)) {
-        if (nullptr == ptr_north_neighbor) return false;
-
-        neighbor_voxel.x = 0;
-        return ptr_north_neighbor->isVoidAt(neighbor_voxel);
-    }
-
-    neighbor_voxel.x++;
-    return isVoidAt(neighbor_voxel);
-}
-
-bool Chunk::isVoidSouth(const LocalPosition voxel_origin, const Chunk *ptr_south_neighbor) const {
-    LocalPosition neighbor_voxel = voxel_origin;
-
-    if (isVoxelAtChunkBoundarySouth(voxel_origin)) {
-        if (nullptr == ptr_south_neighbor) return false;
-
-        neighbor_voxel.x = Constant::CHUNK_SIZE-1;
-        return ptr_south_neighbor->isVoidAt(neighbor_voxel);
-    }
-
-    neighbor_voxel.x--;
-    return isVoidAt(neighbor_voxel);
-}
-
-bool Chunk::isVoidTop(const LocalPosition voxel_origin) const {
-    LocalPosition neighbor_voxel = voxel_origin;
-
-    if (isVoxelAtChunkBoundaryTop(voxel_origin)) {
-        // check for neighboring chunk
-        return true;
-    }
-
-    neighbor_voxel.y++;
-    return isVoidAt(neighbor_voxel);
-}
-
-bool Chunk::isVoidBottom(const LocalPosition voxel_origin) const {
-    LocalPosition neighbor_voxel = voxel_origin;
-
-    if (isVoxelAtChunkBoundaryBottom(voxel_origin)) {
-        // check for neighboring chunk
-        return false;
-    }
-
-    neighbor_voxel.y--;
+    neighbor_voxel += DIRECTION_VECTORS.at(direction);
     return isVoidAt(neighbor_voxel);
 }
 
@@ -282,18 +204,18 @@ VoxelID Chunk::getVoxelID(const LocalPosition local) const {
 }
 
 void Chunk::setVoxelIDAtPosition(const VoxelID voxel_id, const LocalPosition local) {
-    voxel_ids[Conversion::toIndex(local)] = voxel_id;
+    voxel_ids.at(Conversion::toIndex(local)) = voxel_id;
 }
 
 void Chunk::setPosition(const ChunkPosition position) {
     this->position = position;
 }
 
-void Chunk::updateBoundingBoxWithCubeFace(const FaceID face, const LocalPosition &voxel_origin) {
-    const glm::vec3 v0 = getVertexPositionOfFaceByIndex(face, 0, voxel_origin);
-    const glm::vec3 v1 = getVertexPositionOfFaceByIndex(face, 1, voxel_origin);
-    const glm::vec3 v2 = getVertexPositionOfFaceByIndex(face, 2, voxel_origin);
-    const glm::vec3 v3 = getVertexPositionOfFaceByIndex(face, 3, voxel_origin);
+void Chunk::updateBoundingBoxWithCubeFace(const Direction face, const LocalPosition &voxel_origin) {
+    const glm::vec3 v0 = voxel_origin + FACE_VERTEX_VECTORS.at(face).at(0);
+    const glm::vec3 v1 = voxel_origin + FACE_VERTEX_VECTORS.at(face).at(1);
+    const glm::vec3 v2 = voxel_origin + FACE_VERTEX_VECTORS.at(face).at(2);
+    const glm::vec3 v3 = voxel_origin + FACE_VERTEX_VECTORS.at(face).at(3);
 
     const glm::vec3 min_v = glm::min(v0, v1, v2, v3);
     const glm::vec3 max_v = glm::max(v0, v1, v2, v3);
@@ -355,10 +277,7 @@ void Chunk::buildVoxels() {
     }
 }
 
-void Chunk::buildMesh(const Chunk *ptr_north_neighbor,
-                      const Chunk *ptr_south_neighbor,
-                      const Chunk *ptr_east_neighbor,
-                      const Chunk *ptr_west_neighbor) {
+void Chunk::buildMesh() {
     if (isEmpty()) return;
 
     GLuint index = 0;
@@ -376,73 +295,73 @@ void Chunk::buildMesh(const Chunk *ptr_north_neighbor,
                 if (isVoidAt(voxel_origin)) continue;
                 const VoxelID voxel_id = getVoxelID(voxel_origin);
 
-                if (isVoidTop(voxel_origin)) {
-                    vtx0 = { 0, voxel_origin, FaceID::Top, voxel_id };
-                    vtx1 = { 1, voxel_origin, FaceID::Top, voxel_id };
-                    vtx2 = { 2, voxel_origin, FaceID::Top, voxel_id };
-                    vtx3 = { 3, voxel_origin, FaceID::Top, voxel_id };
+                if (isVoidInNextTo(Direction::Top, voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Direction::Top, voxel_id };
+                    vtx1 = { 1, voxel_origin, Direction::Top, voxel_id };
+                    vtx2 = { 2, voxel_origin, Direction::Top, voxel_id };
+                    vtx3 = { 3, voxel_origin, Direction::Top, voxel_id };
 
-                    updateBoundingBoxWithCubeFace(FaceID::Top, voxel_origin);
+                    updateBoundingBoxWithCubeFace(Direction::Top, voxel_origin);
                     mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
                     mesh.indices.insert(mesh.indices.end(), { index, index+3, index+2, index, index+2, index+1 });
                     index += 4;
                 }
 
-                if (isVoidBottom(voxel_origin)) {
-                    vtx0 = { 0, voxel_origin, FaceID::Bottom, voxel_id };
-                    vtx1 = { 1, voxel_origin, FaceID::Bottom, voxel_id };
-                    vtx2 = { 2, voxel_origin, FaceID::Bottom, voxel_id };
-                    vtx3 = { 3, voxel_origin, FaceID::Bottom, voxel_id };
+                if (isVoidInNextTo(Direction::Bottom, voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Direction::Bottom, voxel_id };
+                    vtx1 = { 1, voxel_origin, Direction::Bottom, voxel_id };
+                    vtx2 = { 2, voxel_origin, Direction::Bottom, voxel_id };
+                    vtx3 = { 3, voxel_origin, Direction::Bottom, voxel_id };
 
-                    updateBoundingBoxWithCubeFace(FaceID::Bottom, voxel_origin);
+                    updateBoundingBoxWithCubeFace(Direction::Bottom, voxel_origin);
                     mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
                     mesh.indices.insert(mesh.indices.end(), { index, index+2, index+3, index, index+1, index+2 });
                     index += 4;
                 }
 
-                if (isVoidNorth(voxel_origin, ptr_north_neighbor)) {
-                    vtx0 = { 0, voxel_origin, FaceID::North, voxel_id };
-                    vtx1 = { 1, voxel_origin, FaceID::North, voxel_id };
-                    vtx2 = { 2, voxel_origin, FaceID::North, voxel_id };
-                    vtx3 = { 3, voxel_origin, FaceID::North, voxel_id };
+                if (isVoidInNextTo(Direction::North, voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Direction::North, voxel_id };
+                    vtx1 = { 1, voxel_origin, Direction::North, voxel_id };
+                    vtx2 = { 2, voxel_origin, Direction::North, voxel_id };
+                    vtx3 = { 3, voxel_origin, Direction::North, voxel_id };
 
-                    updateBoundingBoxWithCubeFace(FaceID::North, voxel_origin);
+                    updateBoundingBoxWithCubeFace(Direction::North, voxel_origin);
                     mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
                     mesh.indices.insert(mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
                 }
 
-                if (isVoidSouth(voxel_origin, ptr_south_neighbor)) {
-                    vtx0 = { 0, voxel_origin, FaceID::South, voxel_id };
-                    vtx1 = { 1, voxel_origin, FaceID::South, voxel_id };
-                    vtx2 = { 2, voxel_origin, FaceID::South, voxel_id };
-                    vtx3 = { 3, voxel_origin, FaceID::South, voxel_id };
+                if (isVoidInNextTo(Direction::South, voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Direction::South, voxel_id };
+                    vtx1 = { 1, voxel_origin, Direction::South, voxel_id };
+                    vtx2 = { 2, voxel_origin, Direction::South, voxel_id };
+                    vtx3 = { 3, voxel_origin, Direction::South, voxel_id };
 
-                    updateBoundingBoxWithCubeFace(FaceID::South, voxel_origin);
+                    updateBoundingBoxWithCubeFace(Direction::South, voxel_origin);
                     mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
                     mesh.indices.insert(mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
                     index += 4;
                 }
 
-                if (isVoidEast(voxel_origin, ptr_east_neighbor)) {
-                    vtx0 = { 0, voxel_origin, FaceID::East, voxel_id };
-                    vtx1 = { 1, voxel_origin, FaceID::East, voxel_id };
-                    vtx2 = { 2, voxel_origin, FaceID::East, voxel_id };
-                    vtx3 = { 3, voxel_origin, FaceID::East, voxel_id };
+                if (isVoidInNextTo(Direction::East, voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Direction::East, voxel_id };
+                    vtx1 = { 1, voxel_origin, Direction::East, voxel_id };
+                    vtx2 = { 2, voxel_origin, Direction::East, voxel_id };
+                    vtx3 = { 3, voxel_origin, Direction::East, voxel_id };
 
-                    updateBoundingBoxWithCubeFace(FaceID::East, voxel_origin);
+                    updateBoundingBoxWithCubeFace(Direction::East, voxel_origin);
                     mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
                     mesh.indices.insert(mesh.indices.end(), { index, index+2, index+1, index, index+3, index+2 });
                     index += 4;
                 }
 
-                if (isVoidWest(voxel_origin, ptr_west_neighbor)) {
-                    vtx0 = { 0, voxel_origin, FaceID::West, voxel_id };
-                    vtx1 = { 1, voxel_origin, FaceID::West, voxel_id };
-                    vtx2 = { 2, voxel_origin, FaceID::West, voxel_id };
-                    vtx3 = { 3, voxel_origin, FaceID::West, voxel_id };
+                if (isVoidInNextTo(Direction::West, voxel_origin)) {
+                    vtx0 = { 0, voxel_origin, Direction::West, voxel_id };
+                    vtx1 = { 1, voxel_origin, Direction::West, voxel_id };
+                    vtx2 = { 2, voxel_origin, Direction::West, voxel_id };
+                    vtx3 = { 3, voxel_origin, Direction::West, voxel_id };
 
-                    updateBoundingBoxWithCubeFace(FaceID::West, voxel_origin);
+                    updateBoundingBoxWithCubeFace(Direction::West, voxel_origin);
                     mesh.vertices.insert(mesh.vertices.end(),{ vtx0, vtx1, vtx2, vtx3 });
                     mesh.indices.insert(mesh.indices.end(), { index, index+1, index+2, index, index+2, index+3 });
                     index += 4;
@@ -469,7 +388,7 @@ void Chunk::buildMesh(const Chunk *ptr_north_neighbor,
 }
 
 void Chunk::destroyMesh() {
-    if (!isBuilt()) return;
+    if (not isBuilt()) return;
 
     glDeleteVertexArrays(1, &mesh.vao);
     glDeleteBuffers(1, &mesh.ssbo_vertices);
@@ -486,7 +405,7 @@ void Chunk::resetVoxels() {
 }
 
 void Chunk::render() const {
-    if (!isBuilt()) return;
+    if (not isBuilt()) return;
 
     glBindVertexArray(mesh.vao);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, mesh.ssbo_vertices);
@@ -508,5 +427,3 @@ void Chunk::setBuilt(const bool state) {
 void Chunk::setEmpty(const bool state) {
     is_empty = state;
 }
-
-

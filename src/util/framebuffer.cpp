@@ -46,7 +46,7 @@ void Framebuffer::setSize(const GLsizei width, const GLsizei height) {
 }
 
 void Framebuffer::setupTextureColorBuffer() const {
-    if (!is_multisample_fb) {
+    if (not is_multisample_fb) {
         glBindTexture(GL_TEXTURE_2D, texture_color_buffer);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glTextureParameteri(texture_color_buffer, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -64,7 +64,7 @@ void Framebuffer::setupTextureColorBuffer() const {
 }
 
 void Framebuffer::setupRenderBuffer() const {
-    if (!is_multisample_fb) {
+    if (not is_multisample_fb) {
         glNamedRenderbufferStorage(renderbuffer, sized_internal_format, width, height);
         return;
     }
