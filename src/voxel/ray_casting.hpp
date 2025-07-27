@@ -7,7 +7,7 @@
 
 struct RayCastResult {
     bool is_detected_voxel;
-    FaceID detected_face;
+    Direction detected_face;
     WorldPosition detected_voxel_position;
 };
 

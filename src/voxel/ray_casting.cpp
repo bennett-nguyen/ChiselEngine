@@ -17,7 +17,7 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     const auto step_x = static_cast<int>(glm::sign(normalized_direction.x));
     const auto step_y = static_cast<int>(glm::sign(normalized_direction.y));
     const auto step_z = static_cast<int>(glm::sign(normalized_direction.z));
-    auto face_x = FaceID::Nil, face_y = FaceID::Nil, face_z = FaceID::Nil;
+    auto face_x = Direction::Nil, face_y = Direction::Nil, face_z = Direction::Nil;
 
     float t_delta_x = 0.0f, t_delta_y = 0.0f, t_delta_z = 0.0f;
     float t_max_x = 0.0f, t_max_y = 0.0f, t_max_z = 0.0f;
@@ -28,7 +28,7 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     if (step_x == 0) {
         t_delta_x = 10000000.0f;
     } else {
-        face_x = step_x > 0 ? FaceID::South : FaceID::North;
+        face_x = step_x > 0 ? Direction::South : Direction::North;
         t_delta_x = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.x), 10000000.0f));
 
         if (step_x > 0) {
@@ -41,7 +41,7 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     if (step_y == 0) {
         t_delta_y = 10000000.0f;
     } else {
-        face_y = step_y > 0 ? FaceID::Bottom : FaceID::Top;
+        face_y = step_y > 0 ? Direction::Bottom : Direction::Top;
         t_delta_y = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.y), 10000000.0f));
 
         if (step_y > 0) {
@@ -54,7 +54,7 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     if (step_z == 0) {
         t_delta_z = 10000000.0f;
     } else {
-        face_z = step_z > 0 ? FaceID::West : FaceID::East;
+        face_z = step_z > 0 ? Direction::West : Direction::East;
         t_delta_z = std::abs(std::min(static_cast<float>(1.0 / normalized_direction.z), 10000000.0f));
 
         if (step_z > 0) {
@@ -67,13 +67,13 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     unsigned voxel_traversed = 0;
     float current_ray_length = 0.0f;
 
-    while (voxel_traversed <= Constant::MAX_VOXEL_TRAVERSED || current_ray_length <= Constant::MAX_RAY_LENGTH) {
+    while (voxel_traversed <= Constant::MAX_VOXEL_TRAVERSED or current_ray_length <= Constant::MAX_RAY_LENGTH) {
         chunk_position_of_voxel = Conversion::toChunk(current_voxel);
 
         if (ChunkPool::isChunkUsed(chunk_position_of_voxel)) {
             voxel_origin = Conversion::toLocal(current_voxel, chunk_position_of_voxel);
 
-            if (!ChunkPool::isVoidAtInChunk(voxel_origin, chunk_position_of_voxel)) {
+            if (not ChunkPool::isVoidAtInChunk(voxel_origin, chunk_position_of_voxel)) {
                 ray_cast_result.is_detected_voxel = true;
                 ray_cast_result.detected_voxel_position = current_voxel;
                 break;
@@ -111,31 +111,8 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
 }
 
 WorldPosition getAdjacentVoxel(const RayCastResult &ray_cast_result) {
-    if (!ray_cast_result.is_detected_voxel) return glm::ivec3(0);
-    WorldPosition adjacent_voxel = ray_cast_result.detected_voxel_position;
-
-    switch (ray_cast_result.detected_face) {
-        case FaceID::North:
-            adjacent_voxel.x += 1;
-            break;
-        case FaceID::South:
-            adjacent_voxel.x -= 1;
-            break;
-        case FaceID::East:
-            adjacent_voxel.z += 1;
-            break;
-        case FaceID::West:
-            adjacent_voxel.z -= 1;
-            break;
-        case FaceID::Top:
-            adjacent_voxel.y += 1;
-            break;
-        case FaceID::Bottom:
-            adjacent_voxel.z -= 1;
-            break;
-        default: break;
-    }
-
+    if (not ray_cast_result.is_detected_voxel) return WorldPosition(0);
+    const WorldPosition adjacent_voxel = ray_cast_result.detected_voxel_position + DIRECTION_VECTORS.at(ray_cast_result.detected_face);
     return adjacent_voxel;
 }
 
