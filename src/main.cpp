@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <SDL2/SDL.h>
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
@@ -28,11 +30,12 @@ void loadWorld(const ChunkPosition player_position) {
     const ChunkPosition CORNER_4 { X_MAX, 0, Z_MAX };
     const ChunkPosition CENTER   { player_position.x, 0, player_position.z };
 
-    const std::vector directions = { Direction::North, Direction::South, Direction::East, Direction::West };
-    const std::vector starting_points = { CORNER_1, CORNER_2, CORNER_3, CORNER_4, CENTER };
+    const std::array starting_points = { CORNER_1, CORNER_2, CORNER_3, CORNER_4, CENTER };
+    constexpr std::array directions = { Direction::North, Direction::South, Direction::East, Direction::West };
+
     std::queue<ChunkPosition> build_queue;
 
-    for (auto const point : starting_points) {
+    for (auto const &point : starting_points) {
         if (ChunkPool::isChunkUsed(point)) continue;
         ChunkPool::use(point);
         ChunkPool::enqueueForBuilding(point);
@@ -66,7 +69,7 @@ void removeChunks(const ChunkPosition player_position) {
     const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
     const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
 
-    const std::vector<ChunkPosition> used_chunks_positions = ChunkPool::getUsedChunksPositions();
+    const auto&& used_chunks_positions = ChunkPool::getUsedChunksPositions();
     for (const auto &position : used_chunks_positions) {
         if (X_MIN <= position.x && position.x <= X_MAX &&
                 Z_MIN <= position.z && position.z <= Z_MAX) continue;
@@ -197,7 +200,7 @@ int main(int argc, char** argv) {
     cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
 
     player_camera = initCamera(glm::radians(60.0f), 0.1f, 500.0f, computeAspectRatio(window));
-    player_camera.position = glm::vec3(0.0f, 80.0f, 0.0f);
+    player_camera.position = glm::vec3(0.0f, 0.0f, 0.0f);
     prev_player_position = Conversion::toChunk(player_camera.position);
     current_player_position = Conversion::toChunk(player_camera.position);
 
@@ -256,7 +259,27 @@ int main(int argc, char** argv) {
     const GLubyte* version  = glGetString(GL_VERSION);
     const GLubyte* shading  = glGetString(GL_SHADING_LANGUAGE_VERSION);
 
+    // Build type
+    const std::string build_type = IS_DEBUGGING_ENABLE ? "Debug" : "Release";
+
+    uint32_t now = SDL_GetTicks();
+    uint32_t last = 0;
+    float delta_time = 0;
+
+    double elapsed_time = 0;
+    double average_elapsed_time = 0;
+    int update_counter = 0;
+    constexpr int UPDATE_FREQUENCY = 5;
+
+    uint64_t start, end;
+
     while (running) {
+        start = SDL_GetPerformanceCounter();
+
+        last = now;
+        now = SDL_GetTicks();
+        delta_time = (static_cast<float>(now) - static_cast<float>(last)) / 1000.0f;
+
         enable_break_block = false;
         enable_place_block = false;
 
@@ -297,9 +320,9 @@ int main(int argc, char** argv) {
         }
 
         if (not is_switching_controls) {
-            move(player_camera);
+            move(player_camera, delta_time);
         } else {
-            move(cinematic_camera);
+            move(cinematic_camera, delta_time);
         }
 
         updateView(player_camera);
@@ -347,8 +370,8 @@ int main(int argc, char** argv) {
 
         if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        std::vector<glm::vec4> frustum_planes = getFrustumPlanes(player_camera);
-        std::vector<ChunkPosition> used_chunks_positions = ChunkPool::getUsedChunksPositions();
+        const auto&& frustum_planes = getFrustumPlanes(player_camera);
+        const auto&& used_chunks_positions = ChunkPool::getUsedChunksPositions();
 
         for (const auto position : used_chunks_positions) {
             if (not ChunkPool::isVisible(position, frustum_planes)) continue;
@@ -379,6 +402,16 @@ int main(int argc, char** argv) {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
+        end = SDL_GetPerformanceCounter();
+        elapsed_time += static_cast<double>(end - start) / static_cast<double>(SDL_GetPerformanceFrequency());
+        update_counter++;
+
+        if (UPDATE_FREQUENCY-1 == update_counter) {
+            average_elapsed_time = elapsed_time / static_cast<double>(UPDATE_FREQUENCY);
+            update_counter = 0;
+            elapsed_time = 0;
+        }
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
@@ -386,11 +419,13 @@ int main(int argc, char** argv) {
         ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::SetWindowPos(ImVec2(0, 0), 0);
 
+        ImGui::Text("Avg. Frame Generation Time - %d frame(s): %.3lf ms", UPDATE_FREQUENCY, average_elapsed_time * 1000.0f);
         ImGui::Text("Coordinates: %f, %f, %f", player_camera.position.x, player_camera.position.y, player_camera.position.z);
         ImGui::Text("Cardinal Direction: %s", getCardinalDirections(player_camera).c_str());
 
         ImGui::NewLine();
 
+        ImGui::Text("Chisel Build: %s %s", Constant::VERSION.c_str(), build_type.c_str());
         ImGui::Text("GPU Vendor: %s",               vendor   ? reinterpret_cast<const char*>(vendor)   : "Unknown");
         ImGui::Text("Version: %s",                  version  ? reinterpret_cast<const char*>(version)  : "Unknown");
         ImGui::Text("Renderer: %s",                 renderer ? reinterpret_cast<const char*>(renderer) : "Unknown");
