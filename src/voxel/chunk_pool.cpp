@@ -3,6 +3,10 @@
 constexpr unsigned CHUNKS_TO_BUILD_PER_FRAME = 5;
 constexpr unsigned CHUNKS_TO_REBUILD_PER_FRAME = 3;
 
+constexpr unsigned EXTRA_RESERVED = 0;
+constexpr unsigned WORLD_SIZE = 2 * Constant::LOAD_DISTANCE + 1;
+constexpr unsigned POOL_RESERVED_SIZE = WORLD_SIZE * WORLD_SIZE + EXTRA_RESERVED;
+
 std::vector<Chunk*> chunk_pool;
 
 std::queue<ChunkID> allocated_chunks;
@@ -27,21 +31,20 @@ ChunkNeighbors forwardNeighboringChunks(const ChunkPosition chunk) {
         .east  = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::East)),
         .west  = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::West)),
 
-        .north_east = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::NorthEast)),
-        .north_west = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::NorthWest)),
-        .south_east = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::SouthEast)),
-        .south_west = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::SouthWest))
+        .north_east = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::North | Direction::East)),
+        .north_west = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::North | Direction::West)),
+        .south_east = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::South | Direction::East)),
+        .south_west = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::South | Direction::West))
     };
 }
 
 void ChunkPool::init() {
-    constexpr unsigned EXTRA_RESERVED = 0;
-    constexpr unsigned WORLD_SIZE = 2 * Constant::LOAD_DISTANCE + 1;
-    constexpr unsigned POOL_RESERVED_SIZE = WORLD_SIZE * WORLD_SIZE + EXTRA_RESERVED;
     chunk_pool.resize(POOL_RESERVED_SIZE);
+    used_chunks_id.reserve(POOL_RESERVED_SIZE);
 
     for (size_t ID = 0; ID < POOL_RESERVED_SIZE; ID++) {
         chunk_pool.at(ID) = new Chunk();
+        chunk_pool.at(ID)->preload();
         allocated_chunks.push(ID);
     }
 
@@ -87,7 +90,6 @@ void ChunkPool::enqueueForBuilding(const ChunkPosition position) {
     chunks_to_build.insert(position);
     build_queue.push(position);
 }
-
 
 void ChunkPool::enqueueForRebuilding(const ChunkPosition position) {
     if (chunks_to_rebuild.find(position) != chunks_to_rebuild.end()) return;
@@ -160,13 +162,15 @@ bool ChunkPool::isVoidAtInChunk(const LocalPosition local, const ChunkPosition c
     return getUsedChunkPointer(chunk)->isVoidAt(local);
 }
 
-bool ChunkPool::isVisible(const ChunkPosition position, const std::vector<glm::vec4> &frustum_planes) {
+bool ChunkPool::isVisible(const ChunkPosition position, const std::array<glm::vec4, 6> &frustum_planes) {
     if (not isChunkUsed(position)) return false;
     return getUsedChunkPointer(position)->isChunkVisible(frustum_planes);
 }
 
 std::vector<ChunkPosition> ChunkPool::getUsedChunksPositions() {
     std::vector<ChunkPosition> positions;
+    positions.reserve(used_chunks_id.size());
+
     for (const auto &[position, _] : used_chunks_id) {
         positions.push_back(position);
     }

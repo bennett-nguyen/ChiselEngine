@@ -30,11 +30,11 @@ namespace ChunkPool {
     void render(ChunkPosition);
     void setVoxelIDAtPositionInChunk(VoxelID, LocalPosition, ChunkPosition);
 
+    [[nodiscard]] bool isBuilt(ChunkPosition);
     [[nodiscard]] bool isChunkUsed(ChunkPosition);
     [[nodiscard]] bool isVoidAtInChunk(LocalPosition, ChunkPosition);
-    [[nodiscard]] bool isVisible(ChunkPosition, const std::vector<glm::vec4> &frustum_planes);
+    [[nodiscard]] bool isVisible(ChunkPosition, const std::array<glm::vec4, 6> &frustum_planes);
     [[nodiscard]] std::vector<ChunkPosition> getUsedChunksPositions();
-    [[nodiscard]] bool isBuilt(ChunkPosition);
 }
 
 #endif
