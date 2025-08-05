@@ -2,9 +2,10 @@
 #define CONSTANT_HPP
 
 #include <glad.h>
+#include <string>
 
 namespace Constant {
-    constexpr unsigned FPS = 60;
+    const std::string VERSION = "v0.2.0-dev";
     constexpr float SCREEN_OCCUPATION_RATIO = 0.9f;
 
     constexpr unsigned CHUNK_SIZE = 16;
