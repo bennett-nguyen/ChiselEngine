@@ -1,6 +1,6 @@
 #include "camera.hpp"
 
-constexpr float SENSITIVITY = 0.3f;
+constexpr float SENSITIVITY = 0.2f;
 
 void computeCameraUp(Camera &camera) {
     camera.up = glm::cross(camera.front, camera.right);
@@ -28,6 +28,8 @@ Camera initCamera(const float fov_y, const float near, const float far, const fl
     camera.projection_mat = glm::perspective(fov_y, aspect_ratio, near, far);
     camera.position = glm::vec3(0);
     computeCameraFront(camera);
+    computeCameraRight(camera);
+    computeCameraUp(camera);
     updateView(camera);
 
     return camera;
@@ -42,7 +44,7 @@ void pan(Camera &camera, const SDL_Event &event) {
     yoffset *= SENSITIVITY;
 
     camera.yaw   += xoffset;
-    camera.pitch -= yoffset; 
+    camera.pitch -= yoffset;
 
     camera.pitch = std::min(camera.pitch, 89.0f);
     camera.pitch = std::max(camera.pitch, -89.0f);
@@ -51,7 +53,7 @@ void pan(Camera &camera, const SDL_Event &event) {
     computeCameraUp(camera);
 }
 
-void move(Camera &camera) {
+void move(Camera &camera, const float delta_time) {
     const Uint8 *kb_state = SDL_GetKeyboardState(nullptr);
 
     glm::vec3 moving_direction(0.0f);
@@ -75,13 +77,13 @@ void move(Camera &camera) {
     }
 
     if (glm::vec3(0.0f) != moving_direction) {
-        camera.position += glm::normalize(moving_direction) * 0.7f;
+        camera.position += glm::normalize(moving_direction) * 35.0f * delta_time;
     }
 }
 
-std::vector<glm::vec4> getFrustumPlanes(const Camera &camera) {
+std::array<glm::vec4, 6> getFrustumPlanes(const Camera &camera) {
     const glm::mat4 vpt = glm::transpose(camera.projection_mat * camera.view_mat);
-    return {
+    return {{
         // left, right, bottom, top
         (vpt[3] + vpt[0]),
         (vpt[3] - vpt[0]),
@@ -90,7 +92,7 @@ std::vector<glm::vec4> getFrustumPlanes(const Camera &camera) {
         // near, far
         (vpt[3] + vpt[2]),
         (vpt[3] - vpt[2]),
-    };
+    }};
 }
 
 std::string getCardinalDirections(const Camera &camera) {

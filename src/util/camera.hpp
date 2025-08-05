@@ -1,8 +1,8 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
+#include <array>
 #include <string>
-#include <vector>
 
 #include <SDL2/SDL.h>
 
@@ -30,9 +30,9 @@ void computeCameraFront(Camera &camera);
 void computeCameraRight(Camera &camera);
 void updateView(Camera &camera);
 void pan(Camera &camera, const SDL_Event &event);
-void move(Camera &camera);
+void move(Camera &camera, float delta_time);
 
 [[nodiscard]] std::string getCardinalDirections(const Camera &camera);
-[[nodiscard]] std::vector<glm::vec4> getFrustumPlanes(const Camera &camera);
+[[nodiscard]] std::array<glm::vec4, 6> getFrustumPlanes(const Camera &camera);
 
 #endif
