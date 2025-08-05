@@ -16,7 +16,7 @@ Of course, I want to add more content to this engine so it's less boring. Here's
 - [x] Texturing for each block.
 - [x] MSAA so the graphics looks less edgy.
 - [x] Frustum culling.
-- [ ] SSAO.
+- [x] SSAO.
 - [ ] Advanced lighting system.
 - [ ] Improved terrain generation.
 
