@@ -47,7 +47,7 @@ void loadWorld(const ChunkPosition player_position) {
         build_queue.pop();
 
         for (auto const &direction : directions) {
-            const ChunkPosition neighbor = position + DIRECTION_VECTORS.at(direction);
+            const ChunkPosition neighbor = position + CHUNK_NEIGHBORS_DIRECTION.at(direction);
             if (ChunkPool::isChunkUsed(neighbor)) {
                 if (!ChunkPool::isBuilt(neighbor)) continue;
                 ChunkPool::enqueueForRebuilding(neighbor);
@@ -221,14 +221,12 @@ int main(int argc, char** argv) {
 
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array);
 
-    glTextureParameteri(texture_array, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameterf(texture_array, GL_TEXTURE_MAX_ANISOTROPY, 8.0f);
     glTextureParameteri(texture_array, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTextureParameteri(texture_array, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(texture_array, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    const auto NUM_MIPS = static_cast<GLsizei>(std::floor(std::log2(std::max(arr_width, arr_height))));
-
-    glTextureStorage3D(texture_array, NUM_MIPS, GL_RGBA8, arr_width, arr_height, 7);
+    glTextureStorage3D(texture_array, 5, GL_RGBA8, arr_width, arr_height, 7);
     glTextureSubImage3D(texture_array, 0, 0, 0, 0, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, test_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 1, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, dirt_bytes);
     glTextureSubImage3D(texture_array, 0, 0, 0, 2, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, grass_bytes);
