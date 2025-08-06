@@ -1,7 +1,7 @@
 #include "chunk_pool.hpp"
 
-constexpr unsigned CHUNKS_TO_BUILD_PER_FRAME = 2;
-constexpr unsigned CHUNKS_TO_REBUILD_PER_FRAME = 2;
+constexpr unsigned CHUNKS_TO_BUILD_PER_FRAME = 3;
+constexpr unsigned CHUNKS_TO_REBUILD_PER_FRAME = 3;
 
 constexpr unsigned EXTRA_RESERVED = 0;
 constexpr unsigned WORLD_SIZE = 2 * Constant::LOAD_DISTANCE + 1;
