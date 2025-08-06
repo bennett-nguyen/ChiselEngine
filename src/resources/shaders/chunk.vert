@@ -96,7 +96,6 @@ out float fs_shades;
 
 flat out uint fs_face_id;
 flat out uint fs_voxel_id;
-out vec3 voxel_color;
 
 void main() {
     unpack(gl_VertexID);
@@ -107,7 +106,6 @@ void main() {
     int uv_index = gl_VertexID % 4 + int(face_id) * 4;
     fs_uv_coords = uv_coords[uv_indices[uv_index]];
     fs_shades =  shades[face_id] * ao[ao_id];
-    voxel_color = vec3(1.0f) * hash31(voxel_id);
 
     gl_Position = projection * view * model * vec4(position, 1.0f);
 }
