@@ -7,10 +7,10 @@
 
 #include "constant.hpp"
 
-typedef unsigned VoxelIndex;
-typedef glm::ivec3 WorldPosition;
-typedef glm::ivec3 ChunkPosition;
-typedef glm::uvec3 LocalPosition;
+using VoxelIndex = unsigned;
+using WorldPosition = glm::ivec3;
+using ChunkPosition = glm::ivec3;
+using LocalPosition = glm::uvec3;
 
 namespace Conversion {
     [[nodiscard]] VoxelIndex toIndex(LocalPosition);
