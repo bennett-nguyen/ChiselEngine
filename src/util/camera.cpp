@@ -2,70 +2,66 @@
 
 constexpr float SENSITIVITY = 0.2f;
 
-void computeCameraUp(Camera &camera) {
-    camera.up = glm::cross(camera.front, camera.right);
+Camera::Camera(const float fov_y, const float aspect, const float near, const float far) {
+    projection = glm::perspective(fov_y, aspect, near, far);
+    computeAxes();
+    updateView();
 }
 
-void computeCameraRight(Camera &camera) {
-    camera.right = glm::cross(camera.front, glm::vec3(0.0f, 1.0f, 0.0f));
-}
-
-void computeCameraFront(Camera &camera) {
-    camera.front.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
-    camera.front.y = sin(glm::radians(camera.pitch));
-    camera.front.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
-    camera.front   = glm::normalize(camera.front);
-}
-
-void updateView(Camera &camera) {
-    camera.view_mat = glm::lookAt(camera.position,
-        camera.position + camera.front, glm::vec3(0.0f, 1.0f, 0.0f));
-}
-
-Camera initCamera(const float fov_y, const float near, const float far, const float aspect_ratio) {
-    Camera camera;
-
-    camera.projection_mat = glm::perspective(fov_y, aspect_ratio, near, far);
-    camera.position = glm::vec3(0);
-    computeCameraFront(camera);
-    computeCameraRight(camera);
-    computeCameraUp(camera);
-    updateView(camera);
-
-    return camera;
-}
-
-void pan(Camera &camera, const SDL_Event &event) {
+void Camera::pan(const SDL_Event &event) {
     if (SDL_MOUSEMOTION != event.type or not SDL_GetRelativeMouseMode()) return;
-    auto xoffset = static_cast<float>(event.motion.xrel);
-    auto yoffset = static_cast<float>(event.motion.yrel);
+    auto x_offset = static_cast<float>(event.motion.xrel);
+    auto y_offset = static_cast<float>(event.motion.yrel);
 
-    xoffset *= SENSITIVITY;
-    yoffset *= SENSITIVITY;
+    x_offset *= SENSITIVITY;
+    y_offset *= SENSITIVITY;
 
-    camera.yaw   += xoffset;
-    camera.pitch -= yoffset;
+    yaw   += x_offset;
+    pitch -= y_offset;
 
-    camera.pitch = std::min(camera.pitch, 89.0f);
-    camera.pitch = std::max(camera.pitch, -89.0f);
-    computeCameraFront(camera);
-    computeCameraRight(camera);
-    computeCameraUp(camera);
+    pitch = std::min(pitch, 89.0f);
+    pitch = std::max(pitch, -89.0f);
+    computeAxes();
 }
 
-void move(Camera &camera, const float delta_time) {
+void Camera::computeAxes() {
+    computeFront();
+    computeRight();
+    computeUp();
+}
+
+void Camera::updateView() {
+    view = glm::lookAt(position, position + front, { 0.0f, 1.0f, 0.0f });
+}
+
+void Camera::computeFront() {
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front   = glm::normalize(front);
+}
+
+void Camera::computeRight() {
+    right = glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void Camera::computeUp() {
+    up = glm::cross(front, right);
+}
+
+void Camera::move(const float delta_time) {
     const Uint8 *kb_state = SDL_GetKeyboardState(nullptr);
 
     glm::vec3 moving_direction(0.0f);
 
     if (kb_state[SDL_SCANCODE_W]) {
-        moving_direction += camera.front;
+        moving_direction += front;
     } if (kb_state[SDL_SCANCODE_S]) {
-        moving_direction -= camera.front;
+        moving_direction -= front;
     } if (kb_state[SDL_SCANCODE_A]) {
-        moving_direction -= camera.right;
+        moving_direction -= right;
     } if (kb_state[SDL_SCANCODE_D]) {
-        moving_direction += camera.right;
+        moving_direction += right;
     }
     
     moving_direction.y = 0.0f;
@@ -77,12 +73,40 @@ void move(Camera &camera, const float delta_time) {
     }
 
     if (glm::vec3(0.0f) != moving_direction) {
-        camera.position += glm::normalize(moving_direction) * 35.0f * delta_time;
+        position += glm::normalize(moving_direction) * 35.0f * delta_time;
     }
 }
 
-std::array<glm::vec4, 6> getFrustumPlanes(const Camera &camera) {
-    const glm::mat4 vpt = glm::transpose(camera.projection_mat * camera.view_mat);
+void Camera::setPosition(const glm::vec3 any_position) {
+    position = any_position;
+}
+
+glm::vec3 Camera::getPosition() const {
+    return position;
+}
+
+glm::vec3 Camera::getViewingDirection() const {
+    return front;
+}
+
+glm::mat4 Camera::getView() const {
+    return view;
+}
+
+glm::mat4 Camera::getProjection() const {
+    return projection;
+}
+
+std::string Camera::getCardinalDirection() const {
+    const std::string x_direction = front.x >= 0 ? "North" : "South";
+    const std::string y_direction = front.y >= 0 ? "Up" : "Down";
+    const std::string z_direction = front.z >= 0 ? "East" : "West";
+
+    return "(" + x_direction + ", " + z_direction + ", " + y_direction + ")";
+}
+
+std::array<glm::vec4, 6> Camera::getFrustumPlanes() const {
+    const glm::mat4 vpt = glm::transpose(projection * view);
     return {{
         // left, right, bottom, top
         (vpt[3] + vpt[0]),
@@ -93,12 +117,4 @@ std::array<glm::vec4, 6> getFrustumPlanes(const Camera &camera) {
         (vpt[3] + vpt[2]),
         (vpt[3] - vpt[2]),
     }};
-}
-
-std::string getCardinalDirections(const Camera &camera) {
-    const std::string x_direction = camera.front.x >= 0 ? "North" : "South";
-    const std::string y_direction = camera.front.y >= 0 ? "Up" : "Down";
-    const std::string z_direction = camera.front.z >= 0 ? "East" : "West";
-
-    return "(" + x_direction + ", " + z_direction + ", " + y_direction + ")";
 }

@@ -190,19 +190,20 @@ int main(int argc, char** argv) {
     attachShader("resources/shaders/chunk.frag", chunk_shader_program);
     linkProgram(chunk_shader_program);
 
-    Camera player_camera;
+    Camera cinematic_camera { glm::radians(60.0f), computeAspectRatio(window), 20.0f, 500.0f };
+    Camera player_camera { glm::radians(60.0f), computeAspectRatio(window), 0.1f, 500.0f };
+
+    cinematic_camera.setPosition({ 0, 80.0f, -10.0f });
+    player_camera.setPosition({ 0.0f, 0.0f, 0.0f });
+
     RayCastResult ray_cast_result;
     ChunkPosition prev_player_position, current_player_position;
 
     bool is_using_cinematic_camera = false;
     bool is_switching_controls = false;
-    Camera cinematic_camera = initCamera(glm::radians(60.0f), 20.0f, 500.0f, computeAspectRatio(window));
-    cinematic_camera.position = glm::vec3(0, 80.0f, -10.0f);
 
-    player_camera = initCamera(glm::radians(60.0f), 0.1f, 500.0f, computeAspectRatio(window));
-    player_camera.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    prev_player_position = Conversion::toChunk(player_camera.position);
-    current_player_position = Conversion::toChunk(player_camera.position);
+    prev_player_position = Conversion::toChunk(player_camera.getPosition());
+    current_player_position = Conversion::toChunk(player_camera.getPosition());
 
     ChunkPool::init();
     loadWorld(current_player_position);
@@ -311,31 +312,31 @@ int main(int argc, char** argv) {
                 }
             }
             if (not is_switching_controls) {
-                pan(player_camera, event);
+                player_camera.pan(event);
             } else {
-                pan(cinematic_camera, event);
+                cinematic_camera.pan(event);
             }
         }
 
         if (not is_switching_controls) {
-            move(player_camera, delta_time);
+            player_camera.move(delta_time);
         } else {
-            move(cinematic_camera, delta_time);
+            cinematic_camera.move(delta_time);
         }
 
-        updateView(player_camera);
-        updateView(cinematic_camera);
+        player_camera.updateView();
+        cinematic_camera.updateView();
 
         if (not is_using_cinematic_camera) {
-            setView(player_camera.view_mat);
-            setProjection(player_camera.projection_mat);
+            setView(player_camera.getView());
+            setProjection(player_camera.getProjection());
         } else {
-            setView(cinematic_camera.view_mat);
-            setProjection(cinematic_camera.projection_mat);
+            setView(cinematic_camera.getView());
+            setProjection(cinematic_camera.getProjection());
         }
 
         if (enable_break_block or enable_place_block) {
-            rayCast(ray_cast_result, player_camera.position, player_camera.front);
+            rayCast(ray_cast_result, player_camera.getPosition(), player_camera.getViewingDirection());
 
             if (ray_cast_result.is_detected_voxel) {
                 if (enable_break_block) {
@@ -346,7 +347,8 @@ int main(int argc, char** argv) {
             }
         }
 
-        current_player_position = Conversion::toChunk(player_camera.position);
+        glm::vec3 player_position = player_camera.getPosition();
+        current_player_position = Conversion::toChunk(player_position);
 
         if (prev_player_position.x != current_player_position.x
             or prev_player_position.z != current_player_position.z) {
@@ -368,7 +370,7 @@ int main(int argc, char** argv) {
 
         if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        const auto&& frustum_planes = getFrustumPlanes(player_camera);
+        const auto&& frustum_planes = player_camera.getFrustumPlanes();
         const auto&& used_chunks_positions = ChunkPool::getUsedChunksPositions();
 
         for (const auto position : used_chunks_positions) {
@@ -418,8 +420,8 @@ int main(int argc, char** argv) {
         ImGui::SetWindowPos(ImVec2(0, 0), 0);
 
         ImGui::Text("Avg. Frame Generation Time - %d frame(s): %.3lf ms", UPDATE_FREQUENCY, average_elapsed_time * 1000.0f);
-        ImGui::Text("Coordinates: %f, %f, %f", player_camera.position.x, player_camera.position.y, player_camera.position.z);
-        ImGui::Text("Cardinal Direction: %s", getCardinalDirections(player_camera).c_str());
+        ImGui::Text("Coordinates: %f, %f, %f", player_position.x, player_position.y, player_position.z);
+        ImGui::Text("Cardinal Direction: %s", player_camera.getCardinalDirection().c_str());
 
         ImGui::NewLine();
 
