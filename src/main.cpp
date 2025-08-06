@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
     Camera player_camera { glm::radians(60.0f), computeAspectRatio(window), 0.1f, 500.0f };
 
     cinematic_camera.setPosition({ 0, 80.0f, -10.0f });
-    player_camera.setPosition({ 0.0f, 0.0f, 0.0f });
+    player_camera.setPosition({ 0.0f, 40.0f, 0.0f });
 
     RayCastResult ray_cast_result;
     ChunkPosition prev_player_position, current_player_position;
