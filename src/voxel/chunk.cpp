@@ -1,5 +1,14 @@
 #include "chunk.hpp"
 
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+
 constexpr unsigned X_SIZE = 5,
                    Y_SIZE = 5,
                    Z_SIZE = 5,
@@ -63,23 +72,24 @@ Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const 
 void Chunk::buildVoxels() {
     for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
-            // const unsigned y_level = heightMap(6, static_cast<float>(static_cast<int>(x) + position.x * static_cast<int>(Constant::CHUNK_SIZE)),
-            //                              static_cast<float>(static_cast<int>(z) + position.z * static_cast<int>(Constant::CHUNK_SIZE)), 0.6f, 0.007f,
-            //                              0, Constant::CHUNK_HEIGHT);
+            glm::vec3 voxel_position = Conversion::toWorld(LocalPosition(x, 0, z), position);
+            voxel_position /= static_cast<float>(Constant::CHUNK_SIZE);
 
-            for (unsigned y = 0; y < Constant::CHUNK_HEIGHT; y++) {
+            const unsigned y_level = heightMap(voxel_position);
+
+            for (unsigned y = 0; y <= y_level; y++) {
                 const LocalPosition local { x, y, z };
                 VoxelID voxel_id {};
 
-                // if (y <= 15) {
-                //     voxel_id = 6;
-                // } else if (y < y_level || y <= 20) {
-                //     voxel_id = 1;
-                // } else if (y == y_level) {
-                //     voxel_id = 2;
-                // }
+                if (y <= 15) {
+                    voxel_id = 6;
+                } else if (y < y_level || y <= 20) {
+                    voxel_id = 1;
+                } else if (y == y_level) {
+                    voxel_id = 2;
+                }
 
-                setVoxelIDAtPosition(1, local);
+                setVoxelIDAtPosition(voxel_id, local);
                 setEmpty(false);
             }
         }
