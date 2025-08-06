@@ -23,6 +23,6 @@ void main() {
     face_uv.x = (fs_uv_coords.x / 6) + (float(fs_face_id) / 6);
 
     vec3 tex_color = texture2DArrayAA(texture_array0, face_uv).rgb;
-    vec4 final_color = vec4(tex_color * fs_shades, 1.0f);
+    vec4 final_color = vec4(vec3(1.0f) * fs_shades, 1.0f);
     frag_color = final_color;
 }
