@@ -1,19 +1,38 @@
 #include "proc_gen.hpp"
 
-unsigned heightMap(const unsigned num_iterations, const float x, const float z, const float persistence, const float scale, const unsigned low, const unsigned high) {
-    float max_amp = 0;
-    float amp = 1;
-    float freq = scale;
-    float noise = 0;
+float noise(const glm::vec3 any_position, const Biome biome) {
+    auto const PARAMETERS = BIOMES_PARAMETERS.at(biome);
 
-    for (unsigned i = 0; i < num_iterations; ++i) {
-        noise += glm::simplex(glm::vec2(x, z) * freq) * amp;
-        max_amp += amp;
-        amp *= persistence;
-        freq *= 2;
+    const float OCTAVES          = PARAMETERS.octaves;
+    const float FREQUENCY        = PARAMETERS.frequency;
+    const float INITIAL_GAIN     = PARAMETERS.initial_gain;
+    const float DELTA_GAIN       = PARAMETERS.delta_gain;
+    const float FUDGE_FACTOR     = PARAMETERS.fudge_factor;
+    const float ELEVATION_FACTOR = PARAMETERS.elevation_factor;
+
+    float noise = 0.0f;
+    float amplitude = 1.0f;
+    float amplitude_sum = 0.0f;
+    float gain = 0.0f;
+    float frequency = FREQUENCY;
+
+    for (int i = 0; i < OCTAVES; i++) {
+        noise += amplitude * ((glm::simplex(frequency * any_position) + 1.0f) * 0.5f);
+
+        amplitude_sum += amplitude;
+        gain = INITIAL_GAIN + i * DELTA_GAIN;
+        frequency *= 2.0f;
+        amplitude = 1.0f / gain;
     }
 
-    noise /= max_amp;
-    noise = noise * (static_cast<float>(high) - static_cast<float>(low)) / 2 + (static_cast<float>(high) + static_cast<float>(low)) / 2;
-    return static_cast<unsigned>(noise);
+    noise /= amplitude_sum;
+    noise = std::pow(noise * FUDGE_FACTOR, ELEVATION_FACTOR);
+
+    return noise;
+}
+
+unsigned heightMap(const glm::vec3 any_position) {
+    constexpr float CHUNK_HEIGHT_RANGE = static_cast<float>(Constant::CHUNK_HEIGHT);
+    const unsigned height = static_cast<unsigned>(noise(any_position, Biome::Test) * CHUNK_HEIGHT_RANGE);
+    return height;
 }
