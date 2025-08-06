@@ -10,7 +10,7 @@
 
 #include "chunk.hpp"
 
-typedef size_t ChunkID;
+using ChunkID = size_t;
 
 namespace ChunkPool {
     void init();

@@ -26,15 +26,15 @@ std::unordered_map<ChunkPosition, ChunkID> used_chunks_id;
 
 ChunkNeighbors forwardNeighboringChunks(const ChunkPosition chunk) {
     return {
-        .north = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::North)),
-        .south = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::South)),
-        .east  = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::East)),
-        .west  = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::West)),
+        .north = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North)),
+        .south = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South)),
+        .east  = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East)),
+        .west  = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West)),
 
-        .north_east = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::North | Direction::East)),
-        .north_west = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::North | Direction::West)),
-        .south_east = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::South | Direction::East)),
-        .south_west = getUsedChunkPointer(chunk + DIRECTION_VECTORS.at(Direction::South | Direction::West))
+        .north_east = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North | Direction::East)),
+        .north_west = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North | Direction::West)),
+        .south_east = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South | Direction::East)),
+        .south_west = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South | Direction::West))
     };
 }
 
