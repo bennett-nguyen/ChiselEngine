@@ -3,7 +3,6 @@
 
 #include <array>
 #include <vector>
-#include <tuple>
 #include <algorithm>
 #include <ostream>
 #include <iostream>
@@ -11,12 +10,13 @@
 
 #include <glad.h>
 #include <unordered_map>
-#include <glm/gtc/noise.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/extended_min_max.hpp>
 
+#include "aabb.hpp"
 #include "constant.hpp"
+#include "proc_gen.hpp"
+#include "direction.hpp"
 #include "conversions.hpp"
 
 /*
@@ -32,71 +32,7 @@
 
 class Chunk;
 
-typedef uint8_t VoxelID;
-
-enum class Direction : unsigned {
-    Nil     = 0,
-    Top     = 0b000001, // Y+
-    Bottom  = 0b000010, // Y-
-    North   = 0b000100, // X+
-    South   = 0b001000, // X-
-    East    = 0b010000, // Z+
-    West    = 0b100000, // Z-
-
-    faceBegin = Top,
-    faceEnd   = West,
-};
-
-constexpr Direction operator |(const Direction a, const Direction b) {
-    return static_cast<Direction>(static_cast<unsigned>(a) | static_cast<unsigned>(b));
-}
-
-constexpr Direction& operator |=(Direction& a, const Direction b) {
-    return a = a | b;
-}
-
-const std::unordered_map<Direction, unsigned> FACE_ID {
-    { Direction::Top,    0 },
-    { Direction::Bottom, 1 },
-    { Direction::North,  2 },
-    { Direction::South,  3 },
-    { Direction::East,   4 },
-    { Direction::West,   5 },
-};
-
-const std::unordered_map<Direction, ChunkPosition> DIRECTION_VECTORS {
-    { Direction::Top,    ChunkPosition(0,  1, 0) },
-    { Direction::Bottom, ChunkPosition(0, -1, 0) },
-    { Direction::North,  ChunkPosition( 1, 0, 0) },
-    { Direction::South,  ChunkPosition(-1, 0, 0) },
-    { Direction::East,   ChunkPosition( 0, 0, 1) },
-    { Direction::West,   ChunkPosition( 0, 0,-1) },
-
-    { Direction::North | Direction::East, ChunkPosition( 1, 0,  1) },
-    { Direction::North | Direction::West, ChunkPosition( 1, 0, -1) },
-    { Direction::South | Direction::East, ChunkPosition(-1, 0,  1) },
-    { Direction::South | Direction::West, ChunkPosition(-1, 0, -1) },
-
-    { Direction::Top | Direction::North, ChunkPosition( 1, 1,  0) },
-    { Direction::Top | Direction::South, ChunkPosition(-1, 1,  0) },
-    { Direction::Top | Direction::East,  ChunkPosition( 0, 1,  1) },
-    { Direction::Top | Direction::West,  ChunkPosition( 0, 1, -1) },
-
-    { Direction::Bottom | Direction::North, ChunkPosition(1, -1, 0) },
-    { Direction::Bottom | Direction::South, ChunkPosition(-1, -1, 0) },
-    { Direction::Bottom | Direction::East, ChunkPosition(0, -1, 1) },
-    { Direction::Bottom | Direction::West, ChunkPosition(0, -1, -1) },
-
-    { Direction::Top | Direction::North | Direction::East, ChunkPosition( 1, 1,  1) },
-    { Direction::Top | Direction::North | Direction::West, ChunkPosition( 1, 1, -1) },
-    { Direction::Top | Direction::South | Direction::East, ChunkPosition(-1, 1,  1) },
-    { Direction::Top | Direction::South | Direction::West, ChunkPosition(-1, 1, -1) },
-
-    { Direction::Bottom | Direction::North | Direction::East, ChunkPosition( 1, -1,  1) },
-    { Direction::Bottom | Direction::North | Direction::West, ChunkPosition (1, -1, -1) },
-    { Direction::Bottom | Direction::South | Direction::East, ChunkPosition(-1, -1,  1) },
-    { Direction::Bottom | Direction::South | Direction::West, ChunkPosition(-1, -1, -1) },
-};
+using VoxelID = uint8_t;
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryEast(const LocalPosition local) {
     return Constant::CHUNK_SIZE-1 == local.z;
@@ -123,10 +59,16 @@ const std::unordered_map<Direction, ChunkPosition> DIRECTION_VECTORS {
 }
 
 struct Vertex {
-    GLuint packed_data;
+    GLuint packed_data {};
 
     Vertex() = default;
+    ~Vertex() = default;
+
     Vertex(int vertex_index, const LocalPosition &voxel_origin, unsigned ao_id, Direction face_direction, VoxelID voxel_id);
+
+    Vertex(Vertex&& other) noexcept {
+        packed_data = other.packed_data;
+    }
 };
 
 struct ChunkMesh {
@@ -134,14 +76,6 @@ struct ChunkMesh {
 
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
-};
-
-struct AABB {
-    glm::vec3 vmin {}, vmax {};
-
-    void reset();
-    void translate(ChunkPosition);
-    void updateWithCubeFace(Direction face, LocalPosition voxel_origin);
 };
 
 struct ChunkNeighbors {
