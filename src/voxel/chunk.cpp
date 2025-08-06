@@ -1,14 +1,5 @@
 #include "chunk.hpp"
 
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-#include <glm/detail/_noise.hpp>
-
 constexpr unsigned X_SIZE = 5,
                    Y_SIZE = 5,
                    Z_SIZE = 5,
