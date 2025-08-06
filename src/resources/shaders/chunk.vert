@@ -3,16 +3,16 @@
 /*
  * packed_data (32-bit):
  * Data           Size            Value Range (inclusive)     Constant name that holds such size
- * x              4 bit           0..15                       X_SIZE
+ * x              5 bit           0..31                       X_SIZE
  * y              5 bit           0..31                       Y_SIZE
- * z              4 bit           0..15                       Z_SIZE
+ * z              5 bit           0..31                       Z_SIZE
  * ao_id          2 bit           0..3                        AO_ID_SIZE
  * face_id        3 bit           0..6                        FACE_ID_SIZE
  * voxel_id       8 bit           0..255                      VOXEL_ID_SIZE
  */
 
 const int X_SIZE = 5,
-          Y_SIZE = 6,
+          Y_SIZE = 5,
           Z_SIZE = 5,
           AO_ID_SIZE = 2,
           FACE_ID_SIZE = 3,
