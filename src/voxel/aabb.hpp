@@ -2,6 +2,8 @@
 #define AABB_HPP
 
 #include <glm/vec3.hpp>
+
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/extended_min_max.hpp>
 
 #include "direction.hpp"

@@ -70,17 +70,7 @@ void Chunk::buildVoxels() {
 
             for (unsigned y = 0; y <= y_level; y++) {
                 const LocalPosition local { x, y, z };
-                VoxelID voxel_id {};
-
-                if (y <= 15) {
-                    voxel_id = 6;
-                } else if (y < y_level || y <= 20) {
-                    voxel_id = 1;
-                } else if (y == y_level) {
-                    voxel_id = 2;
-                }
-
-                setVoxelIDAtPosition(voxel_id, local);
+                setVoxelIDAtPosition((rand() % 6)+1, local);
                 setEmpty(false);
             }
         }

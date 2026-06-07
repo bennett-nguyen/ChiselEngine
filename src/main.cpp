@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Debug", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::SetWindowPos(ImVec2(0, 0), 0);
 
         ImGui::Text("Avg. Frame Generation Time - %d frame(s): %.3lf ms", UPDATE_FREQUENCY, average_elapsed_time * 1000.0f);

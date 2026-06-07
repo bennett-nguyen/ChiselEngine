@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include "chunk.hpp"
