@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 
 find_package(OpenGL REQUIRED)
-find_package(SDL2 REQUIRED)
+find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 
 set(INIT_SOURCE_FILES)
 set(UTIL_SOURCE_FILES)
@@ -20,7 +20,7 @@ set(MAIN_SOURCE_FILES src/main.cpp)
 
 set(IMGUI_SOURCE_FILES)
 set(STB_SOURCE_FILE deps/stb/stb.cpp)
-set(GLAD_SOURCE_FILE deps/glad.c)
+set(GLAD_SOURCE_FILE deps/gl.c)
 set(DEPS_FILES)
 
 file(GLOB INIT_SOURCE_FILES CONFIGURE_DEPENDS "src/init/*.cpp")
@@ -68,7 +68,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 endif()
 
 if ((${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2 OpenGL::GL)
+    target_link_libraries(${PROJECT_NAME} SDL3::SDL3 OpenGL::GL)
 endif()
 
 add_custom_command(

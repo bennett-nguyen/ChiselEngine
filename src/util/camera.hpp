@@ -4,7 +4,7 @@
 #include <array>
 #include <string>
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -31,7 +31,7 @@ public:
     ~Camera() = default;
     Camera(const Camera&) = default;
 
-    void pan(const SDL_Event &event);
+    void pan(const SDL_Event &event, const bool is_mouse_locked);
     void move(float delta_time);
     void updateView();
 

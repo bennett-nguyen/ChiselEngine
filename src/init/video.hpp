@@ -4,9 +4,9 @@
 #include <string>
 #include <iostream>
 
-#include <glad.h>
-#include <SDL2/SDL.h>
-#include <SDL_opengl.h>
+#include <glad/gl.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_opengl.h>
 #include <glm/vec4.hpp>
 
 #include "constant.hpp"
@@ -29,7 +29,7 @@ void initVideo();
 void initWindow(Window &window, const std::string& window_name, float screen_occupation_percentage);
 
 void destroyWindow(const Window &window);
-void swapBuffers(Window &window);
+void swapBuffers(const Window &window);
 
 void clearWindow(glm::vec4 color);
 

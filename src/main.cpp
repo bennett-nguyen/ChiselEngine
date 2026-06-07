@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <imgui.h>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
 #include <stb_image.h>
 
@@ -90,10 +90,10 @@ int main(int argc, char** argv) {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    ImGui_ImplSDL2_InitForOpenGL(window.ptr_window, window.gl_context);
+    ImGui_ImplSDL3_InitForOpenGL(window.ptr_window, window.gl_context);
     ImGui_ImplOpenGL3_Init();
 
-    SDL_SetRelativeMouseMode(SDL_TRUE);
+    SDL_SetWindowRelativeMouseMode(window.ptr_window, true);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -283,28 +283,25 @@ int main(int argc, char** argv) {
         enable_place_block = false;
 
         while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (SDL_QUIT == event.type) {
+            ImGui_ImplSDL3_ProcessEvent(&event);
+            if (SDL_EVENT_QUIT == event.type) {
                 running = false;
             }
 
-            if (SDL_KEYDOWN == event.type) {
-                if (SDL_SCANCODE_TAB == event.key.keysym.scancode) {
-                    if (SDL_GetRelativeMouseMode()) {
-                        SDL_SetRelativeMouseMode(SDL_FALSE);
-                    } else {
-                        SDL_SetRelativeMouseMode(SDL_TRUE);
-                    }
-                } else if (SDL_SCANCODE_Q == event.key.keysym.scancode) {
+            if (SDL_EVENT_KEY_DOWN == event.type) {
+                if (SDL_SCANCODE_TAB == event.key.scancode) {
+                    bool is_mouse_locked = SDL_GetWindowRelativeMouseMode(window.ptr_window);
+                    SDL_SetWindowRelativeMouseMode(window.ptr_window, !is_mouse_locked);
+                } else if (SDL_SCANCODE_Q == event.key.scancode) {
                     wireframe = not wireframe;
-                } else if (SDL_SCANCODE_E == event.key.keysym.scancode) {
+                } else if (SDL_SCANCODE_E == event.key.scancode) {
                     is_using_cinematic_camera = !is_using_cinematic_camera;
-                } else if (SDL_SCANCODE_R == event.key.keysym.scancode) {
+                } else if (SDL_SCANCODE_R == event.key.scancode) {
                     is_switching_controls = !is_switching_controls;
                 }
             }
 
-            if (SDL_MOUSEBUTTONDOWN == event.type) {
+            if (SDL_EVENT_MOUSE_BUTTON_DOWN == event.type) {
                 if (SDL_BUTTON_LEFT == event.button.button) {
                     enable_break_block = true;
                 } else if (SDL_BUTTON_RIGHT == event.button.button) {
@@ -312,9 +309,9 @@ int main(int argc, char** argv) {
                 }
             }
             if (not is_switching_controls) {
-                player_camera.pan(event);
+                player_camera.pan(event, SDL_GetWindowRelativeMouseMode(window.ptr_window));
             } else {
-                cinematic_camera.pan(event);
+                cinematic_camera.pan(event, SDL_GetWindowRelativeMouseMode(window.ptr_window));
             }
         }
 
@@ -413,7 +410,7 @@ int main(int argc, char** argv) {
         }
 
         ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
         ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
@@ -439,8 +436,10 @@ int main(int argc, char** argv) {
     }
 
     ChunkPool::destroy();
+    intermediate_framebuffer.destroy();
+    multisample_framebuffer.destroy();
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
     destroyWindow(window);
     SDL_Quit();

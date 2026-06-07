@@ -3,13 +3,13 @@
 
 #include <iostream>
 
-#include <SDL2/SDL.h>
-#include <glad.h>
+#include <SDL3/SDL.h>
+#include <glad/gl.h>
 
 void requestDebugContext();
 void initDebugOutput();
 void filterDebugMessage(GLenum source, GLenum type, GLenum severity);
-void APIENTRY glDebugOutput(GLenum source, 
+void GLAPIENTRY glDebugOutput(GLenum source,
                             GLenum type, 
                             unsigned int id, 
                             GLenum severity, 

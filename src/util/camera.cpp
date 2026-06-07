@@ -8,8 +8,8 @@ Camera::Camera(const float fov_y, const float aspect, const float near, const fl
     updateView();
 }
 
-void Camera::pan(const SDL_Event &event) {
-    if (SDL_MOUSEMOTION != event.type or not SDL_GetRelativeMouseMode()) return;
+void Camera::pan(const SDL_Event &event, const bool is_mouse_locked) {
+    if (SDL_EVENT_MOUSE_MOTION != event.type or not is_mouse_locked) return;
     auto x_offset = static_cast<float>(event.motion.xrel);
     auto y_offset = static_cast<float>(event.motion.yrel);
 
@@ -50,7 +50,7 @@ void Camera::computeUp() {
 }
 
 void Camera::move(const float delta_time) {
-    const Uint8 *kb_state = SDL_GetKeyboardState(nullptr);
+    const bool* kb_state = SDL_GetKeyboardState(nullptr);
 
     glm::vec3 moving_direction(0.0f);
 

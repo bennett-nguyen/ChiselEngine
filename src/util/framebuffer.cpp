@@ -16,7 +16,7 @@ GLenum getRenderbufferAttachment(const GLenum sized_internal_formal) {
     }
 }
 
-Framebuffer::~Framebuffer() {
+void Framebuffer::destroy() const {
     glDeleteFramebuffers(1, &framebuffer);
     glDeleteRenderbuffers(1, &renderbuffer);
     glDeleteTextures(1, &texture_color_buffer);

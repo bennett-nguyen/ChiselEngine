@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include <glad.h>
+#include <glad/gl.h>
 
 #include "constant.hpp"
 
@@ -27,6 +27,8 @@ public:
     void init();
     void initMultiSample(int samples);
 
+    void destroy() const;
+
     void setSize(GLsizei width, GLsizei height);
     void setSizedInternalFormat(GLenum sized_internal_format);
     void setUp() const;
@@ -37,8 +39,6 @@ public:
     [[nodiscard]] GLuint getTextureName() const;
     [[nodiscard]] GLuint getFramebufferName() const;
     [[nodiscard]] std::pair<GLsizei, GLsizei> getFramebufferDimension() const;
-
-    ~Framebuffer();
 };
 
 #endif

@@ -1,12 +1,12 @@
 #ifndef CONSTANT_HPP
 #define CONSTANT_HPP
 
-#include <glad.h>
+#include <glad/gl.h>
 #include <string>
 
 namespace Constant {
     const std::string VERSION = "v0.2.0-dev";
-    constexpr float SCREEN_OCCUPATION_RATIO = 0.9f;
+    constexpr float SCREEN_OCCUPATION_RATIO = 0.8f;
 
     constexpr unsigned CHUNK_SIZE = 31;
     constexpr unsigned CHUNK_HEIGHT = 31;
@@ -17,7 +17,7 @@ namespace Constant {
 
     constexpr float MAX_RAY_LENGTH = 8.78f;
     constexpr unsigned MAX_VOXEL_TRAVERSED = 8;
-    constexpr GLsizei MULTISAMPLE_LEVEL = 4;
+    constexpr GLsizei MULTISAMPLE_LEVEL = 3;
 }
 
 #endif

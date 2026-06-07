@@ -4,7 +4,7 @@ void requestDebugContext() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 }
 
-void APIENTRY glDebugOutput(GLenum source,
+void GLAPIENTRY glDebugOutput(GLenum source,
                             GLenum type,
                             unsigned id,
                             GLenum severity,

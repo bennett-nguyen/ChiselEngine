@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <glad.h>
+#include <glad/gl.h>
 #include <glm/matrix.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

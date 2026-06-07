@@ -1,7 +1,7 @@
 #include "video.hpp"
 
 void initVideo() {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (not SDL_Init(SDL_INIT_VIDEO)) {
         const auto ERROR_MESSAGE = std::string(SDL_GetError());
         throw std::runtime_error("Video Error:\n" + ERROR_MESSAGE);
     }
@@ -12,10 +12,6 @@ void initVideo() {
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-    // Enable 4x MSAA
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, Constant::MULTISAMPLE_LEVEL);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
@@ -31,20 +27,16 @@ void initVideo() {
 void initWindow(Window &window, const std::string& window_name, const float screen_occupation_percentage) {
     window.window_name = window_name;
 
-    SDL_DisplayMode MD;
-    SDL_GetDesktopDisplayMode(0, &MD);
+    const SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, window_name.c_str());
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1728);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 972);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, SDL_WINDOWPOS_CENTERED);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, SDL_WINDOWPOS_CENTERED);
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 
-    const int width = static_cast<int>(static_cast<float>(MD.w) * screen_occupation_percentage);
-    const int height = static_cast<int>(static_cast<float>(MD.h) * screen_occupation_percentage);
-
-    window.ptr_window = SDL_CreateWindow(
-        window_name.c_str(),
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        width,
-        height,
-        SDL_WINDOW_OPENGL
-    );
+    window.ptr_window = SDL_CreateWindowWithProperties(props);
+    SDL_DestroyProperties(props);
 
     if (nullptr == window.ptr_window) {
         const auto ERROR_MESSAGE = std::string(SDL_GetError());
@@ -56,15 +48,15 @@ void initWindow(Window &window, const std::string& window_name, const float scre
     window.gl_context = SDL_GL_CreateContext(window.ptr_window);
     std::cout << "GL context is initialized" << '\n';
 
-    gladLoadGLLoader(SDL_GL_GetProcAddress);
-    std::cout << "GLAD is initialized" << '\n' << '\n';
+    const int version = gladLoadGL(SDL_GL_GetProcAddress);
+    std::cout << "GLAD is initialized: OpenGL " << GLAD_VERSION_MAJOR(version) << '.' << GLAD_VERSION_MINOR(version) << '\n' << '\n';
 
     std::cout << "GPU Vendor: " << glGetString(GL_VENDOR) << '\n';
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';
     std::cout << "Version: " << glGetString(GL_VERSION) << '\n';
     std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n' << '\n';
 
-    if (SDL_GL_SetSwapInterval(1) < 0) {
+    if (not SDL_GL_SetSwapInterval(1)) {
         std::cerr << "Failed to enable VSync: " << SDL_GetError() << '\n';
     }
 
@@ -74,14 +66,14 @@ void initWindow(Window &window, const std::string& window_name, const float scre
 }
 
 void destroyWindow(const Window &window) {
-    SDL_GL_DeleteContext(window.gl_context);
+    SDL_GL_DestroyContext(window.gl_context);
     std::cout << "Destroyed GL context" << '\n';
 
     SDL_DestroyWindow(window.ptr_window);
     std::cout << "Destroyed window" << '\n';
 }
 
-void swapBuffers(Window &window) {
+void swapBuffers(const Window &window) {
     SDL_GL_SwapWindow(window.ptr_window);
 }
 

@@ -1,7 +1,7 @@
 #ifndef UBO_VIEW_PROJECTION_HPP
 #define UBO_VIEW_PROJECTION_HPP
 
-#include <glad.h>
+#include <glad/gl.h>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
