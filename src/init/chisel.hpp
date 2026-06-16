@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <queue>
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -42,11 +43,13 @@ namespace chisel {
     };
 
     class System {
+        static std::queue<std::pair<SDL_GLAttr, int>> saved_attrs;
     public:
         explicit System(SDL_InitFlags flags);
         ~System();
 
         static void setGLWindowAttribute(SDL_GLAttr attr, int value);
+        static void recheckGLAttrs();
 
         System(const System&)            = delete;
         System& operator=(const System&) = delete;

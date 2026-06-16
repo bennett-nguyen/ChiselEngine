@@ -1,13 +1,10 @@
 #include "chisel.hpp"
 
+std::queue<std::pair<SDL_GLAttr, int>> chisel::System::saved_attrs {};
+
 void chisel::System::setGLWindowAttribute(const SDL_GLAttr attr, const int value) {
     SDL_GL_SetAttribute(attr, value);
-
-    if constexpr (EngineConstants::IS_DEBUGGING_ENABLED) {
-        int actual_value {};
-        SDL_GL_GetAttribute(attr, &actual_value);
-        std::clog << "LOG :: Requested value " << value << " for " << attr << " attribute. Got " << actual_value << '\n';
-    }
+    saved_attrs.emplace(attr, value);
 }
 
 chisel::System::System(const SDL_InitFlags flags) {
@@ -96,7 +93,23 @@ chisel::GLContextPtr chisel::makeGLContext(const WindowPtr &p_window) {
         initDebugOutput();
     }
 
+    System::recheckGLAttrs();
     return GLContextPtr(raw_gl_context);
+}
+
+void chisel::System::recheckGLAttrs() {
+    while (not saved_attrs.empty()) {
+        const auto& [attr, value] = saved_attrs.front();
+
+        int actual_value {};
+        SDL_GL_GetAttribute(attr, &actual_value);
+
+        if constexpr (EngineConstants::IS_DEBUGGING_ENABLED) {
+            std::clog << "LOG :: Requested value " << value << " for " << attr << " attribute. Got " << actual_value << '\n';
+        }
+
+        saved_attrs.pop();
+    }
 }
 
 void chisel::swapBuffers(const WindowPtr &p_window) {
