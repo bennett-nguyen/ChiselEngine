@@ -14,7 +14,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "aabb.hpp"
-#include "constant.hpp"
+#include "../init/gl_constants.hpp"
 #include "proc_gen.hpp"
 #include "direction.hpp"
 #include "conversions.hpp"
@@ -35,7 +35,7 @@ class Chunk;
 using VoxelID = uint8_t;
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryEast(const LocalPosition local) {
-    return Constant::CHUNK_SIZE-1 == local.z;
+    return chisel::EngineConstants::CHUNK_SIZE-1 == local.z;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryWest(const LocalPosition local) {
@@ -43,7 +43,7 @@ using VoxelID = uint8_t;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryNorth(const LocalPosition local) {
-    return Constant::CHUNK_SIZE-1 == local.x;
+    return chisel::EngineConstants::CHUNK_SIZE-1 == local.x;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundarySouth(const LocalPosition local) {
@@ -51,7 +51,7 @@ using VoxelID = uint8_t;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryTop(const LocalPosition local) {
-    return Constant::CHUNK_HEIGHT-1 == local.y;
+    return chisel::EngineConstants::CHUNK_HEIGHT-1 == local.y;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryBottom(const LocalPosition local) {
@@ -96,7 +96,7 @@ class Chunk {
     ChunkPosition position {};
     ChunkNeighbors neighbors {};
 
-    std::array<VoxelID, Constant::CHUNK_VOLUME> voxel_ids {};
+    std::array<VoxelID, chisel::EngineConstants::CHUNK_VOLUME> voxel_ids {};
 
     bool is_empty = true;
     bool is_built = false;

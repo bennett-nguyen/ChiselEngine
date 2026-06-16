@@ -5,7 +5,7 @@
 
 #include <glad/gl.h>
 
-#include "constant.hpp"
+#include "../init/gl_constants.hpp"
 
 /*
  * For a full list of GL Sized Internal Format, refers to:

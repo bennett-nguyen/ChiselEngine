@@ -5,7 +5,7 @@
 #include <glm/common.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "constant.hpp"
+#include "engine_constants.hpp"
 
 using VoxelIndex = unsigned;
 using WorldPosition = glm::ivec3;

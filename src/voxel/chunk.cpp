@@ -61,10 +61,10 @@ Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const 
 }
 
 void Chunk::buildVoxels() {
-    for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
-        for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
+    for (unsigned x = 0; x < chisel::EngineConstants::CHUNK_SIZE; x++) {
+        for (unsigned z = 0; z < chisel::EngineConstants::CHUNK_SIZE; z++) {
             glm::vec3 voxel_position = Conversion::toWorld(LocalPosition(x, 0, z), position);
-            voxel_position /= static_cast<float>(Constant::CHUNK_SIZE);
+            voxel_position /= static_cast<float>(chisel::EngineConstants::CHUNK_SIZE);
 
             const unsigned y_level = heightMap(voxel_position);
 
@@ -90,9 +90,9 @@ void Chunk::buildMesh() {
 
     bounding_box.reset();
 
-    for (unsigned x = 0; x < Constant::CHUNK_SIZE; x++) {
-        for (unsigned z = 0; z < Constant::CHUNK_SIZE; z++) {
-            for (unsigned y = 0; y < Constant::CHUNK_HEIGHT; y++) {
+    for (unsigned x = 0; x < chisel::EngineConstants::CHUNK_SIZE; x++) {
+        for (unsigned z = 0; z < chisel::EngineConstants::CHUNK_SIZE; z++) {
+            for (unsigned y = 0; y < chisel::EngineConstants::CHUNK_HEIGHT; y++) {
                 LocalPosition voxel_origin = { x, y, z };
                 if (isVoidAt(voxel_origin)) continue;
                 const VoxelID voxel_id = getVoxelID(voxel_origin);
@@ -398,7 +398,7 @@ bool Chunk::isVoidWestNeighbor(const LocalPosition voxel_origin) const {
 
     if (IS_ADJACENT_WEST) {
         if (nullptr == neighbors.west or neighbors.west->isEmpty()) return true;
-        neighbor_voxel.z = Constant::CHUNK_SIZE-1;
+        neighbor_voxel.z = chisel::EngineConstants::CHUNK_SIZE-1;
         return neighbors.west->isVoidAt(neighbor_voxel);
     }
 
@@ -426,7 +426,7 @@ bool Chunk::isVoidSouthNeighbor(const LocalPosition voxel_origin) const {
 
     if (IS_ADJACENT_SOUTH) {
         if (nullptr == neighbors.south or neighbors.south->isEmpty()) return true;
-        neighbor_voxel.x = Constant::CHUNK_SIZE-1;
+        neighbor_voxel.x = chisel::EngineConstants::CHUNK_SIZE-1;
         return neighbors.south->isVoidAt(neighbor_voxel);
     }
 
@@ -492,7 +492,7 @@ bool Chunk::isVoidNorthWestNeighbor(const LocalPosition voxel_origin) const {
     if (IS_ADJACENT_NORTH and IS_ADJACENT_WEST) {
         if (nullptr == neighbors.north_west or neighbors.north_west->isEmpty()) return true;
         neighbor_voxel.x = 0;
-        neighbor_voxel.z = Constant::CHUNK_SIZE-1;
+        neighbor_voxel.z = chisel::EngineConstants::CHUNK_SIZE-1;
         return neighbors.north_west->isVoidAt(neighbor_voxel);
     }
 
@@ -517,7 +517,7 @@ bool Chunk::isVoidSouthEastNeighbor(const LocalPosition voxel_origin) const {
 
     if (IS_ADJACENT_SOUTH and IS_ADJACENT_EAST) {
         if (nullptr == neighbors.south_east or neighbors.south_east->isEmpty()) return true;
-        neighbor_voxel.x = Constant::CHUNK_SIZE-1;
+        neighbor_voxel.x = chisel::EngineConstants::CHUNK_SIZE-1;
         neighbor_voxel.z = 0;
         return neighbors.south_east->isVoidAt(neighbor_voxel);
     }
@@ -543,8 +543,8 @@ bool Chunk::isVoidSouthWestNeighbor(const LocalPosition voxel_origin) const {
 
     if (IS_ADJACENT_SOUTH and IS_ADJACENT_WEST) {
         if (nullptr == neighbors.south_west or neighbors.south_west->isEmpty()) return true;
-        neighbor_voxel.x = Constant::CHUNK_SIZE-1;
-        neighbor_voxel.z = Constant::CHUNK_SIZE-1;
+        neighbor_voxel.x = chisel::EngineConstants::CHUNK_SIZE-1;
+        neighbor_voxel.z = chisel::EngineConstants::CHUNK_SIZE-1;
         return neighbors.south_west->isVoidAt(neighbor_voxel);
     }
 

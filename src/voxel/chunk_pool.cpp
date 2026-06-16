@@ -4,7 +4,7 @@ constexpr unsigned CHUNKS_TO_BUILD_PER_FRAME = 3;
 constexpr unsigned CHUNKS_TO_REBUILD_PER_FRAME = 3;
 
 constexpr unsigned EXTRA_RESERVED = 0;
-constexpr unsigned WORLD_SIZE = 2 * Constant::LOAD_DISTANCE + 1;
+constexpr unsigned WORLD_SIZE = 2 * chisel::EngineConstants::LOAD_DISTANCE + 1;
 constexpr unsigned POOL_RESERVED_SIZE = WORLD_SIZE * WORLD_SIZE + EXTRA_RESERVED;
 
 std::vector<Chunk*> chunk_pool;

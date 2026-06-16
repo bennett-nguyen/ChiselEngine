@@ -67,7 +67,7 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     unsigned voxel_traversed = 0;
     float current_ray_length = 0.0f;
 
-    while (voxel_traversed <= Constant::MAX_VOXEL_TRAVERSED or current_ray_length <= Constant::MAX_RAY_LENGTH) {
+    while (voxel_traversed <= chisel::EngineConstants::MAX_VOXEL_TRAVERSED or current_ray_length <= chisel::EngineConstants::MAX_RAY_LENGTH) {
         chunk_position_of_voxel = Conversion::toChunk(current_voxel);
 
         if (ChunkPool::isChunkUsed(chunk_position_of_voxel)) {

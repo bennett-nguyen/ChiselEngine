@@ -8,7 +8,8 @@
 
 #include "chisel.hpp"
 #include "shader.hpp"
-#include "constant.hpp"
+#include "gl_constants.hpp"
+#include "engine_constants.hpp"
 #include "camera.hpp"
 #include "ray_casting.hpp"
 #include "framebuffer.hpp"
@@ -16,10 +17,10 @@
 #include "ubo_view_projection.hpp"
 
 void loadWorld(const ChunkPosition player_position) {
-    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
-    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
-    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
-    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+    const int X_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
+    const int X_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
+    const int Z_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
+    const int Z_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
 
     const ChunkPosition CORNER_1 { X_MIN, 0, Z_MIN };
     const ChunkPosition CORNER_2 { X_MAX, 0, Z_MIN };
@@ -61,10 +62,10 @@ void loadWorld(const ChunkPosition player_position) {
 }
 
 void removeChunks(const ChunkPosition player_position) {
-    const int X_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
-    const int X_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.x;
-    const int Z_MIN = -static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
-    const int Z_MAX =  static_cast<int>(Constant::LOAD_DISTANCE) + player_position.z;
+    const int X_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
+    const int X_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
+    const int Z_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
+    const int Z_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
 
     const auto&& used_chunks_positions = ChunkPool::getUsedChunksPositions();
     for (const auto &position : used_chunks_positions) {
@@ -79,6 +80,8 @@ int main(int argc, char** argv) {
     chisel::System chisel_engine { SDL_INIT_VIDEO };
     auto p_window       = chisel::makeGLWindow("Chisel Engine v0.2.0");
     auto p_gl_context = chisel::makeGLContext(p_window);
+    const auto GL_CONSTANTS = chisel::loadGLConstants();
+
     chisel::enableVsync();
     chisel::lockMouseToWindow(p_window);
 
@@ -105,7 +108,7 @@ int main(int argc, char** argv) {
     Framebuffer multisample_framebuffer, intermediate_framebuffer;
 
     intermediate_framebuffer.init();
-    multisample_framebuffer.initMultiSample(Constant::MULTISAMPLE_LEVEL);
+    multisample_framebuffer.initMultiSample(chisel::EngineConstants::MULTISAMPLE_LEVEL);
 
     int window_width {};
     int window_height {};
@@ -248,15 +251,6 @@ int main(int argc, char** argv) {
     bool running = true;
     SDL_Event event;
 
-    // Graphics Specs
-    const GLubyte* vendor   = glGetString(GL_VENDOR);
-    const GLubyte* renderer = glGetString(GL_RENDERER);
-    const GLubyte* version  = glGetString(GL_VERSION);
-    const GLubyte* shading  = glGetString(GL_SHADING_LANGUAGE_VERSION);
-
-    // Build type
-    const std::string build_type = IS_DEBUGGING_ENABLE ? "Debug" : "Release";
-
     uint32_t now = SDL_GetTicks();
     uint32_t last = 0;
     float delta_time = 0;
@@ -267,6 +261,12 @@ int main(int argc, char** argv) {
     constexpr int UPDATE_FREQUENCY = 5;
 
     uint64_t start, end;
+
+    const auto CHISEL_VERSION = std::string(chisel::EngineConstants::ENGINE_VERSION) + std::string(chisel::EngineConstants::ENGINE_BUILD_TYPE);
+    const auto VENDOR = GL_CONSTANTS.getGLVendor();
+    const auto VERSION = GL_CONSTANTS.getGLVersion();
+    const auto RENDERER = GL_CONSTANTS.getGLRenderer();
+    const auto SHADING = GL_CONSTANTS.getGLShadingLanguageVersion();
 
     while (running) {
         start = SDL_GetPerformanceCounter();
@@ -419,11 +419,11 @@ int main(int argc, char** argv) {
 
         ImGui::NewLine();
 
-        ImGui::Text("Chisel Build: %s %s", Constant::VERSION.c_str(), build_type.c_str());
-        ImGui::Text("GPU Vendor: %s",               vendor   ? reinterpret_cast<const char*>(vendor)   : "Unknown");
-        ImGui::Text("Version: %s",                  version  ? reinterpret_cast<const char*>(version)  : "Unknown");
-        ImGui::Text("Renderer: %s",                 renderer ? reinterpret_cast<const char*>(renderer) : "Unknown");
-        ImGui::Text("Shading Language Version: %s", shading  ? reinterpret_cast<const char*>(shading)  : "Unknown");
+        ImGui::Text("Chisel Build: %s",             CHISEL_VERSION.c_str());
+        ImGui::Text("GPU Vendor: %s",               VENDOR   ? reinterpret_cast<const char*>(VENDOR)   : "Unknown");
+        ImGui::Text("Version: %s",                  VERSION  ? reinterpret_cast<const char*>(VERSION)  : "Unknown");
+        ImGui::Text("Renderer: %s",                 RENDERER ? reinterpret_cast<const char*>(RENDERER) : "Unknown");
+        ImGui::Text("Shading Language Version: %s", SHADING  ? reinterpret_cast<const char*>(SHADING)  : "Unknown");
 
         ImGui::End();
 

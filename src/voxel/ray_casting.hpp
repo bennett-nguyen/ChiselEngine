@@ -1,7 +1,7 @@
 #ifndef RAY_CASTING_HPP
 #define RAY_CASTING_HPP
 
-#include "constant.hpp"
+#include "../init/gl_constants.hpp"
 #include "chunk_pool.hpp"
 #include "conversions.hpp"
 

@@ -12,13 +12,8 @@
 
 #include <glm/vec4.hpp>
 
+#include "engine_constants.hpp"
 #include "debug_output.hpp"
-
-#ifdef NDEBUG
-    constexpr bool IS_DEBUGGING_ENABLE = false;
-#else
-    constexpr bool IS_DEBUGGING_ENABLE = true;
-#endif
 
 namespace chisel {
     struct Destroyer {

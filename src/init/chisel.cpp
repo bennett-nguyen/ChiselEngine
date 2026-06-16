@@ -3,11 +3,10 @@
 void chisel::System::setGLWindowAttribute(const SDL_GLAttr attr, const int value) {
     SDL_GL_SetAttribute(attr, value);
 
-    if constexpr (IS_DEBUGGING_ENABLE) {
+    if constexpr (EngineConstants::IS_DEBUGGING_ENABLED) {
         int actual_value {};
         SDL_GL_GetAttribute(attr, &actual_value);
-        std::clog << "LOG :: Requested value " << value << " for " << attr << " attribute" << value << '\n';
-        std::clog << "LOG :: Got " << actual_value << '\n';
+        std::clog << "LOG :: Requested value " << value << " for " << attr << " attribute. Got " << actual_value << '\n';
     }
 }
 
@@ -19,7 +18,7 @@ chisel::System::System(const SDL_InitFlags flags) {
 
     std::clog << "LOG :: SDL3 is initialized\n";
 
-    if constexpr (IS_DEBUGGING_ENABLE) {
+    if constexpr (EngineConstants::IS_DEBUGGING_ENABLED) {
         setGLWindowAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     }
 }
@@ -93,7 +92,7 @@ chisel::GLContextPtr chisel::makeGLContext(const WindowPtr &p_window) {
     std::clog << "LOG :: GLAD is initialized: OpenGL "
         << GLAD_VERSION_MAJOR(version) << '.' << GLAD_VERSION_MINOR(version) << '\n';
 
-    if constexpr (IS_DEBUGGING_ENABLE) {
+    if constexpr (EngineConstants::IS_DEBUGGING_ENABLED) {
         initDebugOutput();
     }
 

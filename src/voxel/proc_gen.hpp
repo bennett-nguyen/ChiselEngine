@@ -5,7 +5,7 @@
 
 #include <glm/gtc/noise.hpp>
 
-#include "constant.hpp"
+#include "../init/gl_constants.hpp"
 #include "conversions.hpp"
 
 enum class Biome : unsigned {
