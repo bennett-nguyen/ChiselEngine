@@ -1,0 +1,87 @@
+#ifndef CHISEL_HPP
+#define CHISEL_HPP
+
+#include <memory>
+#include <string>
+#include <iostream>
+
+#include <SDL3/SDL.h>
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
+#include <imgui_impl_opengl3.h>
+
+#include <glm/vec4.hpp>
+
+#include "debug_output.hpp"
+
+#ifdef NDEBUG
+    constexpr bool IS_DEBUGGING_ENABLE = false;
+#else
+    constexpr bool IS_DEBUGGING_ENABLE = true;
+#endif
+
+namespace chisel {
+    struct Destroyer {
+        void operator()(SDL_Window* p) const noexcept {
+            std::clog << "LOG :: GL window is destroyed\n";
+            SDL_DestroyWindow(p);
+        }
+
+        void operator()(SDL_GLContext p) const noexcept {
+            std::clog << "LOG :: GL context is destroyed\n";
+            SDL_GL_DestroyContext(p);
+        }
+    };
+
+    using WindowPtr = std::unique_ptr<SDL_Window, Destroyer>;
+    using GLContextPtr = std::unique_ptr<SDL_GLContextState, Destroyer>;
+
+    class Exception : std::exception {
+        std::string error_msg {};
+
+    public:
+        explicit Exception(const std::string_view error_msg)
+            : error_msg { error_msg } {}
+
+        [[nodiscard]] const std::string& getErrorMsg() const { return error_msg; }
+    };
+
+    class System {
+    public:
+        explicit System(SDL_InitFlags flags);
+        ~System();
+
+        static void setGLWindowAttribute(SDL_GLAttr attr, int value);
+
+        System(const System&)            = delete;
+        System& operator=(const System&) = delete;
+        System(System&&)                 = delete;
+        System& operator=(System&&)      = delete;
+    };
+
+    class GUISystem {
+    public:
+        explicit GUISystem(const WindowPtr& p_window, const GLContextPtr& p_gl_context);
+        ~GUISystem();
+
+        GUISystem(const GUISystem&)            = delete;
+        GUISystem& operator=(const GUISystem&) = delete;
+        GUISystem(GUISystem&&)                 = delete;
+        GUISystem& operator=(GUISystem&&)      = delete;
+    };
+
+    [[nodiscard]] WindowPtr makeGLWindow(const std::string& title);
+    [[nodiscard]] GLContextPtr makeGLContext(const WindowPtr& p_window);
+
+    void swapBuffers(const WindowPtr& p_window);
+    void clearWindow(glm::vec4 color);
+    void clearWindow(GLfloat r, GLfloat g, GLfloat b, GLfloat a);
+
+    void enableVsync();
+    void disableVsync();
+
+    void lockMouseToWindow(const WindowPtr& p_window);
+    void unlockMouseFromWindow(const WindowPtr& p_window);
+};
+
+#endif

@@ -1,9 +1,5 @@
 #include "debug_output.hpp"
 
-void requestDebugContext() {
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-}
-
 void GLAPIENTRY glDebugOutput(GLenum source,
                             GLenum type,
                             unsigned id,

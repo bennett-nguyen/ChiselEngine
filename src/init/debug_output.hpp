@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <glad/gl.h>
 
-void requestDebugContext();
 void initDebugOutput();
 void filterDebugMessage(GLenum source, GLenum type, GLenum severity);
 void GLAPIENTRY glDebugOutput(GLenum source,

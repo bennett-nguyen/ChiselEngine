@@ -1,15 +1,12 @@
 #include <iostream>
 
 #include <SDL3/SDL.h>
-#include <imgui.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_opengl3.h>
 #include <stb_image.h>
 
 #define GLM_FORCE_CXX17
 #define GLM_FORCE_EXPLICIT_CTOR
 
-#include "video.hpp"
+#include "chisel.hpp"
 #include "shader.hpp"
 #include "constant.hpp"
 #include "camera.hpp"
@@ -79,21 +76,17 @@ void removeChunks(const ChunkPosition player_position) {
 }
 
 int main(int argc, char** argv) {
-    // Program Init
-    Window window;
+    chisel::System chisel_engine { SDL_INIT_VIDEO };
+    auto p_window       = chisel::makeGLWindow("Chisel Engine v0.2.0");
+    auto p_gl_context = chisel::makeGLContext(p_window);
+    chisel::enableVsync();
+    chisel::lockMouseToWindow(p_window);
 
-    initVideo();
-    initWindow(window, "Chisel", Constant::SCREEN_OCCUPATION_RATIO);
+    chisel::GUISystem gui_engine { p_window, p_gl_context };
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    ImGui_ImplSDL3_InitForOpenGL(window.ptr_window, window.gl_context);
-    ImGui_ImplOpenGL3_Init();
-
-    SDL_SetWindowRelativeMouseMode(window.ptr_window, true);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -102,8 +95,6 @@ int main(int argc, char** argv) {
 
     GLuint empty_vao;
     glCreateVertexArrays(1, &empty_vao);
-
-    auto [window_width, window_height] = getWindowWidthHeight(window);
 
     // Screen Init
     const ShaderProgramID screen_shader_program = glCreateProgram();
@@ -115,6 +106,10 @@ int main(int argc, char** argv) {
 
     intermediate_framebuffer.init();
     multisample_framebuffer.initMultiSample(Constant::MULTISAMPLE_LEVEL);
+
+    int window_width {};
+    int window_height {};
+    SDL_GetWindowSize(p_window.get(), &window_width, &window_height);
 
     intermediate_framebuffer.setSize(window_width, window_height);
     multisample_framebuffer.setSize(window_width, window_height);
@@ -190,8 +185,9 @@ int main(int argc, char** argv) {
     attachShader("resources/shaders/chunk.frag", chunk_shader_program);
     linkProgram(chunk_shader_program);
 
-    Camera cinematic_camera { glm::radians(60.0f), computeAspectRatio(window), 20.0f, 500.0f };
-    Camera player_camera { glm::radians(60.0f), computeAspectRatio(window), 0.1f, 500.0f };
+    const float aspect_ratio = static_cast<float>(window_width) / window_height;
+    Camera cinematic_camera { glm::radians(60.0f), aspect_ratio, 20.0f, 500.0f };
+    Camera player_camera { glm::radians(60.0f), aspect_ratio, 0.1f, 500.0f };
 
     cinematic_camera.setPosition({ 0, 80.0f, -10.0f });
     player_camera.setPosition({ 0.0f, 40.0f, 0.0f });
@@ -290,8 +286,9 @@ int main(int argc, char** argv) {
 
             if (SDL_EVENT_KEY_DOWN == event.type) {
                 if (SDL_SCANCODE_TAB == event.key.scancode) {
-                    bool is_mouse_locked = SDL_GetWindowRelativeMouseMode(window.ptr_window);
-                    SDL_SetWindowRelativeMouseMode(window.ptr_window, !is_mouse_locked);
+                    bool is_mouse_locked = SDL_GetWindowRelativeMouseMode(p_window.get());
+                    if (is_mouse_locked) chisel::unlockMouseFromWindow(p_window);
+                    else chisel::lockMouseToWindow(p_window);
                 } else if (SDL_SCANCODE_Q == event.key.scancode) {
                     wireframe = not wireframe;
                 } else if (SDL_SCANCODE_E == event.key.scancode) {
@@ -309,9 +306,9 @@ int main(int argc, char** argv) {
                 }
             }
             if (not is_switching_controls) {
-                player_camera.pan(event, SDL_GetWindowRelativeMouseMode(window.ptr_window));
+                player_camera.pan(event, SDL_GetWindowRelativeMouseMode(p_window.get()));
             } else {
-                cinematic_camera.pan(event, SDL_GetWindowRelativeMouseMode(window.ptr_window));
+                cinematic_camera.pan(event, SDL_GetWindowRelativeMouseMode(p_window.get()));
             }
         }
 
@@ -358,7 +355,7 @@ int main(int argc, char** argv) {
         ChunkPool::rebuildQueuedChunks();
 
         multisample_framebuffer.bind();
-        clearWindow({ 0.45490f, 0.70196f, 1.0f, 1.0f });
+        chisel::clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
         glEnable(GL_DEPTH_TEST);
 
         activateShaderProgram(chunk_shader_program);
@@ -432,17 +429,12 @@ int main(int argc, char** argv) {
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        swapBuffers(window);
+        chisel::swapBuffers(p_window);
     }
 
     ChunkPool::destroy();
     intermediate_framebuffer.destroy();
     multisample_framebuffer.destroy();
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
-    destroyWindow(window);
-    SDL_Quit();
 
     return 0;
 }
