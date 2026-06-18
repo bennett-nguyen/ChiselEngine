@@ -32,7 +32,7 @@ float noise(const glm::vec3 any_position, const Biome biome) {
 }
 
 unsigned heightMap(const glm::vec3 any_position) {
-    constexpr float CHUNK_HEIGHT_RANGE = static_cast<float>(chisel::EngineConstants::CHUNK_HEIGHT);
+    constexpr float CHUNK_HEIGHT_RANGE = static_cast<float>(chisel::ChunkDataConstants::CHUNK_HEIGHT);
     const unsigned height = static_cast<unsigned>(noise(any_position, Biome::Test) * CHUNK_HEIGHT_RANGE);
     return height;
 }

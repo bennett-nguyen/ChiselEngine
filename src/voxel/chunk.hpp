@@ -19,23 +19,12 @@
 #include "direction.hpp"
 #include "conversions.hpp"
 
-/*
- * packed_data (32-bit):
- * Data           Size            Value Range (inclusive)     Constant name that holds such size
- * x              5 bit           0..31                       X_SIZE
- * y              5 bit           0..31                       Y_SIZE
- * z              5 bit           0..31                       Z_SIZE
- * ao_id          2 bit           0..3                        AO_ID_SIZE
- * face_id        3 bit           0..6                        FACE_ID_SIZE
- * voxel_id       8 bit           0..255                      VOXEL_ID_SIZE
- */
-
 class Chunk;
 
 using VoxelID = uint8_t;
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryEast(const LocalPosition local) {
-    return chisel::EngineConstants::CHUNK_SIZE-1 == local.z;
+    return chisel::ChunkDataConstants::CHUNK_SIZE-1 == local.z;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryWest(const LocalPosition local) {
@@ -43,7 +32,7 @@ using VoxelID = uint8_t;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryNorth(const LocalPosition local) {
-    return chisel::EngineConstants::CHUNK_SIZE-1 == local.x;
+    return chisel::ChunkDataConstants::CHUNK_SIZE-1 == local.x;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundarySouth(const LocalPosition local) {
@@ -51,7 +40,7 @@ using VoxelID = uint8_t;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryTop(const LocalPosition local) {
-    return chisel::EngineConstants::CHUNK_HEIGHT-1 == local.y;
+    return chisel::ChunkDataConstants::CHUNK_HEIGHT-1 == local.y;
 }
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryBottom(const LocalPosition local) {
@@ -69,6 +58,8 @@ struct Vertex {
     Vertex(Vertex&& other) noexcept {
         packed_data = other.packed_data;
     }
+
+    void appendBits(unsigned data, unsigned size);
 };
 
 struct ChunkMesh {
@@ -96,7 +87,7 @@ class Chunk {
     ChunkPosition position {};
     ChunkNeighbors neighbors {};
 
-    std::array<VoxelID, chisel::EngineConstants::CHUNK_VOLUME> voxel_ids {};
+    std::array<VoxelID, chisel::ChunkDataConstants::CHUNK_VOLUME> voxel_ids {};
 
     bool is_empty = true;
     bool is_built = false;

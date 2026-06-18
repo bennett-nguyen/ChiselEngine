@@ -78,7 +78,7 @@ void removeChunks(const ChunkPosition player_position) {
 
 int main(int argc, char** argv) {
     chisel::System chisel_engine { SDL_INIT_VIDEO };
-    auto p_window       = chisel::makeGLWindow("Chisel Engine v0.2.0");
+    auto p_window     = chisel::makeGLWindow("Chisel Engine v0.2.0");
     auto p_gl_context = chisel::makeGLContext(p_window);
     const auto GL_CONSTANTS = chisel::loadGLConstants();
 
@@ -262,7 +262,7 @@ int main(int argc, char** argv) {
 
     uint64_t start, end;
 
-    const auto CHISEL_VERSION = std::string(chisel::EngineConstants::ENGINE_VERSION) + std::string(chisel::EngineConstants::ENGINE_BUILD_TYPE);
+    const auto CHISEL_VERSION = std::string(chisel::EngineConstants::ENGINE_VERSION) + ' ' + std::string(chisel::EngineConstants::ENGINE_BUILD_TYPE);
     const auto VENDOR = GL_CONSTANTS.getGLVendor();
     const auto VERSION = GL_CONSTANTS.getGLVersion();
     const auto RENDERER = GL_CONSTANTS.getGLRenderer();
