@@ -5,7 +5,6 @@
 
 #include <glad/gl.h>
 
-
 namespace chisel::EngineConstants {
     constexpr std::string_view ENGINE_VERSION = "v0.2.0-dev";
     constexpr float SCREEN_OCCUPATION_RATIO = 0.8f;
@@ -17,6 +16,8 @@ namespace chisel::EngineConstants {
     constexpr bool IS_DEBUGGING_ENABLED = true;
     constexpr std::string_view ENGINE_BUILD_TYPE = "Debug";
     #endif
+    constexpr unsigned CHUNKS_TO_BUILD_PER_FRAME = 3;
+    constexpr unsigned CHUNKS_TO_REBUILD_PER_FRAME = 3;
 
     constexpr unsigned LOAD_DISTANCE = 12;
     constexpr float MAX_RAY_LENGTH = 8.78f;

@@ -44,10 +44,11 @@ namespace chisel {
 
     class System {
         static std::queue<std::pair<SDL_GLAttr, int>> saved_attrs;
-    public:
         explicit System(SDL_InitFlags flags);
+    public:
         ~System();
 
+        static System& initialize(SDL_InitFlags flags);
         static void setGLWindowAttribute(SDL_GLAttr attr, int value);
         static void recheckGLAttrs();
 

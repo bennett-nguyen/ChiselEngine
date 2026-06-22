@@ -3,6 +3,7 @@
 
 #include <array>
 #include <vector>
+#include <memory>
 #include <algorithm>
 #include <ostream>
 #include <iostream>
@@ -20,6 +21,7 @@
 #include "conversions.hpp"
 
 class Chunk;
+using ChunkPtr = std::unique_ptr<Chunk>;
 
 using VoxelID = uint8_t;
 
@@ -65,20 +67,20 @@ struct Vertex {
 struct ChunkMesh {
     GLuint ssbo_vertices {}, ebo {}, vao {};
 
-    std::vector<Vertex> vertices;
-    std::vector<GLuint> indices;
+    std::vector<Vertex> vertices {};
+    std::vector<GLuint> indices {};
 };
 
 struct ChunkNeighbors {
-    const Chunk* north = nullptr;
-    const Chunk* south = nullptr;
-    const Chunk* east = nullptr;
-    const Chunk* west = nullptr;
+    const Chunk* north {};
+    const Chunk* south {};
+    const Chunk* east {};
+    const Chunk* west {};
 
-    const Chunk* north_east = nullptr;
-    const Chunk* north_west = nullptr;
-    const Chunk* south_east = nullptr;
-    const Chunk* south_west = nullptr;
+    const Chunk* north_east {};
+    const Chunk* north_west {};
+    const Chunk* south_east {};
+    const Chunk* south_west {};
 };
 
 class Chunk {

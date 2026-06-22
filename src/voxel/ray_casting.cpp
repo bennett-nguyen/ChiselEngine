@@ -8,7 +8,7 @@ float FRAC1(const float x) {
     return 1.0f - x + std::floor(x);
 }
 
-void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direction) {
+void rayCast(const chisel::ChunkPool& pool, RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direction) {
     auto current_voxel = Conversion::toWorld(position);
     glm::vec3 normalized_direction = glm::normalize(direction);
 
@@ -70,10 +70,10 @@ void rayCast(RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direc
     while (voxel_traversed <= chisel::EngineConstants::MAX_VOXEL_TRAVERSED or current_ray_length <= chisel::EngineConstants::MAX_RAY_LENGTH) {
         chunk_position_of_voxel = Conversion::toChunk(current_voxel);
 
-        if (ChunkPool::isChunkUsed(chunk_position_of_voxel)) {
+        if (pool.isPositionUsed(chunk_position_of_voxel)) {
             voxel_origin = Conversion::toLocal(current_voxel, chunk_position_of_voxel);
 
-            if (not ChunkPool::isVoidAtInChunk(voxel_origin, chunk_position_of_voxel)) {
+            if (not pool.isVoidAtInChunk(voxel_origin, chunk_position_of_voxel)) {
                 ray_cast_result.is_detected_voxel = true;
                 ray_cast_result.detected_voxel_position = current_voxel;
                 break;
@@ -116,56 +116,56 @@ WorldPosition getAdjacentVoxel(const RayCastResult &ray_cast_result) {
     return adjacent_voxel;
 }
 
-void breakBlock(const WorldPosition voxel_position) {
+void breakBlock(chisel::ChunkPool& pool, const WorldPosition voxel_position) {
     const auto chunk_position = Conversion::toChunk(voxel_position);
     const auto local_position = Conversion::toLocal(voxel_position, chunk_position);
 
-    ChunkPool::setVoxelIDAtPositionInChunk(0, local_position, chunk_position);
-    ChunkPool::rebuild(chunk_position);
+    pool.setVoxelIDAtPositionInChunk(0, local_position, chunk_position);
+    pool.enqueueForRebuilding(chunk_position);
 
     if (isVoxelAtChunkBoundarySouth(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South));
     } else if (isVoxelAtChunkBoundaryNorth(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North));
     }
 
     if (isVoxelAtChunkBoundaryBottom(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Bottom));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Bottom));
     } else if (isVoxelAtChunkBoundaryTop(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Top));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Top));
     }
 
     if (isVoxelAtChunkBoundaryWest(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West));
     } else if (isVoxelAtChunkBoundaryEast(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East));
     }
 }
 
-void placeBlock(const WorldPosition adjacent_voxel_position) {
+void placeBlock(chisel::ChunkPool& pool, const WorldPosition adjacent_voxel_position) {
     const auto chunk_position = Conversion::toChunk(adjacent_voxel_position);
     const auto local_position = Conversion::toLocal(adjacent_voxel_position, chunk_position);
 
     if (chunk_position.y != 0) return;
 
-    ChunkPool::setVoxelIDAtPositionInChunk(1, local_position, chunk_position);
-    ChunkPool::rebuild(chunk_position);
+    pool.setVoxelIDAtPositionInChunk(1, local_position, chunk_position);
+    pool.enqueueForRebuilding(chunk_position);
 
     if (isVoxelAtChunkBoundarySouth(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South));
     } else if (isVoxelAtChunkBoundaryNorth(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North));
     }
 
     if (isVoxelAtChunkBoundaryBottom(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Bottom));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Bottom));
     } else if (isVoxelAtChunkBoundaryTop(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Top));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::Top));
     }
 
     if (isVoxelAtChunkBoundaryWest(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West));
     } else if (isVoxelAtChunkBoundaryEast(local_position)) {
-        ChunkPool::rebuild(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East));
+        pool.enqueueForRebuilding(chunk_position + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East));
     }
 }

@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <vector>
+#include <ranges>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -11,31 +12,55 @@
 
 #include "chunk.hpp"
 
-using ChunkID = size_t;
+namespace chisel {
+    using ChunkID = size_t;
+    constexpr ChunkID NULL_CHUNK_ID = 0;
 
-namespace ChunkPool {
-    void init();
-    void destroy();
+    class ChunkPool {
+        std::vector<ChunkPtr> chunk_pool {};
+        std::queue<ChunkID> allocated_chunks {};
+        std::unordered_map<ChunkPosition, ChunkID> used_chunk_ids {};
 
-    void use(ChunkPosition);
-    void free(ChunkPosition);
+        std::queue<ChunkPosition> build_queue {};
+        std::queue<ChunkPosition> rebuild_queue {};
 
-    void enqueueForBuilding(ChunkPosition);
-    void enqueueForRebuilding(ChunkPosition);
+        std::unordered_set<ChunkPosition> chunks_to_build {};
+        std::unordered_set<ChunkPosition> chunks_to_rebuild {};
 
-    void build(ChunkPosition);
-    void rebuild(ChunkPosition);
-    void buildQueuedChunks();
-    void rebuildQueuedChunks();
+        void build(ChunkPosition) const;
+        void rebuild(ChunkPosition) const;
 
-    void render(ChunkPosition);
-    void setVoxelIDAtPositionInChunk(VoxelID, LocalPosition, ChunkPosition);
+        [[nodiscard]] ChunkNeighbors forwardNeighboringChunks(ChunkPosition) const;
+    public:
+         ChunkPool();
+        ~ChunkPool() = default;
 
-    [[nodiscard]] bool isBuilt(ChunkPosition);
-    [[nodiscard]] bool isChunkUsed(ChunkPosition);
-    [[nodiscard]] bool isVoidAtInChunk(LocalPosition, ChunkPosition);
-    [[nodiscard]] bool isVisible(ChunkPosition, const std::array<glm::vec4, 6> &frustum_planes);
-    [[nodiscard]] std::vector<ChunkPosition> getUsedChunksPositions();
+        void use(ChunkPosition);
+        void recycle(ChunkPosition);
+
+        [[nodiscard]] ChunkID getUsedChunkID(ChunkPosition) const;
+        [[nodiscard]] bool isPositionUsed(ChunkPosition) const;
+
+        void enqueueForBuilding(ChunkPosition);
+        void enqueueForRebuilding(ChunkPosition);
+
+        void buildQueuedChunks();
+        void rebuildQueuedChunks();
+
+        void renderUsedChunk(ChunkPosition) const;
+        void setVoxelIDAtPositionInChunk(VoxelID, LocalPosition, ChunkPosition) const;
+
+        [[nodiscard]] bool isVoidAtInChunk(LocalPosition, ChunkPosition) const;
+        [[nodiscard]] bool isVisible(ChunkPosition position, const std::array<glm::vec4, 6> &frustum_planes) const;
+        [[nodiscard]] bool isBuilt(ChunkPosition) const;
+
+        [[nodiscard]] const std::vector<ChunkPosition>& getUsedChunks() const;
+
+        ChunkPool(const ChunkPool&)            = delete;
+        ChunkPool& operator=(const ChunkPool&) = delete;
+        ChunkPool(ChunkPool&&)                 = delete;
+        ChunkPool& operator=(ChunkPool&&)      = delete;
+    };
 }
 
 #endif

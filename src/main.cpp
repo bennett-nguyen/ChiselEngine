@@ -16,7 +16,7 @@
 #include "ray_casting.hpp"
 #include "ubo_view_projection.hpp"
 
-void loadWorld(const ChunkPosition player_position) {
+void loadWorld(chisel::ChunkPool& pool, const ChunkPosition player_position) {
     const int X_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
     const int X_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
     const int Z_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
@@ -31,56 +31,58 @@ void loadWorld(const ChunkPosition player_position) {
     const std::array starting_points = { CORNER_1, CORNER_2, CORNER_3, CORNER_4, CENTER };
     constexpr std::array directions = { Direction::North, Direction::South, Direction::East, Direction::West };
 
-    std::queue<ChunkPosition> build_queue;
+    std::queue<ChunkPosition> build_queue {};
 
     for (auto const &point : starting_points) {
-        if (ChunkPool::isChunkUsed(point)) continue;
-        ChunkPool::use(point);
-        ChunkPool::enqueueForBuilding(point);
+        if (pool.isPositionUsed(point)) continue;
+        pool.use(point);
+        pool.enqueueForBuilding(point);
         build_queue.push(point);
     }
 
-    while (!build_queue.empty()) {
+    while (not build_queue.empty()) {
         ChunkPosition position = build_queue.front();
         build_queue.pop();
 
         for (auto const &direction : directions) {
             const ChunkPosition neighbor = position + CHUNK_NEIGHBORS_DIRECTION.at(direction);
-            if (ChunkPool::isChunkUsed(neighbor)) {
-                if (!ChunkPool::isBuilt(neighbor)) continue;
-                ChunkPool::enqueueForRebuilding(neighbor);
+            if (pool.isPositionUsed(neighbor)) {
+                if (not pool.isBuilt(neighbor)) continue;
+                pool.enqueueForRebuilding(neighbor);
                 continue;
             }
 
             if (X_MIN > neighbor.x || neighbor.x > X_MAX || Z_MIN > neighbor.z || neighbor.z > Z_MAX) continue;
 
             build_queue.push(neighbor);
-            ChunkPool::use(neighbor);
-            ChunkPool::enqueueForBuilding(neighbor);
+            pool.use(neighbor);
+            pool.enqueueForBuilding(neighbor);
         }
     }
 }
 
-void removeChunks(const ChunkPosition player_position) {
+void removeChunks(chisel::ChunkPool& pool, const ChunkPosition player_position) {
     const int X_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
     const int X_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.x;
     const int Z_MIN = -static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
     const int Z_MAX =  static_cast<int>(chisel::EngineConstants::LOAD_DISTANCE) + player_position.z;
 
-    const auto&& used_chunks_positions = ChunkPool::getUsedChunksPositions();
-    for (const auto &position : used_chunks_positions) {
+    const auto& used_chunks = pool.getUsedChunks();
+
+    for (const auto &position : used_chunks) {
         if (X_MIN <= position.x && position.x <= X_MAX &&
                 Z_MIN <= position.z && position.z <= Z_MAX) continue;
 
-        ChunkPool::free(position);
+        pool.recycle(position);
     }
 }
 
 int main(int argc, char** argv) {
-    chisel::System chisel_engine { SDL_INIT_VIDEO };
+    chisel::System::initialize(SDL_INIT_VIDEO);
+
     auto p_window     = chisel::makeGLWindow("Chisel Engine v0.2.0");
     auto p_gl_context = chisel::makeGLContext(p_window);
-    const auto GL_CONSTANTS = chisel::loadGLConstants();
+    auto GL_CONSTANTS = chisel::GLConstants::getInstance();
 
     chisel::enableVsync();
     chisel::lockMouseToWindow(p_window);
@@ -195,7 +197,7 @@ int main(int argc, char** argv) {
     cinematic_camera.setPosition({ 0, 80.0f, -10.0f });
     player_camera.setPosition({ 0.0f, 40.0f, 0.0f });
 
-    RayCastResult ray_cast_result;
+    RayCastResult ray_cast_result {};
     ChunkPosition prev_player_position, current_player_position;
 
     bool is_using_cinematic_camera = false;
@@ -204,8 +206,8 @@ int main(int argc, char** argv) {
     prev_player_position = Conversion::toChunk(player_camera.getPosition());
     current_player_position = Conversion::toChunk(player_camera.getPosition());
 
-    ChunkPool::init();
-    loadWorld(current_player_position);
+    chisel::ChunkPool pool {};
+    loadWorld(pool, current_player_position);
 
     // Texture Array
     GLuint texture_array;
@@ -330,13 +332,13 @@ int main(int argc, char** argv) {
         }
 
         if (enable_break_block or enable_place_block) {
-            rayCast(ray_cast_result, player_camera.getPosition(), player_camera.getViewingDirection());
+            rayCast(pool, ray_cast_result, player_camera.getPosition(), player_camera.getViewingDirection());
 
             if (ray_cast_result.is_detected_voxel) {
                 if (enable_break_block) {
-                    breakBlock(ray_cast_result.detected_voxel_position);
+                    breakBlock(pool, ray_cast_result.detected_voxel_position);
                 } else {
-                    placeBlock(getAdjacentVoxel(ray_cast_result));
+                    placeBlock(pool, getAdjacentVoxel(ray_cast_result));
                 }
             }
         }
@@ -346,13 +348,13 @@ int main(int argc, char** argv) {
 
         if (prev_player_position.x != current_player_position.x
             or prev_player_position.z != current_player_position.z) {
-            removeChunks(current_player_position);
-            loadWorld(current_player_position);
+            removeChunks(pool, current_player_position);
+            loadWorld(pool, current_player_position);
             prev_player_position = current_player_position;
         }
 
-        ChunkPool::buildQueuedChunks();
-        ChunkPool::rebuildQueuedChunks();
+        pool.buildQueuedChunks();
+        pool.rebuildQueuedChunks();
 
         multisample_framebuffer.bind();
         chisel::clearWindow(0.45490f, 0.70196f, 1.0f, 1.0f);
@@ -365,12 +367,12 @@ int main(int argc, char** argv) {
         if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         const auto&& frustum_planes = player_camera.getFrustumPlanes();
-        const auto&& used_chunks_positions = ChunkPool::getUsedChunksPositions();
+        const auto& used_chunks = pool.getUsedChunks();
 
-        for (const auto position : used_chunks_positions) {
-            if (not ChunkPool::isVisible(position, frustum_planes)) continue;
+        for (const auto &position : used_chunks) {
+            if (not pool.isVisible(position, frustum_planes)) continue;
             uniformMat4f(chunk_shader_program, "model", 1, GL_FALSE, Conversion::toChunkModel(position));
-            ChunkPool::render(position);
+            pool.renderUsedChunk(position);
         }
 
         multisample_framebuffer.blitTo(intermediate_framebuffer);
@@ -432,7 +434,6 @@ int main(int argc, char** argv) {
         chisel::swapBuffers(p_window);
     }
 
-    ChunkPool::destroy();
     intermediate_framebuffer.destroy();
     multisample_framebuffer.destroy();
 

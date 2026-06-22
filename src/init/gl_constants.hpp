@@ -13,8 +13,9 @@ namespace chisel {
         GLfloat glMaxTextureMaxAnisotropy {};
         GLint glMaxSamples {};
 
-        friend GLConstants loadGLConstants();
+        GLConstants();
     public:
+        static GLConstants& getInstance();
         const GLubyte* getGLVendor() const { return glVendor; }
         const GLubyte* getGLRenderer() const { return glRenderer; }
         const GLubyte* getGLVersion() const { return glVersion; }
@@ -23,8 +24,6 @@ namespace chisel {
         GLfloat getMaxTextureMaxAnisotropy() const { return glMaxTextureMaxAnisotropy; }
         GLint getMaxSamples() const { return glMaxSamples; }
     };
-
-    GLConstants loadGLConstants();
 }
 
 #endif

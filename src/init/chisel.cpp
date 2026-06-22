@@ -7,6 +7,11 @@ void chisel::System::setGLWindowAttribute(const SDL_GLAttr attr, const int value
     saved_attrs.emplace(attr, value);
 }
 
+chisel::System& chisel::System::initialize(const SDL_InitFlags flags) {
+    static System instance { flags };
+    return instance;
+}
+
 chisel::System::System(const SDL_InitFlags flags) {
      if (not SDL_Init(flags)) {
          const std::string sdl_error_msg { SDL_GetError() };

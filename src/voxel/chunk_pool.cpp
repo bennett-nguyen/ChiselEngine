@@ -1,64 +1,30 @@
 #include "chunk_pool.hpp"
 
-constexpr unsigned CHUNKS_TO_BUILD_PER_FRAME = 3;
-constexpr unsigned CHUNKS_TO_REBUILD_PER_FRAME = 3;
-
 constexpr unsigned EXTRA_RESERVED = 0;
 constexpr unsigned WORLD_SIZE = 2 * chisel::EngineConstants::LOAD_DISTANCE + 1;
 constexpr unsigned POOL_RESERVED_SIZE = WORLD_SIZE * WORLD_SIZE + EXTRA_RESERVED;
 
-std::vector<Chunk*> chunk_pool;
+chisel::ChunkPool::ChunkPool() {
+    chunk_pool.reserve(POOL_RESERVED_SIZE+1);
+    used_chunk_ids.reserve(POOL_RESERVED_SIZE+1);
 
-std::queue<ChunkID> allocated_chunks;
-std::queue<ChunkPosition> build_queue, rebuild_queue;
+    chunk_pool.emplace_back(nullptr);
+    for (size_t ID = 1; ID <= POOL_RESERVED_SIZE; ID++) {
+        auto p_chunk = std::make_unique<Chunk>();
+        p_chunk->preload();
 
-std::unordered_set<ChunkPosition> chunks_to_build, chunks_to_rebuild;
-std::unordered_map<ChunkPosition, ChunkID> used_chunks_id;
-
-[[nodiscard]] inline Chunk* getChunkPointer(const ChunkID ID) {
-    return chunk_pool.at(ID);
-}
-
-[[nodiscard]] inline Chunk* getUsedChunkPointer(const ChunkPosition position) {
-    if (not ChunkPool::isChunkUsed(position)) return nullptr;
-    return getChunkPointer(used_chunks_id.at(position));
-}
-
-ChunkNeighbors forwardNeighboringChunks(const ChunkPosition chunk) {
-    return {
-        .north = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North)),
-        .south = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South)),
-        .east  = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East)),
-        .west  = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West)),
-
-        .north_east = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North | Direction::East)),
-        .north_west = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North | Direction::West)),
-        .south_east = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South | Direction::East)),
-        .south_west = getUsedChunkPointer(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South | Direction::West))
-    };
-}
-
-void ChunkPool::init() {
-    chunk_pool.resize(POOL_RESERVED_SIZE);
-    used_chunks_id.reserve(POOL_RESERVED_SIZE);
-
-    for (size_t ID = 0; ID < POOL_RESERVED_SIZE; ID++) {
-        chunk_pool.at(ID) = new Chunk();
-        chunk_pool.at(ID)->preload();
+        chunk_pool.emplace_back(std::move(p_chunk));
         allocated_chunks.push(ID);
     }
-
-    std::cout << "LOG :: Chunk Pool created with " << allocated_chunks.size() << " allocated chunks." << '\n';
 }
 
-void ChunkPool::destroy() {
-    for (const auto &ptr_chunk : chunk_pool) {
-        delete ptr_chunk;
-    }
+chisel::ChunkID chisel::ChunkPool::getUsedChunkID(const ChunkPosition position) const {
+    if (not isPositionUsed(position)) return NULL_CHUNK_ID;
+    return used_chunk_ids.at(position);
 }
 
-void ChunkPool::use(const ChunkPosition position) {
-    if (isChunkUsed(position)) return;
+void chisel::ChunkPool::use(const ChunkPosition position) {
+    if (isPositionUsed(position)) return;
 
     if (allocated_chunks.empty()) {
         std::cerr << "WARNING :: Ran out of unused chunk!" << '\n';
@@ -68,117 +34,146 @@ void ChunkPool::use(const ChunkPosition position) {
     const ChunkID ID = allocated_chunks.front();
     allocated_chunks.pop();
 
-    used_chunks_id.insert({ position, ID });
-    const auto current_chunk = getChunkPointer(ID);
-    current_chunk->setPosition(position);
-    current_chunk->buildVoxels();
+    used_chunk_ids.emplace(position, ID);
+    chunk_pool.at(ID)->setPosition(position);
+    chunk_pool.at(ID)->buildVoxels();
 }
 
-void ChunkPool::free(const ChunkPosition position) {
-    if (not isChunkUsed(position)) return;
-    const auto current_chunk = getUsedChunkPointer(position);
+void chisel::ChunkPool::recycle(const ChunkPosition position) {
+    if (not isPositionUsed(position)) return;
+    const ChunkID ID = used_chunk_ids.at(position);
 
-    current_chunk->destroyMesh();
-    current_chunk->resetVoxels();
+    chunk_pool.at(ID)->destroyMesh();
+    chunk_pool.at(ID)->resetVoxels();
 
-    allocated_chunks.push(used_chunks_id.at(position));
-    used_chunks_id.erase(position);
+    allocated_chunks.emplace(ID);
+    used_chunk_ids.erase(position);
 }
 
-void ChunkPool::enqueueForBuilding(const ChunkPosition position) {
-    if (chunks_to_build.find(position) != chunks_to_build.end()) return;
-    chunks_to_build.insert(position);
-    build_queue.push(position);
+bool chisel::ChunkPool::isPositionUsed(const ChunkPosition position) const {
+    return used_chunk_ids.count(position) != 0;
 }
 
-void ChunkPool::enqueueForRebuilding(const ChunkPosition position) {
-    if (chunks_to_rebuild.find(position) != chunks_to_rebuild.end()) return;
-    chunks_to_rebuild.insert(position);
-    rebuild_queue.push(position);
+void chisel::ChunkPool::enqueueForBuilding(const ChunkPosition position) {
+    if (not isPositionUsed(position)) return;
+    const auto [_, is_inserted] = chunks_to_build.emplace(position);
+    if (not is_inserted) return;
+    build_queue.emplace(position);
 }
 
-void ChunkPool::build(const ChunkPosition position) {
-    if (not isChunkUsed(position)) return;
-    const auto current_chunk = getUsedChunkPointer(position);
-
-    current_chunk->fetchNeighbors(forwardNeighboringChunks(position));
-    current_chunk->buildMesh();
+void chisel::ChunkPool::enqueueForRebuilding(const ChunkPosition position) {
+    if (not isPositionUsed(position)) return;
+    const auto [_, is_inserted] = chunks_to_rebuild.emplace(position);
+    if (not is_inserted) return;
+    rebuild_queue.emplace(position);
 }
 
-void ChunkPool::rebuild(const ChunkPosition position) {
-    if (not isChunkUsed(position)) return;
-    getUsedChunkPointer(position)->destroyMesh();
-    build(position);
-}
-
-void ChunkPool::buildQueuedChunks() {
+void chisel::ChunkPool::buildQueuedChunks() {
     if (build_queue.empty()) return;
-    unsigned num_chunks = CHUNKS_TO_BUILD_PER_FRAME;
+    unsigned num_chunks = EngineConstants::CHUNKS_TO_BUILD_PER_FRAME;
 
-    while (num_chunks and not build_queue.empty()) {
-        const ChunkPosition position = build_queue.front();
-        build_queue.pop();
+    while (num_chunks != 0 and not build_queue.empty()) {
+        const auto position = build_queue.front();
         chunks_to_build.erase(position);
+        build_queue.pop();
 
-        if (not isChunkUsed(position)) continue;
-
+        if (not isPositionUsed(position)) continue;
         build(position);
         num_chunks--;
     }
 }
 
-void ChunkPool::rebuildQueuedChunks() {
+void chisel::ChunkPool::rebuildQueuedChunks() {
     if (rebuild_queue.empty()) return;
-    unsigned num_chunks = CHUNKS_TO_REBUILD_PER_FRAME;
+    unsigned num_chunks = EngineConstants::CHUNKS_TO_REBUILD_PER_FRAME;
 
-    while (num_chunks and not rebuild_queue.empty()) {
-        const ChunkPosition position = rebuild_queue.front();
-        rebuild_queue.pop();
+    while (num_chunks != 0 and not rebuild_queue.empty()) {
+        const auto position = rebuild_queue.front();
         chunks_to_rebuild.erase(position);
+        rebuild_queue.pop();
 
-        if (not isChunkUsed(position)) continue;
-
+        if (not isPositionUsed(position)) continue;
         rebuild(position);
         num_chunks--;
     }
 }
 
-void ChunkPool::render(const ChunkPosition position) {
-    if (not isChunkUsed(position)) return;
-    getUsedChunkPointer(position)->render();
+void chisel::ChunkPool::build(const ChunkPosition position) const {
+    if (not isPositionUsed(position)) return;
+    const auto ID = getUsedChunkID(position);
+    chunk_pool.at(ID)->fetchNeighbors(forwardNeighboringChunks(position));
+    chunk_pool.at(ID)->buildMesh();
 }
 
-void ChunkPool::setVoxelIDAtPositionInChunk(const VoxelID voxel_id, const LocalPosition local, const ChunkPosition chunk) {
-    if (not isChunkUsed(chunk)) return;
-    getUsedChunkPointer(chunk)->setVoxelIDAtPosition(voxel_id, local);
+void chisel::ChunkPool::rebuild(const ChunkPosition position) const {
+    if (not isPositionUsed(position)) return;
+    const auto ID = getUsedChunkID(position);
+    chunk_pool.at(ID)->destroyMesh();
+    chunk_pool.at(ID)->fetchNeighbors(forwardNeighboringChunks(position));
+    chunk_pool.at(ID)->buildMesh();
 }
 
-bool ChunkPool::isChunkUsed(const ChunkPosition position) {
-    return 0 != used_chunks_id.count(position);
+ChunkNeighbors chisel::ChunkPool::forwardNeighboringChunks(const ChunkPosition chunk) const {
+    const auto ID_NORTH = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North));
+    const auto ID_SOUTH = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South));
+    const auto ID_EAST = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::East));
+    const auto ID_WEST = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::West));
+
+    const auto ID_NORTH_EAST = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North | Direction::East));
+    const auto ID_NORTH_WEST = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::North | Direction::West));
+    const auto ID_SOUTH_EAST = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South | Direction::East));
+    const auto ID_SOUTH_WEST = getUsedChunkID(chunk + CHUNK_NEIGHBORS_DIRECTION.at(Direction::South | Direction::West));
+
+    return {
+        .north = ID_NORTH != NULL_CHUNK_ID ? chunk_pool.at(ID_NORTH).get() : nullptr,
+        .south = ID_SOUTH != NULL_CHUNK_ID ? chunk_pool.at(ID_SOUTH).get() : nullptr,
+        .east  = ID_EAST != NULL_CHUNK_ID ? chunk_pool.at(ID_EAST).get() : nullptr,
+        .west  = ID_WEST != NULL_CHUNK_ID ? chunk_pool.at(ID_WEST).get() : nullptr,
+
+        .north_east = ID_NORTH_EAST != NULL_CHUNK_ID ? chunk_pool.at(ID_NORTH_EAST).get() : nullptr,
+        .north_west = ID_NORTH_WEST != NULL_CHUNK_ID ? chunk_pool.at(ID_NORTH_WEST).get() : nullptr,
+        .south_east = ID_SOUTH_EAST != NULL_CHUNK_ID ? chunk_pool.at(ID_SOUTH_EAST).get() : nullptr,
+        .south_west = ID_SOUTH_WEST != NULL_CHUNK_ID ? chunk_pool.at(ID_SOUTH_WEST).get() : nullptr
+    };
 }
 
-bool ChunkPool::isVoidAtInChunk(const LocalPosition local, const ChunkPosition chunk) {
-    if (not isChunkUsed(chunk)) return false;
-    return getUsedChunkPointer(chunk)->isVoidAt(local);
+void chisel::ChunkPool::renderUsedChunk(const ChunkPosition position) const {
+    if (not isPositionUsed(position)) return;
+    const auto ID = getUsedChunkID(position);
+    chunk_pool.at(ID)->render();
 }
 
-bool ChunkPool::isVisible(const ChunkPosition position, const std::array<glm::vec4, 6> &frustum_planes) {
-    if (not isChunkUsed(position)) return false;
-    return getUsedChunkPointer(position)->isChunkVisible(frustum_planes);
+void chisel::ChunkPool::setVoxelIDAtPositionInChunk(const VoxelID voxel_id, const LocalPosition local, const ChunkPosition chunk) const {
+    if (not isPositionUsed(chunk)) return;
+    const auto ID = getUsedChunkID(chunk);
+    chunk_pool.at(ID)->setVoxelIDAtPosition(voxel_id, local);
 }
 
-std::vector<ChunkPosition> ChunkPool::getUsedChunksPositions() {
-    std::vector<ChunkPosition> positions;
-    positions.reserve(used_chunks_id.size());
+bool chisel::ChunkPool::isVoidAtInChunk(const LocalPosition local, const ChunkPosition chunk) const {
+    if (not isPositionUsed(chunk)) return false;
+    const auto ID = getUsedChunkID(chunk);
+    return chunk_pool.at(ID)->isVoidAt(local);
+}
 
-    for (const auto &[position, _] : used_chunks_id) {
-        positions.push_back(position);
+bool chisel::ChunkPool::isVisible(const ChunkPosition position, const std::array<glm::vec4, 6> &frustum_planes) const {
+    if (not isPositionUsed(position)) return false;
+    const auto ID = getUsedChunkID(position);
+    return chunk_pool.at(ID)->isChunkVisible(frustum_planes);
+}
+
+bool chisel::ChunkPool::isBuilt(const ChunkPosition position) const {
+    if (not isPositionUsed(position)) return false;
+    const auto ID = getUsedChunkID(position);
+    return chunk_pool.at(ID)->isBuilt();
+}
+
+const std::vector<ChunkPosition>& chisel::ChunkPool::getUsedChunks() const {
+    static std::vector<ChunkPosition> used_chunks {};
+    used_chunks.clear();
+
+    for (auto const& [position, _] : used_chunk_ids) {
+        used_chunks.emplace_back(position);
     }
 
-    return positions;
-}
-
-bool ChunkPool::isBuilt(const ChunkPosition position) {
-    if (not isChunkUsed(position)) return false;
-    return getUsedChunkPointer(position)->isBuilt();
+    return used_chunks;
 }
