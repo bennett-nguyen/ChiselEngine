@@ -48,7 +48,7 @@ namespace chisel {
         void rebuildQueuedChunks();
 
         void renderUsedChunk(ChunkPosition) const;
-        void setVoxelIDAtPositionInChunk(VoxelID, LocalPosition, ChunkPosition) const;
+        void setVoxelIDAtPositionInChunk(types::VoxelID, LocalPosition, ChunkPosition) const;
 
         [[nodiscard]] bool isVoidAtInChunk(LocalPosition, ChunkPosition) const;
         [[nodiscard]] bool isVisible(ChunkPosition position, const std::array<glm::vec4, 6> &frustum_planes) const;

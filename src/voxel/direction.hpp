@@ -33,6 +33,15 @@ const std::unordered_map<Direction, unsigned> FACE_DIRECTION_TO_ID {
     { Direction::West,   5 },
 };
 
+const std::unordered_map<std::string, unsigned> FACE_STRING_TO_ID {
+    { "top",    0 },
+    { "bottom", 1 },
+    { "north",  2 },
+    { "south",  3 },
+    { "east",   4 },
+    { "west",   5 },
+};
+
 const std::unordered_map<Direction, std::array<LocalPosition, 4>> FACE_VERTICES {
     {
         Direction::Top, {{

@@ -14,6 +14,6 @@ struct RayCastResult {
 void rayCast(const chisel::ChunkPool& pool, RayCastResult &ray_cast_result, glm::vec3 position, glm::vec3 direction);
 WorldPosition getAdjacentVoxel(const RayCastResult &ray_cast_result);
 void breakBlock(chisel::ChunkPool& pool, WorldPosition voxel_position);
-void placeBlock(chisel::ChunkPool& pool, WorldPosition adjacent_voxel_position);
+void placeBlock(chisel::ChunkPool& pool, WorldPosition adjacent_voxel_position, chisel::types::VoxelID block_id);
 
 #endif

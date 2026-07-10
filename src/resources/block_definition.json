@@ -1,0 +1,51 @@
+{
+    "missing_textures": {
+        "textures": [
+            "resources/imgs/block_textures/missing_textures/missing_top.png",
+            "resources/imgs/block_textures/missing_textures/missing_bottom.png",
+            "resources/imgs/block_textures/missing_textures/missing_north.png",
+            "resources/imgs/block_textures/missing_textures/missing_south.png",
+            "resources/imgs/block_textures/missing_textures/missing_east.png",
+            "resources/imgs/block_textures/missing_textures/missing_west.png" ],
+        "texture_face": { "top":  0, "bottom": 1, "north": 2, "south": 3, "east": 4, "west": 5 }
+    },
+    
+    "definitions": [
+        {
+            "name": "chisel::dirt",
+            "textures": [ "resources/imgs/block_textures/dirt/dirt.png" ],
+            "texture_face": { "top":  0, "bottom": 0, "north": 0, "south": 0, "east": 0, "west": 0 }
+        },
+        {
+            "name": "chisel::grass_block",
+            "textures": [
+                "resources/imgs/block_textures/grass_block/grass_block_top.png",
+                "resources/imgs/block_textures/grass_block/grass_block_side.png",
+                "resources/imgs/block_textures/grass_block/grass_block_bottom.png" ],
+            "texture_face": { "top":  0, "bottom": 2, "north": 1, "south": 1, "east": 1, "west": 1 }
+        },
+        {
+            "name": "chisel::stone",
+            "textures": [ "resources/imgs/block_textures/stone/stone.png" ],
+            "texture_face": { "top":  0, "bottom": 0, "north": 0, "south": 0, "east": 0, "west": 0 }
+        },
+        {
+            "name": "chisel::cobblestone",
+            "textures": [ "resources/imgs/block_textures/cobblestone/cobblestone.png" ],
+            "texture_face": { "top":  0, "bottom": 0, "north": 0, "south": 0, "east": 0, "west": 0 }
+        },
+        {
+            "name": "chisel::sand",
+            "textures": [ "resources/imgs/block_textures/sand/sand.png" ],
+            "texture_face": { "top":  0, "bottom": 0, "north": 0, "south": 0, "east": 0, "west": 0 }
+        },
+        {
+            "name": "chisel::tnt",
+            "textures": [
+                "resources/imgs/block_textures/tnt/tnt_top.png",
+                "resources/imgs/block_textures/tnt/tnt_side.png",
+                "resources/imgs/block_textures/tnt/tnt_bottom.png" ],
+            "texture_face": { "top":  0, "bottom": 2, "north": 1, "south": 1, "east": 1, "west": 1 }
+        }
+    ]
+}

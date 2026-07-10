@@ -15,15 +15,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "aabb.hpp"
-#include "../init/gl_constants.hpp"
+#include "gl_constants.hpp"
 #include "proc_gen.hpp"
 #include "direction.hpp"
 #include "conversions.hpp"
+#include "block_registry.hpp"
 
 class Chunk;
 using ChunkPtr = std::unique_ptr<Chunk>;
-
-using VoxelID = uint8_t;
 
 [[nodiscard]] inline bool isVoxelAtChunkBoundaryEast(const LocalPosition local) {
     return chisel::ChunkDataConstants::CHUNK_SIZE-1 == local.z;
@@ -55,7 +54,7 @@ struct Vertex {
     Vertex() = default;
     ~Vertex() = default;
 
-    Vertex(int vertex_index, const LocalPosition &voxel_origin, unsigned ao_id, Direction face_direction, VoxelID voxel_id);
+    Vertex(int vertex_index, const LocalPosition &voxel_origin, unsigned ao_id, Direction face_direction, chisel::types::VoxelID voxel_id);
 
     Vertex(Vertex&& other) noexcept {
         packed_data = other.packed_data;
@@ -89,7 +88,7 @@ class Chunk {
     ChunkPosition position {};
     ChunkNeighbors neighbors {};
 
-    std::array<VoxelID, chisel::ChunkDataConstants::CHUNK_VOLUME> voxel_ids {};
+    std::array<chisel::types::VoxelID, chisel::ChunkDataConstants::CHUNK_VOLUME> voxel_ids {};
 
     bool is_empty = true;
     bool is_built = false;
@@ -147,14 +146,14 @@ public:
     void render() const;
 
     void setPosition(ChunkPosition position);
-    void setVoxelIDAtPosition(VoxelID voxel_id, LocalPosition local);
+    void setVoxelIDAtPosition(chisel::types::VoxelID voxel_id, LocalPosition local);
 
     [[nodiscard]] bool isBuilt() const;
     [[nodiscard]] bool isEmpty() const;
     [[nodiscard]] bool isVoidAt(LocalPosition local) const;
     [[nodiscard]] bool isChunkVisible(const std::array<glm::vec4, 6>& frustum_planes) const;
 
-    [[nodiscard]] VoxelID getVoxelID(LocalPosition local) const;
+    [[nodiscard]] chisel::types::VoxelID getVoxelID(LocalPosition local) const;
 };
 
 #endif

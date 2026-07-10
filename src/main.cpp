@@ -10,6 +10,9 @@
 #include "shader.hpp"
 #include "gl_constants.hpp"
 #include "engine_constants.hpp"
+#include "block_textures.hpp"
+#include "block_registry.hpp"
+#include "block_textures.hpp"
 #include "camera.hpp"
 #include "ray_casting.hpp"
 #include "framebuffer.hpp"
@@ -97,6 +100,9 @@ int main(int argc, char** argv) {
 
     stbi_set_flip_vertically_on_load(true);
     setupUBOViewProjection();
+
+    auto& block_registry = chisel::BlockRegistry::getInstance();
+    auto& block_textures = chisel::BlockTextures::getInstance();
 
     GLuint empty_vao;
     glCreateVertexArrays(1, &empty_vao);
@@ -209,43 +215,6 @@ int main(int argc, char** argv) {
     chisel::ChunkPool pool {};
     loadWorld(pool, current_player_position);
 
-    // Texture Array
-    GLuint texture_array;
-
-    int arr_width, arr_height, arr_numCh;
-    unsigned char* dirt_bytes = stbi_load("resources/imgs/block_textures/dirt.png", &arr_width, &arr_height, &arr_numCh, 0);
-    unsigned char* grass_bytes = stbi_load("resources/imgs/block_textures/grass.png", &arr_width, &arr_height, &arr_numCh, 0);
-    unsigned char* stone_bytes = stbi_load("resources/imgs/block_textures/stone.png", &arr_width, &arr_height, &arr_numCh, 0);
-    unsigned char* test_bytes = stbi_load("resources/imgs/block_textures/test.png", &arr_width, &arr_height, &arr_numCh, 0);
-    unsigned char* tnt_bytes = stbi_load("resources/imgs/block_textures/tnt.png", &arr_width, &arr_height, &arr_numCh, 0);
-    unsigned char* cobblestone_bytes = stbi_load("resources/imgs/block_textures/cobblestone.png", &arr_width, &arr_height, &arr_numCh, 0);
-    unsigned char* sand_bytes = stbi_load("resources/imgs/block_textures/sand.png", &arr_width, &arr_height, &arr_numCh, 0);
-
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array);
-
-    glTextureParameterf(texture_array, GL_TEXTURE_MAX_ANISOTROPY, 8.0f);
-    glTextureParameteri(texture_array, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameteri(texture_array, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(texture_array, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glTextureStorage3D(texture_array, 5, GL_RGBA8, arr_width, arr_height, 7);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 0, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, test_bytes);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 1, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, dirt_bytes);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 2, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, grass_bytes);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 3, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, stone_bytes);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 4, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, cobblestone_bytes);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 5, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, tnt_bytes);
-    glTextureSubImage3D(texture_array, 0, 0, 0, 6, arr_width, arr_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, sand_bytes);
-
-    glGenerateTextureMipmap(texture_array);
-
-    stbi_image_free(dirt_bytes);
-    stbi_image_free(grass_bytes);
-    stbi_image_free(stone_bytes);
-    stbi_image_free(test_bytes);
-    stbi_image_free(tnt_bytes);
-    stbi_image_free(cobblestone_bytes);
-
     // Game State
     bool enable_break_block = false;
     bool enable_place_block = false;
@@ -269,6 +238,8 @@ int main(int argc, char** argv) {
     const auto VERSION = GL_CONSTANTS.getGLVersion();
     const auto RENDERER = GL_CONSTANTS.getGLRenderer();
     const auto SHADING = GL_CONSTANTS.getGLShadingLanguageVersion();
+
+    chisel::types::VoxelID current_block {};
 
     while (running) {
         start = SDL_GetPerformanceCounter();
@@ -297,6 +268,20 @@ int main(int argc, char** argv) {
                     is_using_cinematic_camera = !is_using_cinematic_camera;
                 } else if (SDL_SCANCODE_R == event.key.scancode) {
                     is_switching_controls = !is_switching_controls;
+                }
+
+                else if (SDL_SCANCODE_1 == event.key.scancode) {
+                    current_block = 1;
+                } else if (SDL_SCANCODE_2 == event.key.scancode) {
+                    current_block = 2;
+                } else if (SDL_SCANCODE_3 == event.key.scancode) {
+                    current_block = 3;
+                } else if (SDL_SCANCODE_4 == event.key.scancode) {
+                    current_block = 4;
+                } else if (SDL_SCANCODE_5 == event.key.scancode) {
+                    current_block = 5;
+                } else if (SDL_SCANCODE_6 == event.key.scancode) {
+                    current_block = 6;
                 }
             }
 
@@ -338,7 +323,7 @@ int main(int argc, char** argv) {
                 if (enable_break_block) {
                     breakBlock(pool, ray_cast_result.detected_voxel_position);
                 } else {
-                    placeBlock(pool, getAdjacentVoxel(ray_cast_result));
+                    placeBlock(pool, getAdjacentVoxel(ray_cast_result), current_block);
                 }
             }
         }
@@ -361,7 +346,7 @@ int main(int argc, char** argv) {
         glEnable(GL_DEPTH_TEST);
 
         activateShaderProgram(chunk_shader_program);
-        glBindTextureUnit(0, texture_array);
+        block_textures.bind();
         bindUBOViewProjection();
 
         if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -375,6 +360,7 @@ int main(int argc, char** argv) {
             pool.renderUsedChunk(position);
         }
 
+        chisel::BlockTextures::unbind();
         multisample_framebuffer.blitTo(intermediate_framebuffer);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

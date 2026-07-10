@@ -36,7 +36,7 @@ bool isVoxelAdjacentToChunkInZAxis(const LocalPosition voxel_origin, const Direc
     return false;
 }
 
-Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const unsigned ao_id, const Direction face_direction, const VoxelID voxel_id) {
+Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const unsigned ao_id, const Direction face_direction, const chisel::types::VoxelID voxel_id) {
     const unsigned VERTEX_FACE_ID = FACE_DIRECTION_TO_ID.at(face_direction);
     const LocalPosition VERTEX_POSITION = voxel_origin + FACE_VERTICES.at(face_direction).at(vertex_index);
 
@@ -45,7 +45,7 @@ Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const 
     appendBits(VERTEX_POSITION.z, chisel::ChunkDataConstants::Z_SIZE);
     appendBits(ao_id,             chisel::ChunkDataConstants::AO_ID_SIZE);
     appendBits(VERTEX_FACE_ID,    chisel::ChunkDataConstants::FACE_ID_SIZE);
-    appendBits(voxel_id,          chisel::ChunkDataConstants::VOXEL_ID_SIZE);
+    appendBits(+voxel_id,          chisel::ChunkDataConstants::VOXEL_ID_SIZE);
 }
 
 void Vertex::appendBits(const unsigned data, const unsigned size) {
@@ -54,6 +54,8 @@ void Vertex::appendBits(const unsigned data, const unsigned size) {
 }
 
 void Chunk::buildVoxels() {
+    auto& block_registry = chisel::BlockRegistry::getInstance();
+
     for (unsigned x = 0; x < chisel::ChunkDataConstants::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < chisel::ChunkDataConstants::CHUNK_SIZE; z++) {
             glm::vec3 voxel_position = Conversion::toWorld(LocalPosition(x, 0, z), position);
@@ -63,7 +65,8 @@ void Chunk::buildVoxels() {
 
             for (unsigned y = 0; y <= y_level; y++) {
                 const LocalPosition local { x, y, z };
-                setVoxelIDAtPosition((rand() % 6)+1, local);
+                chisel::types::VoxelID max_id = block_registry.getAllDefinitions().size()-1;
+                setVoxelIDAtPosition((rand() % max_id)+1, local);
                 setEmpty(false);
             }
         }
@@ -88,7 +91,7 @@ void Chunk::buildMesh() {
             for (unsigned y = 0; y < chisel::ChunkDataConstants::CHUNK_HEIGHT; y++) {
                 LocalPosition voxel_origin { x, y, z };
                 if (isVoidAt(voxel_origin)) continue;
-                const VoxelID voxel_id = getVoxelID(voxel_origin);
+                const chisel::types::VoxelID voxel_id = getVoxelID(voxel_origin);
 
                 if (isVoidTopNeighbor(voxel_origin)) {
                     AO = getVertexAO(Direction::Top, voxel_origin);
@@ -284,14 +287,14 @@ void Chunk::setEmpty(const bool state) {
 }
 
 bool Chunk::isVoidAt(const LocalPosition local) const {
-    return 0 == getVoxelID(local);
+    return chisel::AIR_ID == getVoxelID(local);
 }
 
-VoxelID Chunk::getVoxelID(const LocalPosition local) const {
+chisel::types::VoxelID Chunk::getVoxelID(const LocalPosition local) const {
     return voxel_ids.at(Conversion::toIndex(local));
 }
 
-void Chunk::setVoxelIDAtPosition(const VoxelID voxel_id, const LocalPosition local) {
+void Chunk::setVoxelIDAtPosition(const chisel::types::VoxelID voxel_id, const LocalPosition local) {
     voxel_ids.at(Conversion::toIndex(local)) = voxel_id;
 }
 

@@ -1,7 +1,7 @@
 #version 460 core
 out vec4 frag_color;
 
-uniform sampler2DArray texture_array0;
+layout(binding = 0) uniform sampler2DArray texture_array;
 
 in vec2 fs_uv_coords;
 in float fs_shades;
@@ -22,7 +22,7 @@ void main() {
     vec2 face_uv = fs_uv_coords;
     face_uv.x = (fs_uv_coords.x / 6) + (float(fs_face_id) / 6);
 
-    vec3 tex_color = texture2DArrayAA(texture_array0, face_uv).rgb;
+    vec3 tex_color = texture2DArrayAA(texture_array, face_uv).rgb;
     vec4 final_color = vec4(tex_color * fs_shades, 1.0f);
     frag_color = final_color;
 }

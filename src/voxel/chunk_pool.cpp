@@ -143,7 +143,7 @@ void chisel::ChunkPool::renderUsedChunk(const ChunkPosition position) const {
     chunk_pool.at(ID)->render();
 }
 
-void chisel::ChunkPool::setVoxelIDAtPositionInChunk(const VoxelID voxel_id, const LocalPosition local, const ChunkPosition chunk) const {
+void chisel::ChunkPool::setVoxelIDAtPositionInChunk(const types::VoxelID voxel_id, const LocalPosition local, const ChunkPosition chunk) const {
     if (not isPositionUsed(chunk)) return;
     const auto ID = getUsedChunkID(chunk);
     chunk_pool.at(ID)->setVoxelIDAtPosition(voxel_id, local);

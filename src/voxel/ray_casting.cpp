@@ -142,13 +142,16 @@ void breakBlock(chisel::ChunkPool& pool, const WorldPosition voxel_position) {
     }
 }
 
-void placeBlock(chisel::ChunkPool& pool, const WorldPosition adjacent_voxel_position) {
+void placeBlock(chisel::ChunkPool& pool, const WorldPosition adjacent_voxel_position, chisel::types::VoxelID block_id) {
     const auto chunk_position = Conversion::toChunk(adjacent_voxel_position);
     const auto local_position = Conversion::toLocal(adjacent_voxel_position, chunk_position);
 
+    // auto& registry = chisel::BlockRegistry::getInstance();
+    // auto tnt_id = registry.getDefinition("chisel::dirt").voxel_id;
+
     if (chunk_position.y != 0) return;
 
-    pool.setVoxelIDAtPositionInChunk(1, local_position, chunk_position);
+    pool.setVoxelIDAtPositionInChunk(block_id, local_position, chunk_position);
     pool.enqueueForRebuilding(chunk_position);
 
     if (isVoxelAtChunkBoundarySouth(local_position)) {
