@@ -89,6 +89,7 @@ class Chunk {
     ChunkNeighbors neighbors {};
 
     std::array<chisel::types::VoxelID, chisel::ChunkDataConstants::CHUNK_VOLUME> voxel_ids {};
+    std::array<float, chisel::ChunkDataConstants::CHUNK_AREA> height_map {};
 
     bool is_empty = true;
     bool is_built = false;
@@ -154,6 +155,8 @@ public:
     [[nodiscard]] bool isChunkVisible(const std::array<glm::vec4, 6>& frustum_planes) const;
 
     [[nodiscard]] chisel::types::VoxelID getVoxelID(LocalPosition local) const;
+
+    [[nodiscard]] float getNoise(int x, int z) const;
 };
 
 #endif

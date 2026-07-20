@@ -1,10 +1,5 @@
 #include "block_textures.hpp"
 
-chisel::BlockTextures& chisel::BlockTextures::getInstance() {
-    static BlockTextures instance {};
-    return instance;
-}
-
 chisel::BlockTextures::BlockTextures() {
     using namespace rapidjson;
 
@@ -73,9 +68,12 @@ chisel::BlockTextures::BlockTextures() {
 
     glGenerateTextureMipmap(texture_array);
     fclose(fp);
+
+    std::clog << "LOG :: Textures are initialized\n";
 }
 
 chisel::BlockTextures::~BlockTextures() {
+    std::clog << "LOG :: Textures are destroyed\n";
     glDeleteSamplers(1, &sampler);
     glDeleteTextures(1, &texture_array);
 }

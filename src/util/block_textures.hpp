@@ -15,9 +15,8 @@ namespace chisel {
         GLuint texture_array {};
         GLuint sampler {};
 
-        BlockTextures();
     public:
-        static BlockTextures& getInstance();
+        BlockTextures();
         ~BlockTextures();
 
         void bind() const;

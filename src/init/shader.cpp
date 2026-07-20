@@ -46,6 +46,11 @@ void programLinkingCheck(const ShaderProgramID shader_program) {
     throw std::runtime_error("Shader Program Linking Error:\n\n" + std::string(log));
 }
 
+void attachShader(const ShaderID shader, const ShaderProgramID shader_program) {
+    glAttachShader(shader_program, shader);
+    deleteShader(shader);
+}
+
 void attachShader(const std::string &filename, const ShaderProgramID shader_program) {
     const ShaderID shader = makeShader(filename);
     glAttachShader(shader_program, shader);

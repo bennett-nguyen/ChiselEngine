@@ -91,7 +91,7 @@ This software is licensed under the [Apache License, Version 2.0](/licenses/LICE
 
 
 ```
-Copyright 2024 Nguyen Vinh Phu
+Copyright 2024 - 2026 Nguyen Vinh Phu
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

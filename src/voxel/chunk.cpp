@@ -1,5 +1,7 @@
 #include "chunk.hpp"
 
+#include <random>
+
 bool isVoxelAdjacentToChunkInXAxis(const LocalPosition voxel_origin, const Direction expected_adjacent) {
     if (isVoxelAtChunkBoundaryNorth(voxel_origin) and Direction::North == expected_adjacent) {
         return true;
@@ -45,7 +47,7 @@ Vertex::Vertex(const int vertex_index, const LocalPosition &voxel_origin, const 
     appendBits(VERTEX_POSITION.z, chisel::ChunkDataConstants::Z_SIZE);
     appendBits(ao_id,             chisel::ChunkDataConstants::AO_ID_SIZE);
     appendBits(VERTEX_FACE_ID,    chisel::ChunkDataConstants::FACE_ID_SIZE);
-    appendBits(+voxel_id,          chisel::ChunkDataConstants::VOXEL_ID_SIZE);
+    appendBits(+voxel_id,         chisel::ChunkDataConstants::VOXEL_ID_SIZE);
 }
 
 void Vertex::appendBits(const unsigned data, const unsigned size) {
@@ -53,28 +55,80 @@ void Vertex::appendBits(const unsigned data, const unsigned size) {
     packed_data |= data;
 }
 
+float Chunk::getNoise(const int x, const int z) const {
+    using chisel::ChunkDataConstants::CHUNK_SIZE;
+    using chisel::ChunkDataConstants::CHUNK_HEIGHT;
+
+    return height_map.at(z * CHUNK_SIZE + x);
+}
+
+std::vector<std::pair<float, int>> spline_points {
+    { -1.0f, 1 }, { -0.4f, 22 }, { 0.0f, 52 }, { 0.5f, 67 }, { 0.73f, 79 }, { 0.92f, 95}, { 1.1f, 127 }
+};
+
+unsigned spline(float noise, int start, int end) {
+    float dx = spline_points[end].first - spline_points[start].first;
+    float dy = spline_points[end].second - spline_points[start].second;
+
+    return (dy / dx) * (noise - spline_points[start].first) + spline_points[start].second;
+}
+
+unsigned getHeight(float noise) {
+    for (int i = 1; i < spline_points.size(); i++) {
+        if (spline_points[i-1].first <= noise and noise < spline_points[i].first) {
+            return spline(noise, i-1, i);
+        }
+    }
+
+    return 0;
+}
+
 void Chunk::buildVoxels() {
-    auto& block_registry = chisel::BlockRegistry::getInstance();
+    terrain_noise_engine.getHeightMap(height_map, position, Biome::Plains);
+    const auto& block_registry = chisel::BlockRegistry::getInstance();
+
+    chisel::types::VoxelID water_id = block_registry.getVoxelID("chisel::water");
+    chisel::types::VoxelID stone_id = block_registry.getVoxelID("chisel::stone");
+    chisel::types::VoxelID dirt_id = block_registry.getVoxelID("chisel::dirt");
+    chisel::types::VoxelID grass_block_id = block_registry.getVoxelID("chisel::grass_block");
+    chisel::types::VoxelID sand_id = block_registry.getVoxelID("chisel::sand");
+
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist6(1,6);
+
+    setEmpty(false);
 
     for (unsigned x = 0; x < chisel::ChunkDataConstants::CHUNK_SIZE; x++) {
         for (unsigned z = 0; z < chisel::ChunkDataConstants::CHUNK_SIZE; z++) {
             glm::vec3 voxel_position = Conversion::toWorld(LocalPosition(x, 0, z), position);
             voxel_position /= static_cast<float>(chisel::ChunkDataConstants::CHUNK_SIZE);
 
-            const unsigned y_level = heightMap(voxel_position);
+            const unsigned y_level = getHeight(getNoise(x, z));
 
-            for (unsigned y = 0; y <= y_level; y++) {
-                const LocalPosition local { x, y, z };
-                chisel::types::VoxelID max_id = block_registry.getAllDefinitions().size()-1;
-                setVoxelIDAtPosition((rand() % max_id)+1, local);
-                setEmpty(false);
+            chisel::types::VoxelID id {};
+            for (unsigned y = 0; y < y_level; y++) {
+
+                if (y <= 8) {
+                    id = stone_id;
+                } else if (8 < y and y <= 11) {
+                    id = sand_id;
+                } else if (11 < y and y <= 16) {
+                    id = dirt_id;
+                } else if (16 < y and y <= 36) {
+                    id = grass_block_id;
+                } else {
+                    id = stone_id;
+                }
+
+                setVoxelIDAtPosition(id, { x, y, z });
             }
         }
     }
 }
 
 void Chunk::resetVoxels() {
-    std::fill(std::begin(voxel_ids), std::end(voxel_ids), 0);
+    std::fill(std::begin(voxel_ids), std::end(voxel_ids), chisel::AIR_ID);
     setEmpty(true);
 }
 
@@ -295,7 +349,12 @@ chisel::types::VoxelID Chunk::getVoxelID(const LocalPosition local) const {
 }
 
 void Chunk::setVoxelIDAtPosition(const chisel::types::VoxelID voxel_id, const LocalPosition local) {
-    voxel_ids.at(Conversion::toIndex(local)) = voxel_id;
+    try {
+        voxel_ids.at(Conversion::toIndex(local)) = voxel_id;
+    } catch (std::out_of_range& e) {
+        std::cerr << local.x << ' ' << local.y << ' ' << local.z << '\n';
+        std::cerr << e.what() << '\n';
+    }
 }
 
 std::array<unsigned, 4> Chunk::getVertexAO(const Direction face, const LocalPosition voxel_origin) const {

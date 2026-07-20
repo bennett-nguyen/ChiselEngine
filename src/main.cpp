@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 
 #include <SDL3/SDL.h>
 #include <stb_image.h>
@@ -80,6 +81,45 @@ void removeChunks(chisel::ChunkPool& pool, const ChunkPosition player_position) 
     }
 }
 
+ShaderID initializeChunkVertexShader() {
+    std::ostringstream INJECTED_VERTEX_CODE;
+    INJECTED_VERTEX_CODE << "#version 460 core\n\n";
+    INJECTED_VERTEX_CODE << "#define X_SIZE "           << chisel::ChunkDataConstants::X_SIZE << "\n";
+    INJECTED_VERTEX_CODE << "#define Y_SIZE "           << chisel::ChunkDataConstants::Y_SIZE << "\n";
+    INJECTED_VERTEX_CODE << "#define Z_SIZE "           << chisel::ChunkDataConstants::Z_SIZE << "\n";
+    INJECTED_VERTEX_CODE << "#define AO_ID_SIZE "       << chisel::ChunkDataConstants::AO_ID_SIZE << "\n";
+    INJECTED_VERTEX_CODE << "#define FACE_ID_SIZE "     << chisel::ChunkDataConstants::FACE_ID_SIZE << "\n";
+    INJECTED_VERTEX_CODE << "#define VOXEL_ID_SIZE "    << chisel::ChunkDataConstants::VOXEL_ID_SIZE << "\n\n";
+
+    INJECTED_VERTEX_CODE << "const float shades[6] = float[6](1.0, 0.7, 0.8, 0.6, 0.84, 0.8);\n";
+    INJECTED_VERTEX_CODE << "const float ao[4] = float[4](0.7, 0.8, 0.9, 1.0);\n\n";
+
+    INJECTED_VERTEX_CODE << "const int uv_indices[24] = int[24](\n";
+    INJECTED_VERTEX_CODE << "    2, 0, 1, 3, // Top\n";
+    INJECTED_VERTEX_CODE << "    0, 2, 3, 1, // Bottom\n";
+    INJECTED_VERTEX_CODE << "    2, 3, 1, 0, // North\n";
+    INJECTED_VERTEX_CODE << "    0, 1, 3, 2, // South\n";
+    INJECTED_VERTEX_CODE << "    0, 1, 3, 2, // East\n";
+    INJECTED_VERTEX_CODE << "    2, 3, 1, 0  //West\n);\n\n";
+
+    INJECTED_VERTEX_CODE << "const vec2 uv_coords[4] = vec2[4](\n";
+    INJECTED_VERTEX_CODE << "    vec2(0.0f, 0.0f), vec2(0.0f, 1.0f),\n";
+    INJECTED_VERTEX_CODE << "    vec2(1.0f, 0.0f), vec2(1.0f, 1.0f)\n);\n";
+
+    std::string VERTEX_CODE = getFileContent("resources/shaders/chunk.vert");
+
+    const auto STR_INJECTED = INJECTED_VERTEX_CODE.str();
+    GLchar const* VERTEX_SOURCES[] { STR_INJECTED.c_str(), VERTEX_CODE.c_str() };
+    const GLint VERTEX_SOURCES_LENGTH[] { static_cast<GLint>(STR_INJECTED.size()), static_cast<GLint>(VERTEX_CODE.size()) };
+
+    const ShaderID chunk_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(chunk_vertex_shader, 2, VERTEX_SOURCES, VERTEX_SOURCES_LENGTH);
+    glCompileShader(chunk_vertex_shader);
+    shaderCompilationCheck(chunk_vertex_shader);
+
+    return chunk_vertex_shader;
+}
+
 int main(int argc, char** argv) {
     chisel::System::initialize(SDL_INIT_VIDEO);
 
@@ -102,7 +142,7 @@ int main(int argc, char** argv) {
     setupUBOViewProjection();
 
     auto& block_registry = chisel::BlockRegistry::getInstance();
-    auto& block_textures = chisel::BlockTextures::getInstance();
+    chisel::BlockTextures block_textures;
 
     GLuint empty_vao;
     glCreateVertexArrays(1, &empty_vao);
@@ -192,13 +232,15 @@ int main(int argc, char** argv) {
 
     // World Init
     const ShaderProgramID chunk_shader_program = glCreateProgram();
-    attachShader("resources/shaders/chunk.vert", chunk_shader_program);
+
+    ShaderID chunk_vertex_shader = initializeChunkVertexShader();
+    attachShader(chunk_vertex_shader, chunk_shader_program);
     attachShader("resources/shaders/chunk.frag", chunk_shader_program);
     linkProgram(chunk_shader_program);
 
     const float aspect_ratio = static_cast<float>(window_width) / window_height;
-    Camera cinematic_camera { glm::radians(60.0f), aspect_ratio, 20.0f, 500.0f };
-    Camera player_camera { glm::radians(60.0f), aspect_ratio, 0.1f, 500.0f };
+    Camera cinematic_camera { glm::radians(60.0f), aspect_ratio, 0.1f, 500.0f };
+    Camera player_camera { glm::radians(60.0f), aspect_ratio, 0.1f, 20000.0f };
 
     cinematic_camera.setPosition({ 0, 80.0f, -10.0f });
     player_camera.setPosition({ 0.0f, 40.0f, 0.0f });
@@ -355,7 +397,7 @@ int main(int argc, char** argv) {
         const auto& used_chunks = pool.getUsedChunks();
 
         for (const auto &position : used_chunks) {
-            if (not pool.isVisible(position, frustum_planes)) continue;
+            // if (not pool.isVisible(position, frustum_planes)) continue;
             uniformMat4f(chunk_shader_program, "model", 1, GL_FALSE, Conversion::toChunkModel(position));
             pool.renderUsedChunk(position);
         }

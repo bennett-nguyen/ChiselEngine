@@ -46,6 +46,13 @@
                 "resources/imgs/block_textures/tnt/tnt_side.png",
                 "resources/imgs/block_textures/tnt/tnt_bottom.png" ],
             "texture_face": { "top":  0, "bottom": 2, "north": 1, "south": 1, "east": 1, "west": 1 }
+        },
+        {
+            "name": "chisel::water",
+            "textures": [
+                "resources/imgs/block_textures/water/water.png"
+            ],
+            "texture_face": { "top":  0, "bottom": 0, "north": 0, "south": 0, "east": 0, "west": 0 }
         }
     ]
 }

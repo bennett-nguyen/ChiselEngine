@@ -1,12 +1,3 @@
-#version 460 core
-
-const int X_SIZE = 4,
-          Y_SIZE = 4,
-          Z_SIZE = 5,
-          AO_ID_SIZE = 2,
-          FACE_ID_SIZE = 3,
-          VOXEL_ID_SIZE = 8;
-
 struct VertexData {
     uint packed_data;
 };
@@ -25,28 +16,6 @@ vec3 hash31(float p) {
     p3 += dot(p3, p3.yxz + 33.33);
     return fract((p3.xxy + p3.yzz) * p3.zyx) + 0.05;
 }
-
-const float shades[6] = float[6](
-    1.0, 0.7,
-    0.8, 0.6,
-    0.84, 0.8
-);
-
-const float ao[4] = float[4](0.7, 0.8, 0.9, 1.0);
-
-const int uv_indices[24] = int[24](
-    2, 0, 1, 3, // Top
-    0, 2, 3, 1, // Bottom
-    2, 3, 1, 0, // North
-    0, 1, 3, 2, // South
-    0, 1, 3, 2, // East
-    2, 3, 1, 0  // West
-);
-
-const vec2 uv_coords[4] = vec2[4](
-    vec2(0.0f, 0.0f), vec2(0.0f, 1.0f),
-    vec2(1.0f, 0.0f), vec2(1.0f, 1.0f)
-);
 
 vec3 position;
 uint ao_id, face_id, voxel_id;

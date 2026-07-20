@@ -9,7 +9,6 @@ chisel::BlockRegistry::BlockRegistry() {
     using namespace rapidjson;
     definitions.emplace_back(AIR_NAME, AIR_ID, std::vector<std::string>(), std::unordered_map<std::string, unsigned>());
     name_to_id.emplace(AIR_NAME, AIR_ID);
-    id_to_name.emplace_back(AIR_NAME);
 
     FILE* fp = fopen("resources/block_definition.json", "rb");
     if (fp == nullptr) {
@@ -44,7 +43,6 @@ chisel::BlockRegistry::BlockRegistry() {
 
         definitions.emplace_back(name, id, textures_path, texture_faces);
         name_to_id.emplace(name, id);
-        id_to_name.push_back(name);
         id++;
     }
 
@@ -58,5 +56,9 @@ chisel::BlockDefinition chisel::BlockRegistry::getDefinition(const std::string &
 
 const std::vector<chisel::BlockDefinition>& chisel::BlockRegistry::getAllDefinitions() const {
     return definitions;
+}
+
+chisel::types::VoxelID chisel::BlockRegistry::getVoxelID(const std::string &name) const {
+    return getDefinition(name).voxel_id;
 }
 

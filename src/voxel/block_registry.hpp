@@ -36,7 +36,6 @@ namespace chisel {
     class BlockRegistry {
         std::vector<BlockDefinition> definitions {};
         std::unordered_map<std::string, types::VoxelID> name_to_id {};
-        std::vector<std::string> id_to_name {};
 
         BlockRegistry();
     public:
@@ -45,6 +44,7 @@ namespace chisel {
 
         BlockDefinition getDefinition(const std::string &name) const;
         const std::vector<BlockDefinition>& getAllDefinitions() const;
+        types::VoxelID getVoxelID(const std::string& name) const;
 
         BlockRegistry(const BlockRegistry&)            = delete;
         BlockRegistry& operator=(const BlockRegistry&) = delete;

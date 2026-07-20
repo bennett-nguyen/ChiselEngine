@@ -1,38 +1,46 @@
 #include "proc_gen.hpp"
 
-float noise(const glm::vec3 any_position, const Biome biome) {
-    auto const PARAMETERS = BIOMES_PARAMETERS.at(biome);
+TerrainNoise::TerrainNoise(int seed) : global_seed(seed) {
+    node_simplex = FastNoise::New<FastNoise::Simplex>();
+    node_fractal = FastNoise::New<FastNoise::FractalFBm>();
+    node_multiply = FastNoise::New<FastNoise::Multiply>();
+    node_pow_float = FastNoise::New<FastNoise::PowFloat>();
+    node_remap = FastNoise::New<FastNoise::Remap>();
+    node_generator_cache = FastNoise::New<FastNoise::GeneratorCache>();
 
-    const float OCTAVES          = PARAMETERS.octaves;
-    const float FREQUENCY        = PARAMETERS.frequency;
-    const float INITIAL_GAIN     = PARAMETERS.initial_gain;
-    const float DELTA_GAIN       = PARAMETERS.delta_gain;
-    const float FUDGE_FACTOR     = PARAMETERS.fudge_factor;
-    const float ELEVATION_FACTOR = PARAMETERS.elevation_factor;
+    node_fractal->SetSource(node_simplex);
+    node_multiply->SetLHS(node_fractal);
+    // node_pow_float->SetValue(node_multiply);
+    node_remap->SetSource(node_multiply);
+    node_generator_cache->SetSource(node_remap);
 
-    float noise = 0.0f;
-    float amplitude = 1.0f;
-    float amplitude_sum = 0.0f;
-    float gain = 0.0f;
-    float frequency = FREQUENCY;
+    node_remap->SetFromMin(-1.0f);
+    node_remap->SetFromMax(1.0f);
+    node_remap->SetToMin(-1.0f);
+    node_remap->SetToMax(1.0f);
 
-    for (int i = 0; i < OCTAVES; i++) {
-        noise += amplitude * ((glm::simplex(frequency * any_position) + 1.0f) * 0.5f);
-
-        amplitude_sum += amplitude;
-        gain = INITIAL_GAIN + i * DELTA_GAIN;
-        frequency *= 2.0f;
-        amplitude = 1.0f / gain;
-    }
-
-    noise /= amplitude_sum;
-    noise = std::pow(noise * FUDGE_FACTOR, ELEVATION_FACTOR);
-
-    return noise;
+    node_remap->SetClampOutput(true);
 }
 
-unsigned heightMap(const glm::vec3 any_position) {
-    constexpr float CHUNK_HEIGHT_RANGE = static_cast<float>(chisel::ChunkDataConstants::CHUNK_HEIGHT);
-    const unsigned height = static_cast<unsigned>(noise(any_position, Biome::Test) * CHUNK_HEIGHT_RANGE);
-    return height;
+void TerrainNoise::getHeightMap(std::array<float, chisel::ChunkDataConstants::CHUNK_AREA>& height_map, const ChunkPosition chunk, const Biome biome) {
+    using chisel::ChunkDataConstants::CHUNK_AREA;
+    using chisel::ChunkDataConstants::CHUNK_SIZE;
+
+    WorldPosition world = Conversion::chunkToWorld(chunk);
+
+    node_simplex->SetScale(200.0f);
+
+    node_fractal->SetGain(0.54f);
+    node_fractal->SetWeightedStrength(0.52f);
+    node_fractal->SetOctaveCount(4);
+    node_fractal->SetLacunarity(2.32f);
+
+    node_multiply->SetRHS(0.5f);
+    // node_pow_float->SetPow(1.0f);
+
+    auto [min, max] = node_remap->GenUniformGrid2D(
+        height_map.data(),
+        world.x, world.z,
+        CHUNK_SIZE, CHUNK_SIZE,
+        1.0f, 1.0f, global_seed);
 }

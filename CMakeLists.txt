@@ -59,16 +59,19 @@ set_source_files_properties(${DEPS_FILES} PROPERTIES COMPILE_FLAGS "-w -g0 -O2 -
 # GLAD Source file flags will be default to the build type configuration
 set_source_files_properties(${GLAD_SOURCE_FILE} PROPERTIES COMPILE_FLAGS "")
 
+set(FASTNOISE2_NOISETOOL OFF CACHE BOOL "Build Noise Tool" FORCE)
+add_subdirectory(deps/FastNoise2)
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${GLAD_SOURCE_FILE} ${DEPS_FILES})
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
     add_compile_options(-static -static-libgcc -static-libstdc++)
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2main SDL2::SDL2-static OpenGL::GL)
+    target_link_libraries(${PROJECT_NAME} SDL2::SDL2main SDL2::SDL2-static OpenGL::GL FastNoise)
 endif()
 
 if ((${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
-    target_link_libraries(${PROJECT_NAME} SDL3::SDL3 OpenGL::GL)
+    target_link_libraries(${PROJECT_NAME} SDL3::SDL3 OpenGL::GL FastNoise)
 endif()
 
 add_custom_command(
